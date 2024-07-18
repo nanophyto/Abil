@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="installation.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Quick Start" href="quick-start.html" />
 
     <!-- Generated with Sphinx 7.4.6 and Furo 2024.07.18 -->
         <title>Abil 0.0.9 documentation</title>
@@ -199,11 +199,7 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Model Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="example.html">Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="predict.html">Predict</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Post</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a></li>
 </ul>
 
 </div>
@@ -244,78 +240,24 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="planktonsdm-docs">
-<h1>planktonsdm docs<a class="headerlink" href="#planktonsdm-docs" title="Link to this heading">¶</a></h1>
-<p>This is a set of tools to build and process species distributions models in Python.</p>
-<p>Currently supports:</p>
-<p>Classifiers:
-<code class="docutils literal notranslate"><span class="pre">RandomForestClassifier</span></code>
-<code class="docutils literal notranslate"><span class="pre">KNeighborsClassifier</span></code>
-<code class="docutils literal notranslate"><span class="pre">XGBClassifier</span></code></p>
-<p>Regressors:
-<code class="docutils literal notranslate"><span class="pre">RandomForestRegressor</span></code>
-<code class="docutils literal notranslate"><span class="pre">KNeighborsRegressor</span></code>
-<code class="docutils literal notranslate"><span class="pre">XGBRegressor</span></code></p>
-<p>Configuration:
-<code class="docutils literal notranslate"><span class="pre">1-phase</span></code> or <code class="docutils literal notranslate"><span class="pre">2-phase</span></code></p>
-<p>Transformations: <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">log-transform</span></code> and <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">normalization</span></code></p>
-<p>Predictions:
-<code class="docutils literal notranslate"><span class="pre">single</span> <span class="pre">model</span></code> and weighted <code class="docutils literal notranslate"><span class="pre">ensembles</span></code></p>
+          <section id="abil-py">
+<h1>Abil.py<a class="headerlink" href="#abil-py" title="Link to this heading">¶</a></h1>
+<p><em>Aquatic Biogeochemical Interpolation Library in Python</em></p>
+<p>Abil.py is a Python library to interpolate distributions of biogeochemical observations using Machine Learning algorithms in Python.
+The library is optimized to interpolate many predictions in parallel and is thus particularly suited for distribution models of species,
+genes and transcripts. The library relies on scikit-learn and MAPIE.</p>
+<p>## Quick install</p>
+<p>Install the dependencies in a new environment:</p>
+<p>conda env create -f package_save_path/examples/conda/environment.yml</p>
+<p>Activate the new environment and install Abil:</p>
+<p>conda activate abil-env</p>
+<p>python -m pip install package_save_path/Abil/dist/abil-0.0.9.tar.gz</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#pre-requisites">Pre-requisites</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#basic-installation">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#phase-random-forest-regressor">1-phase random forest regressor</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Model Configuration</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="configuration.html#myconfig-yml">myconfig.yml</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#root">root</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#path-out">path_out</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#traits">traits</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#scale-x">scale_X</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#verbose">verbose</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#seed">seed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#n-threads">n_threads</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#cv">cv</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#predict-probability">predict_probability</a></li>
-<li class="toctree-l3"><a class="reference internal" href="configuration.html#ensemble-config">ensemble_config</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="example.html">Examples</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="example.html#phase-random-forest-classifier">1-phase random forest classifier</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="example.html#setup">setup</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#train">train</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#predict">predict</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#post">post</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="example.html#phase-xgboost-regressor">2-phase XGBoost regressor</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id1">setup</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id2">train</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id3">predict</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id4">post</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="example.html#phase-ensemble-regression">1-phase ensemble regression</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id5">setup</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id6">train</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id7">predict</a></li>
-<li class="toctree-l3"><a class="reference internal" href="example.html#id8">post</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="predict.html">Predict</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="predict.html#predict.predict"><code class="docutils literal notranslate"><span class="pre">predict</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="predict.html#predict.predict.make_prediction"><code class="docutils literal notranslate"><span class="pre">predict.make_prediction()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Post</a></li>
 </ul>
 </div>
 </section>
@@ -333,12 +275,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="installation.html">
+          <a class="next-page" href="quick-start.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Installation</div>
+                <div class="title">Quick Start</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

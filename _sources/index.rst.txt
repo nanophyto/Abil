@@ -1,36 +1,27 @@
-planktonsdm docs
+Abil.py
 =======================================
-This is a set of tools to build and process species distributions models in Python.
+*Aquatic Biogeochemical Interpolation Library in Python*
 
-Currently supports:
+Abil.py is a Python library to interpolate distributions of biogeochemical observations using Machine Learning algorithms in Python. 
+The library is optimized to interpolate many predictions in parallel and is thus particularly suited for distribution models of species, 
+genes and transcripts. The library relies on scikit-learn and MAPIE.
 
-Classifiers:
-``RandomForestClassifier``
-``KNeighborsClassifier``
-``XGBClassifier``
+## Quick install
 
-Regressors:
-``RandomForestRegressor`` 
-``KNeighborsRegressor``
-``XGBRegressor``
+Install the dependencies in a new environment:
 
-Configuration:
-``1-phase`` or ``2-phase``
+conda env create -f package_save_path/examples/conda/environment.yml
 
-Transformations: ``y log-transform`` and ``X normalization``
+Activate the new environment and install Abil:
 
-Predictions:
-``single model`` and weighted ``ensembles``
+conda activate abil-env
 
- 
-    
+python -m pip install package_save_path/Abil/dist/abil-0.0.9.tar.gz 
+
+
 .. toctree::
-   /installation
-   /configuration
-   /example
-   /tune
-   /predict
-   /post
+   /index
+   /quick-start
    
 
 Indices and tables
