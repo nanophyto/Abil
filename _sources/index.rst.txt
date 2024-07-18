@@ -1,0 +1,41 @@
+planktonsdm docs
+=======================================
+This is a set of tools to build and process species distributions models in Python.
+
+Currently supports:
+
+Classifiers:
+``RandomForestClassifier``
+``KNeighborsClassifier``
+``XGBClassifier``
+
+Regressors:
+``RandomForestRegressor`` 
+``KNeighborsRegressor``
+``XGBRegressor``
+
+Configuration:
+``1-phase`` or ``2-phase``
+
+Transformations: ``y log-transform`` and ``X normalization``
+
+Predictions:
+``single model`` and weighted ``ensembles``
+
+ 
+    
+.. toctree::
+   /installation
+   /configuration
+   /example
+   /tune
+   /predict
+   /post
+   
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
