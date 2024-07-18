@@ -178,7 +178,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -234,7 +234,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -246,12 +246,20 @@
 <p>Abil.py is a Python library to interpolate distributions of biogeochemical observations using Machine Learning algorithms in Python.
 The library is optimized to interpolate many predictions in parallel and is thus particularly suited for distribution models of species,
 genes and transcripts. The library relies on scikit-learn and MAPIE.</p>
-<p>## Quick install</p>
+<section id="quick-install">
+<h2>Quick install<a class="headerlink" href="#quick-install" title="Link to this heading">¶</a></h2>
 <p>Install the dependencies in a new environment:</p>
-<p>conda env create -f package_save_path/examples/conda/environment.yml</p>
-<p>Activate the new environment and install Abil:</p>
-<p>conda activate abil-env</p>
-<p>python -m pip install package_save_path/Abil/dist/abil-0.0.9.tar.gz</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conda</span> <span class="n">env</span> <span class="n">create</span> <span class="o">-</span><span class="n">f</span> <span class="n">package_save_path</span><span class="o">/</span><span class="n">examples</span><span class="o">/</span><span class="n">conda</span><span class="o">/</span><span class="n">environment</span><span class="o">.</span><span class="n">yml</span>
+</pre></div>
+</div>
+<p>Activate the new environment:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conda</span> <span class="n">activate</span> <span class="n">abil</span><span class="o">-</span><span class="n">env</span>
+</pre></div>
+</div>
+<p>Install Abil:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">package_save_path</span><span class="o">/</span><span class="n">Abil</span><span class="o">/</span><span class="n">dist</span><span class="o">/</span><span class="n">abil</span><span class="o">-</span><span class="mf">0.0.9</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</pre></div>
+</div>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
@@ -260,6 +268,7 @@ genes and transcripts. The library relies on scikit-learn and MAPIE.</p>
 </li>
 </ul>
 </div>
+</section>
 </section>
 <section id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
@@ -303,8 +312,28 @@ genes and transcripts. The library relies on scikit-learn and MAPIE.</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Abil.py</a><ul>
+<li><a class="reference internal" href="#quick-install">Quick install</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
