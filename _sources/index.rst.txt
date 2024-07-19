@@ -21,15 +21,11 @@ Install Abil:
 
 >>> python -m pip install package_save_path/Abil/dist/abil-0.0.9.tar.gz 
 
-
 .. toctree::
    index
    quick-start
-   
+   examples
+   yaml-config
+   mapie
+   hpc
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
