@@ -50,12 +50,19 @@ class TestRegressors(unittest.TestCase):
         self.test_tune_knn()
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
-        m.make_prediction()
+        m.make_prediction(prediction_inference=True)
 
 
     def test_post_ensemble(self):
 
         self.test_predict_ensemble()
+
+        print(self.model_config['local_root'] + self.model_config['path_out'])
+
+
+        print("checking post predictions:")
+
+        print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
 
         m = post(self.model_config)
         m.merge_performance(model="ens")
