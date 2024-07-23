@@ -315,7 +315,7 @@ class tune:
 
 
             with open(reg_sav_out_model  + self.species_no_space + '_reg.sav', 'wb') as f:
-                pickle.dump(m2)
+                pickle.dump(m2, f)
 
 #            pickle.dump(m2, open(reg_sav_out_model  + self.species_no_space + '_reg.sav', 'wb'))
             print("exported model to: " + reg_sav_out_model  + self.species_no_space + '_reg.sav')

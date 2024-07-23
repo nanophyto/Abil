@@ -174,7 +174,10 @@ class TestRegressors(unittest.TestCase):
 
         expected_model_path = "/home/runner/work/Abil/Abil/tests/ModelOutput/rf/scoring/Emiliania_huxleyi_reg.sav"
 
-        test = pickle.load(open(expected_model_path, 'rb'))
+        with open(expected_model_path, 'rb') as f:
+            test = pickle.load(f)
+
+        #test = pickle.load(open(expected_model_path, 'rb'))
 
         print(test)
 
