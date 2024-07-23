@@ -204,6 +204,8 @@ class TestRegressors(unittest.TestCase):
 
     def test_predict_ensemble(self):
         self.test_tune_randomforest()
+        self.test_tune_xgb()
+        self.test_tune_knn()
 
         yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
         
