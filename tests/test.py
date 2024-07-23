@@ -83,13 +83,20 @@ from abil.predict import predict
 
 class TestRegressors(unittest.TestCase):
 
-    def test_tune_randomforest(self):
-        yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
+    def setUp(self):
+        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+        #self.scoring_path = os.path.join(self.workspace, 'tests/ModelOutput/rf/scoring/')
+        #self.model_path = os.path.join(self.workspace, 'tests/ModelOutput/xgb/model/')
+        # os.makedirs(self.scoring_path, exist_ok=True)
+        # os.makedirs(self.model_path, exist_ok=True)
 
-        with open(yaml_path +'/tests/regressor.yml', 'r') as f:
+    def test_tune_randomforest(self):
+        #yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
+
+        with open(self.workspace +'/tests/regressor.yml', 'r') as f:
             model_config = load(f, Loader=Loader)
 
-        model_config['local_root'] = yaml_path
+        model_config['local_root'] = self.workspace # yaml_path
         predictors = model_config['predictors']
         d = pd.read_csv(model_config['local_root'] + model_config['training'])
         target =  "Emiliania huxleyi"
@@ -98,13 +105,31 @@ class TestRegressors(unittest.TestCase):
         X_train = d[predictors]
         y = d[target]
 
+
+        model = "rf"
+
+        sav_out_scores = self.path_out + model + "/scoring/"
+        sav_out_model = self.path_out + model + "/model/"
+        
+        os.makedirs(self.workspace + sav_out_scores, exist_ok=True)
+        os.makedirs(self.workspace + sav_out_model, exist_ok=True)
+
         m = tune(X_train, y, model_config)
     
         m.train(model="rf", regressor=True)
 
-        self.assertTrue(os.path.exists('/home/runner/work/Abil/Abil/tests/ModelOutput/rf/scoring/Emiliania_huxleyi_reg.sav'), 
+        target_no_space = target.replace(' ', '_')
+
+
+        expected_output_scores = self.workspace + sav_out_scores + target_no_space + "_reg.sav"
+        expected_output_model = self.workspace + sav_out_model + target_no_space + "_reg.sav"
+
+        self.assertTrue(os.path.exists(expected_output_scores), 
                         "RF scoring file was not created.")
 
+        self.assertTrue(os.path.exists(expected_output_model), 
+                        "RF model file was not created.")
+        
         # # Print the expected path
         # expected_model_path = "/home/runner/work/Abil/Abil/tests/ModelOutput/rf/scoring/Emiliania_huxleyi_reg.sav"
         # print(f"Expected model path: {expected_model_path}")
