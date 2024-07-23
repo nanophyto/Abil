@@ -65,8 +65,7 @@ class TestRegressors(unittest.TestCase):
         print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
 
         m = post(self.model_config)
-        #m.merge_performance(model="ens") #not exported if prediction_inference = False!?
-        m.merge_performance(model="mapie")
+        m.merge_performance(model="ens") 
         m.merge_performance(model="xgb", configuration= "reg")
         m.merge_performance(model="rf", configuration= "reg")
         m.merge_performance(model="knn", configuration= "reg")

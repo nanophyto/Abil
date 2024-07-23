@@ -28,23 +28,35 @@ def def_prediction(path_out, ensemble_config, n, species):
     if (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == False):
         print("predicting classifier")
         species_no_space = species.replace(' ', '_')
-        m = pickle.load(open(path_to_param + species_no_space + '_clf.sav', 'rb'))
-        scoring =  pickle.load(open(path_to_scores + species_no_space + '_clf.sav', 'rb'))    
+        with open(path_to_param + species_no_space + '_clf.sav', 'rb') as file:
+            m = pickle.load(file)
+        with open(path_to_scores + species_no_space + '_clf.sav', 'rb') as file:
+            scoring = pickle.load(file)
+#        m = pickle.load(open(path_to_param + species_no_space + '_clf.sav', 'rb'))
+#        scoring =  pickle.load(open(path_to_scores + species_no_space + '_clf.sav', 'rb'))    
         scores = np.mean(scoring['test_accuracy'])
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         print("predicting regressor")
         species_no_space = species.replace(' ', '_')
-        m = pickle.load(open(path_to_param + species_no_space + '_reg.sav', 'rb'))
-        scoring =  pickle.load(open(path_to_scores + species_no_space + '_reg.sav', 'rb'))   
+        with open(path_to_param + species_no_space + '_reg.sav', 'rb') as file:
+            m = pickle.load(file)
+        with open(path_to_scores + species_no_space + '_reg.sav', 'rb') as file:
+            scoring = pickle.load(file)
+#        m = pickle.load(open(path_to_param + species_no_space + '_reg.sav', 'rb'))
+#        scoring =  pickle.load(open(path_to_scores + species_no_space + '_reg.sav', 'rb'))   
         scores = abs(np.mean(scoring['test_MAE']))
 
 
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
         print("predicting zero-inflated regressor")
         species_no_space = species.replace(' ', '_')
-        m = pickle.load(open(path_to_param + species_no_space + '_zir.sav', 'rb'))
-        scoring =  pickle.load(open(path_to_scores + species_no_space + '_zir.sav', 'rb'))    
+        with open(path_to_param + species_no_space + '_zir.sav', 'rb') as file:
+            m = pickle.load(file)
+        with open(path_to_scores + species_no_space + '_zir.sav', 'rb') as file:
+            scoring = pickle.load(file)
+#        m = pickle.load(open(path_to_param + species_no_space + '_zir.sav', 'rb'))
+#        scoring =  pickle.load(open(path_to_scores + species_no_space + '_zir.sav', 'rb'))    
         scores = abs(np.mean(scoring['test_MAE']))
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == False):
@@ -163,6 +175,7 @@ class predict:
 
         self.seed = model_config['seed']
         self.species = y.name
+        self.target_no_space = self.species.replace(' ', '_')
         self.verbose = model_config['verbose']
 
         if model_config['hpc']==False:
@@ -285,7 +298,7 @@ class predict:
 
         if number_of_models==1:
 
-            m, mae1 = def_prediction(self.path_out, self.ensemble_config, 0, self.species)
+            m, mae1 = def_prediction(self.path_out, self.ensemble_config, 0, self.target_no_space)
 
             if self.ensemble_config["regressor"] ==True:
                 if prediction_inference==True:
@@ -297,7 +310,7 @@ class predict:
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = self.path_out + model_name + "/predictions/" 
-            export_prediction(m, self.species, self.X_predict, 
+            export_prediction(m, self.target_no_space, self.X_predict, 
                               self.model_config, self.ensemble_config, 
                               model_out, n_threads=self.n_jobs)
 
@@ -309,10 +322,10 @@ class predict:
             w = []
 
             for i in range(number_of_models):
-                m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.species)
+                m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = self.path_out + model_name + "/predictions/" 
-                export_prediction(m, self.species, self.X_predict, 
+                export_prediction(m, self.target_no_space, self.X_predict, 
                                   self.model_config, self.ensemble_config, 
                                   model_out, n_threads=self.n_jobs)
 
@@ -342,7 +355,10 @@ class predict:
                 os.makedirs(model_out_scores)
             except:
                 None
-            pickle.dump(scores, open(model_out_scores + self.species + '.sav', 'wb'))   
+
+            with open(model_out_scores + self.target_no_space + '.sav', 'wb') as f:
+                pickle.dump(scores, f)
+#            pickle.dump(scores, open(model_out_scores + self.species + '.sav', 'wb'))   
             print("exporting ensemble scores to: " + model_out_scores)
 
         else:
@@ -381,22 +397,22 @@ class predict:
             d_ci50 = self.X_predict.copy()
             d_ci50[self.species] = y_pred
             d_ci50 = d_ci50.to_xarray()
-            d_ci50[self.species].to_netcdf(ci50_model_out + self.species + ".nc") 
-            print("exported MAPIE CI50 prediction to: " + ci50_model_out + self.species + ".nc")
+            d_ci50[self.species].to_netcdf(ci50_model_out + self.target_no_space + ".nc") 
+            print("exported MAPIE CI50 prediction to: " + ci50_model_out + self.target_no_space + ".nc")
             d_ci50 = None
             y_pred = None
 
             d_low = self.X_predict.copy()
 
             d_low[self.species] = y_pis[:,0,:].flatten()
-            d_low[self.species].to_xarray().to_netcdf(low_model_out + self.species + ".nc") 
-            print("exported MAPIE " + ci_LL + " prediction to: " + low_model_out + self.species + ".nc")
+            d_low[self.species].to_xarray().to_netcdf(low_model_out + self.target_no_space + ".nc") 
+            print("exported MAPIE " + ci_LL + " prediction to: " + low_model_out + self.target_no_space + ".nc")
             d_low = None
 
             d_up = self.X_predict.copy()
             d_up[self.species] = y_pis[:,1,:].flatten()
-            d_up[self.species].to_xarray().to_netcdf(up_model_out + self.species + ".nc") 
-            print("exported MAPIE " + ci_HL + " prediction to: " + up_model_out + self.species + ".nc")
+            d_up[self.species].to_xarray().to_netcdf(up_model_out + self.target_no_space + ".nc") 
+            print("exported MAPIE " + ci_HL + " prediction to: " + up_model_out + self.target_no_space + ".nc")
             d_up = None
 
         et = time.time()

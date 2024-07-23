@@ -44,7 +44,10 @@ class post:
         if model=="ens":
             extension = ".sav"
         else:
-            extension = "_" + configuration + ".sav"
+            if configuration==None:
+                raise ValueError("configuration should be one of: ['rf', xgb', 'knn', 'mlp']")
+            else:
+                extension = "_" + configuration + ".sav"
 
         for i in range(len(self.d.columns)):
             target = self.d.columns[i]
