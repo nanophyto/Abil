@@ -53,26 +53,26 @@ class TestRegressors(unittest.TestCase):
         m.make_prediction()
 
 
-    # def test_post_ensemble(self):
+    def test_post_ensemble(self):
 
-    #     self.test_predict_ensemble()
+        self.test_predict_ensemble()
 
-    #     m = post(self.model_config)
-    #     m.merge_performance(model="ens")
-    #     m.merge_performance(model="xgb", configuration= "reg")
-    #     m.merge_performance(model="rf", configuration= "reg")
-    #     m.merge_performance(model="knn", configuration= "reg")
+        m = post(self.model_config)
+        m.merge_performance(model="ens")
+        m.merge_performance(model="xgb", configuration= "reg")
+        m.merge_performance(model="rf", configuration= "reg")
+        m.merge_performance(model="knn", configuration= "reg")
 
-    #     m.merge_parameters(model="rf")
-    #     m.merge_parameters(model="xgb")
-    #     m.merge_parameters(model="knn")
+        m.merge_parameters(model="rf")
+        m.merge_parameters(model="xgb")
+        m.merge_parameters(model="knn")
 
-    #     m.total()
+        m.total()
 
-    #     m.merge_env(self.X_predict)
+        m.merge_env(self.X_predict)
 
-    #     m.export_ds("test")
-    #     m.export_csv("test")
+        m.export_ds("test")
+        m.export_csv("test")
 
 
 if __name__ == '__main__':
