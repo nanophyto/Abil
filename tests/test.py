@@ -102,13 +102,15 @@ class TestRegressors(unittest.TestCase):
     
         m.train(model="rf", regressor=True)
 
+        self.assertTrue(os.path.exists('/home/runner/work/Abil/Abil/tests/ModelOutput/rf/scoring/Emiliania_huxleyi_reg.sav'), 
+                        "RF scoring file was not created.")
 
-        # Print the expected path
-        expected_model_path = "/home/runner/work/Abil/Abil/tests/ModelOutput/rf/scoring/Emiliania_huxleyi_reg.sav"
-        print(f"Expected model path: {expected_model_path}")
+        # # Print the expected path
+        # expected_model_path = "/home/runner/work/Abil/Abil/tests/ModelOutput/rf/scoring/Emiliania_huxleyi_reg.sav"
+        # print(f"Expected model path: {expected_model_path}")
 
-        # Print the existence of the file
-        print(f"Does file exist: {os.path.exists(expected_model_path)}")
+        # # Print the existence of the file
+        # print(f"Does file exist: {os.path.exists(expected_model_path)}")
 
 
 
@@ -132,6 +134,9 @@ class TestRegressors(unittest.TestCase):
     
         m.train(model="xgb", regressor=True)
 
+        self.assertTrue(os.path.exists('/home/runner/work/Abil/Abil/tests/ModelOutput/xgb/scoring/Emiliania_huxleyi_reg.sav'), 
+                        "XGBoost scoring file was not created.")
+        
 
     def test_tune_knn(self):
         yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
@@ -152,6 +157,9 @@ class TestRegressors(unittest.TestCase):
     
         m.train(model="knn", regressor=True)
 
+        self.assertTrue(os.path.exists('/home/runner/work/Abil/Abil/tests/ModelOutput/knn/scoring/Emiliania_huxleyi_reg.sav'), 
+                        "KNN scoring file was not created.")
+        
 
     def test_predict_ensemble(self):
         yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
