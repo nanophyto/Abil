@@ -108,8 +108,8 @@ class TestRegressors(unittest.TestCase):
 
         model = "rf"
 
-        sav_out_scores = self.path_out + model + "/scoring/"
-        sav_out_model = self.path_out + model + "/model/"
+        sav_out_scores = model_config['path_out'] + model + "/scoring/"
+        sav_out_model = model_config['path_out'] + model + "/model/"
         
         os.makedirs(self.workspace + sav_out_scores, exist_ok=True)
         os.makedirs(self.workspace + sav_out_model, exist_ok=True)
