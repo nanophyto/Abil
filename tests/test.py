@@ -85,6 +85,10 @@ class TestRegressors(unittest.TestCase):
 
     def setUp(self):
         self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+
+        print("workspace location:")
+
+        print(self.workspace)
         #self.scoring_path = os.path.join(self.workspace, 'tests/ModelOutput/rf/scoring/')
         #self.model_path = os.path.join(self.workspace, 'tests/ModelOutput/xgb/model/')
         # os.makedirs(self.scoring_path, exist_ok=True)
