@@ -59,7 +59,6 @@ class TestRegressors(unittest.TestCase):
 
         print(self.model_config['local_root'] + self.model_config['path_out'])
 
-
         print("checking post predictions:")
 
         print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))

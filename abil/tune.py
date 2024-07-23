@@ -84,8 +84,8 @@ class tune:
         self.X_train = X_train.sample(frac=1, random_state=model_config['seed']) #shuffle
         self.model_config = model_config
         self.seed = model_config['seed']
-        self.species = y.name
-        self.species_no_space = self.species.replace(' ', '_')
+        self.target = y.name
+        self.target_no_space = self.target.replace(' ', '_')
         self.n_jobs = model_config['n_threads']
         self.verbose = model_config['verbose'] 
         self.regions = regions
@@ -263,19 +263,19 @@ class tune:
 
             m1 = clf.best_estimator_
             
-            with open(clf_sav_out_model  + self.species_no_space + '_clf.sav', 'wb') as f:
+            with open(clf_sav_out_model  + self.target_no_space + '_clf.sav', 'wb') as f:
                 pickle.dump(m1, f)
             
             #pickle.dump(m1, open(clf_sav_out_model + self.sspecies_no_space + '_clf.sav', 'wb'))
-            print("exported model to:" + clf_sav_out_model + self.species_no_space + '_clf.sav')
+            print("exported model to:" + clf_sav_out_model + self.target_no_space + '_clf.sav')
 
             clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
             
-            with open(clf_sav_out_scores  + self.species_no_space + '_clf.sav', 'wb') as f:
+            with open(clf_sav_out_scores  + self.target_no_space + '_clf.sav', 'wb') as f:
                 pickle.dump(clf_scores, f)
             
-            #pickle.dump(clf_scores, open(clf_sav_out_scores + self.species_no_space + '_clf.sav', 'wb'))
-            print("exported scoring to: " + clf_sav_out_scores + self.species_no_space + '_clf.sav')
+            #pickle.dump(clf_scores, open(clf_sav_out_scores + self.target_no_space + '_clf.sav', 'wb'))
+            print("exported scoring to: " + clf_sav_out_scores + self.target_no_space + '_clf.sav')
 
             print(clf_scores['test_accuracy'])
             print("clf balanced accuracy " + str((round(np.mean(clf_scores['test_accuracy']), 2))))
@@ -322,24 +322,24 @@ class tune:
             m2 = reg_grid_search.best_estimator_
 
 
-            with open(reg_sav_out_model  + self.species_no_space + '_reg.sav', 'wb') as f:
+            with open(reg_sav_out_model  + self.target_no_space + '_reg.sav', 'wb') as f:
                 pickle.dump(m2, f)
 
-#            pickle.dump(m2, open(reg_sav_out_model  + self.species_no_space + '_reg.sav', 'wb'))
-            print("exported model to: " + reg_sav_out_model  + self.species_no_space + '_reg.sav')
+#            pickle.dump(m2, open(reg_sav_out_model  + self.target_no_space + '_reg.sav', 'wb'))
+            print("exported model to: " + reg_sav_out_model  + self.target_no_space + '_reg.sav')
 
-#            pickle.dump(m2, open(reg_sav_out_model  + self.species + '_reg.sav', 'wb'))
-#            print("exported model to: " + reg_sav_out_model  + self.species + '_reg.sav')
+#            pickle.dump(m2, open(reg_sav_out_model  + self.target + '_reg.sav', 'wb'))
+#            print("exported model to: " + reg_sav_out_model  + self.target + '_reg.sav')
 
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 reg_scores = cross_validate(m2, X_train, y, cv = cv, verbose = self.verbose, scoring=reg_scoring)
 
-            with open(reg_sav_out_scores + self.species_no_space + '_reg.sav', 'wb') as f:
+            with open(reg_sav_out_scores + self.target_no_space + '_reg.sav', 'wb') as f:
                 pickle.dump(reg_scores, f)
 
-            #pickle.dump(reg_scores, open(reg_sav_out_scores + self.species_no_space + '_reg.sav', 'wb'))
+            #pickle.dump(reg_scores, open(reg_sav_out_scores + self.target_no_space + '_reg.sav', 'wb'))
 
-            print("exported scoring to: " + reg_sav_out_scores + self.species_no_space + '_reg.sav')
+            print("exported scoring to: " + reg_sav_out_scores + self.target_no_space + '_reg.sav')
 
             if "RMSE" in reg_scoring:
                 print("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
@@ -376,21 +376,21 @@ class tune:
 
             zir.fit(self.X_train, self.y)
 
-            with open(zir_sav_out_model + self.species_no_space + '_zir.sav', 'wb') as f:
+            with open(zir_sav_out_model + self.target_no_space + '_zir.sav', 'wb') as f:
                 pickle.dump(zir, f)
 
-            pickle.dump(zir, open(zir_sav_out_model + self.species_no_space + '_zir.sav', 'wb'))
-            print("exported model to: " + zir_sav_out_model + self.species_no_space + '_zir.sav')
+            pickle.dump(zir, open(zir_sav_out_model + self.target_no_space + '_zir.sav', 'wb'))
+            print("exported model to: " + zir_sav_out_model + self.target_no_space + '_zir.sav')
 
 
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 zir_scores = cross_validate(zir, self.X_train, self.y, cv=self.cv, verbose =self.verbose, scoring=reg_scoring)
 
-            with open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb') as f:
+            with open(zir_sav_out_scores + self.target_no_space + '_zir.sav', 'wb') as f:
                 pickle.dump(zir_scores, f)
 
-            #pickle.dump(zir_scores, open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb'))
-            print("exported scoring to: " + zir_sav_out_scores + self.species_no_space + '_zir.sav')
+            #pickle.dump(zir_scores, open(zir_sav_out_scores + self.target_no_space + '_zir.sav', 'wb'))
+            print("exported scoring to: " + zir_sav_out_scores + self.target_no_space + '_zir.sav')
 
             print("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
             print("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")

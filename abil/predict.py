@@ -174,8 +174,8 @@ class predict:
         self.X_train = X_train.sample(frac=1, random_state=model_config['seed']) #shuffle
 
         self.seed = model_config['seed']
-        self.species = y.name
-        self.target_no_space = self.species.replace(' ', '_')
+        self.target = y.name
+        self.target_no_space = self.target.replace(' ', '_')
         self.verbose = model_config['verbose']
 
         if model_config['hpc']==False:
@@ -358,7 +358,7 @@ class predict:
 
             with open(model_out_scores + self.target_no_space + '.sav', 'wb') as f:
                 pickle.dump(scores, f)
-#            pickle.dump(scores, open(model_out_scores + self.species + '.sav', 'wb'))   
+#            pickle.dump(scores, open(model_out_scores + self.target + '.sav', 'wb'))   
             print("exporting ensemble scores to: " + model_out_scores)
 
         else:
@@ -395,23 +395,23 @@ class predict:
                 None
 
             d_ci50 = self.X_predict.copy()
-            d_ci50[self.species] = y_pred
+            d_ci50[self.target] = y_pred
             d_ci50 = d_ci50.to_xarray()
-            d_ci50[self.species].to_netcdf(ci50_model_out + self.target_no_space + ".nc") 
+            d_ci50[self.target].to_netcdf(ci50_model_out + self.target_no_space + ".nc") 
             print("exported MAPIE CI50 prediction to: " + ci50_model_out + self.target_no_space + ".nc")
             d_ci50 = None
             y_pred = None
 
             d_low = self.X_predict.copy()
 
-            d_low[self.species] = y_pis[:,0,:].flatten()
-            d_low[self.species].to_xarray().to_netcdf(low_model_out + self.target_no_space + ".nc") 
+            d_low[self.target] = y_pis[:,0,:].flatten()
+            d_low[self.target].to_xarray().to_netcdf(low_model_out + self.target_no_space + ".nc") 
             print("exported MAPIE " + ci_LL + " prediction to: " + low_model_out + self.target_no_space + ".nc")
             d_low = None
 
             d_up = self.X_predict.copy()
-            d_up[self.species] = y_pis[:,1,:].flatten()
-            d_up[self.species].to_xarray().to_netcdf(up_model_out + self.target_no_space + ".nc") 
+            d_up[self.target] = y_pis[:,1,:].flatten()
+            d_up[self.target].to_xarray().to_netcdf(up_model_out + self.target_no_space + ".nc") 
             print("exported MAPIE " + ci_HL + " prediction to: " + up_model_out + self.target_no_space + ".nc")
             d_up = None
 
