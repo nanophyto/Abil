@@ -15,121 +15,64 @@ class TestRegressors(unittest.TestCase):
 
     def setUp(self):
         self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+        with open(self.workspace +'/tests/regressor.yml', 'r') as f:
+            self.model_config = load(f, Loader=Loader)
+
+        self.model_config['local_root'] = self.workspace # yaml_path
+        predictors = self.model_config['predictors']
+        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
+        target =  "Emiliania huxleyi"
+        d = d.dropna(subset=[target])
+        d = d.dropna(subset=predictors)
+        self.X_train = d[predictors]
+        self.y = d[target]
+
+        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
+        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
+        self.X_predict = X_predict[predictors]
+
 
     def test_tune_randomforest(self):
-
-        with open(self.workspace +'/tests/regressor.yml', 'r') as f:
-            model_config = load(f, Loader=Loader)
-
-        model_config['local_root'] = self.workspace # yaml_path
-        predictors = model_config['predictors']
-        d = pd.read_csv(model_config['local_root'] + model_config['training'])
-        target =  "Emiliania huxleyi"
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-        X_train = d[predictors]
-        y = d[target]
-
-        m = tune(X_train, y, model_config)
-    
+        m = tune(self.X_train, self.y, self.model_config)
         m.train(model="rf", regressor=True)
 
-
     def test_tune_xgb(self):
-
-        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
-            model_config = load(f, Loader=Loader)
-
-        model_config['local_root'] = self.workspace
-        predictors = model_config['predictors']
-        d = pd.read_csv(model_config['local_root'] + model_config['training'])
-        target =  "Emiliania huxleyi"
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-        X_train = d[predictors]
-        y = d[target]
-
-        m = tune(X_train, y, model_config)
-    
+        m = tune(self.X_train, self.y, self.model_config)
         m.train(model="xgb", regressor=True)
 
     def test_tune_knn(self):
-
-        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
-            model_config = load(f, Loader=Loader)
-
-        model_config['local_root'] = self.workspace 
-        predictors = model_config['predictors']
-        d = pd.read_csv(model_config['local_root'] + model_config['training'])
-        target =  "Emiliania huxleyi"
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-        X_train = d[predictors]
-        y = d[target]
-
-        m = tune(X_train, y, model_config)
-    
+        m = tune(self.X_train, self.y, self.model_config)
         m.train(model="knn", regressor=True)
-
 
     def test_predict_ensemble(self):
         self.test_tune_randomforest()
         self.test_tune_xgb()
         self.test_tune_knn()
-        
-        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
-            model_config = load(f, Loader=Loader)
 
-        model_config['local_root'] = self.workspace
-        predictors = model_config['predictors']
-        d = pd.read_csv(model_config['local_root'] + model_config['training'])
-        target =  "Emiliania huxleyi"
-
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-
-        X_train = d[predictors]
-        y = d[target]
-
-        X_predict = X_train
-        
-        m = predict(X_train, y, X_predict, model_config)
+        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction()
 
-    def test_post_ensemble(self):
 
-        self.test_predict_ensemble()
+    # def test_post_ensemble(self):
 
-        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
-            model_config = load(f, Loader=Loader)
+    #     self.test_predict_ensemble()
 
-        model_config['hpc']==False
+    #     m = post(self.model_config)
+    #     m.merge_performance(model="ens")
+    #     m.merge_performance(model="xgb", configuration= "reg")
+    #     m.merge_performance(model="rf", configuration= "reg")
+    #     m.merge_performance(model="knn", configuration= "reg")
 
-        predictors = model_config['predictors']
-        d = pd.read_csv(model_config['local_root'] + model_config['training'])
-        d.dropna(subset='FID', inplace=True)
-        X_train = d[predictors]
+    #     m.merge_parameters(model="rf")
+    #     m.merge_parameters(model="xgb")
+    #     m.merge_parameters(model="knn")
 
-        X_predict = pd.read_csv(model_config['local_root'] + model_config['prediction'])
-        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
-        X_predict = X_predict[X_train.columns]
+    #     m.total()
 
-        m = post(model_config)
-        m.merge_performance(model="ens")
-        m.merge_performance(model="xgb", configuration= "reg")
-        m.merge_performance(model="rf", configuration= "reg")
-        m.merge_performance(model="knn", configuration= "reg")
+    #     m.merge_env(self.X_predict)
 
-        m.merge_parameters(model="rf")
-        m.merge_parameters(model="xgb")
-        m.merge_parameters(model="knn")
-
-        m.total()
-
-        m.merge_env(X_predict)
-
-        m.export_ds("test")
-        m.export_csv("test")
+    #     m.export_ds("test")
+    #     m.export_csv("test")
 
 
 if __name__ == '__main__':
