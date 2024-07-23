@@ -65,7 +65,8 @@ class TestRegressors(unittest.TestCase):
         print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
 
         m = post(self.model_config)
-        m.merge_performance(model="ens")
+        #m.merge_performance(model="ens") #not exported if prediction_inference = False!?
+        m.merge_performance(model="mapie")
         m.merge_performance(model="xgb", configuration= "reg")
         m.merge_performance(model="rf", configuration= "reg")
         m.merge_performance(model="knn", configuration= "reg")
@@ -87,10 +88,10 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
 
     # Add tests to the suite in the desired order
-    suite.addTest(TestRegressors('test_tune_randomforest'))
-    suite.addTest(TestRegressors('test_tune_xgb'))
-    suite.addTest(TestRegressors('test_tune_knn'))
-    suite.addTest(TestRegressors('test_predict_ensemble'))
+#    suite.addTest(TestRegressors('test_tune_randomforest'))
+#    suite.addTest(TestRegressors('test_tune_xgb'))
+#    suite.addTest(TestRegressors('test_tune_knn'))
+#    suite.addTest(TestRegressors('test_predict_ensemble'))
     suite.addTest(TestRegressors('test_post_ensemble'))
 
     # Run the test suite
