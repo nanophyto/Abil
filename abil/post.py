@@ -47,16 +47,17 @@ class post:
             extension = "_" + configuration + ".sav"
 
         for i in range(len(self.d.columns)):
-            
-            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + self.d.columns[i] + extension, 'rb'))
+            target = self.d.columns[i]
+            target_no_space = target.replace(' ', '_')
+            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb'))
             mean = np.mean(self.d[self.d.columns[i]])
             R2 = np.mean(m['test_R2'])
             RMSE = -1*np.mean(m['test_RMSE'])
             MAE = -1*np.mean(m['test_MAE'])
             rRMSE = -1*np.mean(m['test_RMSE'])/mean
             rMAE = -1*np.mean(m['test_MAE'])/mean            
-            species = self.d.columns[i]
-            performance = pd.DataFrame({'species':[species], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
+            target = self.d.columns[i]
+            performance = pd.DataFrame({'target':[target], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
                                         'rRMSE':[rRMSE], 'rMAE':[rMAE]})
             all_performance.append(performance)
 
@@ -75,9 +76,10 @@ class post:
 
         for i in range(len(self.d.columns)):
             
-            species = self.d.columns[i]
+            target = self.d.columns[i]
+            target_no_space = target.replace(' ', '_')
 
-            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + self.d.columns[i] + "_reg.sav", 'rb'))
+            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + "_reg.sav", 'rb'))
             # score_reg = np.mean(m['test_MAE'])
 
             # m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + self.d.columns[i] + "_zir.sav", 'rb'))
@@ -93,7 +95,7 @@ class post:
                 max_features = m.regressor_.named_steps.estimator.max_features
                 max_samples = m.regressor_.named_steps.estimator.max_samples
                 min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
-                parameters = pd.DataFrame({'species':[species], 'max_depth':[max_depth], 'max_features':[max_features], 
+                parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'max_features':[max_features], 
                                            'max_samples':[max_samples], 'min_samples_leaf':[min_samples_leaf]})
                 all_parameters.append(parameters)
             elif model == "xgb":
@@ -104,7 +106,7 @@ class post:
                 learning_rate = m.regressor_.named_steps.estimator.learning_rate
                 alpha = m.regressor_.named_steps.estimator.reg_alpha
 
-                parameters = pd.DataFrame({'species':[species], 'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
+                parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
                                            'learning_rate':[learning_rate], 'alpha':[alpha]                                           
                                            })
                 all_parameters.append(parameters)
@@ -117,7 +119,7 @@ class post:
                 p = m.regressor_.named_steps.estimator.estimator.p
                 weights = m.regressor_.named_steps.estimator.estimator.weights
 
-                parameters = pd.DataFrame({'species':[species], 'max_features':[max_features], 'max_samples':[max_samples],
+                parameters = pd.DataFrame({'target':[target], 'max_features':[max_features], 'max_samples':[max_samples],
                                            'leaf_size':[leaf_size], 'p':[p], 'n_neighbors':[n_neighbors], 'weights':[weights]
                                            })
                 all_parameters.append(parameters)    
