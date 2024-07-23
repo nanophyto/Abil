@@ -32,7 +32,7 @@ class TestRegressors(unittest.TestCase):
         self.X_predict = X_predict[predictors]
 
 
-    def test_tune_randomforest(self):
+    def test_tune_rf(self):
         m = tune(self.X_train, self.y, self.model_config)
         m.train(model="rf", regressor=True)
 
@@ -45,7 +45,7 @@ class TestRegressors(unittest.TestCase):
         m.train(model="knn", regressor=True)
 
     def test_predict_ensemble(self):
-        self.test_tune_randomforest()
+        self.test_tune_rf()
         self.test_tune_xgb()
         self.test_tune_knn()
 
@@ -84,14 +84,6 @@ class TestRegressors(unittest.TestCase):
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
-
-    # Add tests to the suite in the desired order
-#    suite.addTest(TestRegressors('test_tune_randomforest'))
-#    suite.addTest(TestRegressors('test_tune_xgb'))
-#    suite.addTest(TestRegressors('test_tune_knn'))
-#    suite.addTest(TestRegressors('test_predict_ensemble'))
     suite.addTest(TestRegressors('test_post_ensemble'))
-
-    # Run the test suite
     runner = unittest.TextTestRunner()
     runner.run(suite)

@@ -1,5 +1,7 @@
 
-# Abil.py (Aquatic Biogeochemical Interpolation Library)
+# Abil.py &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/nanophyto/Abil/LICENSE) [![Build Status](https://github.com/nanophyto/Abil/actions/workflows/CI.yml/badge.svg?branch=Continuous-integration)](https://github.com/nanophyto/Abil/actions/workflows/ci.yml?query=branch%3AContinuous-integration)
+
+# (Aquatic Biogeochemical Interpolation Library)
 
 ## Overview
 
