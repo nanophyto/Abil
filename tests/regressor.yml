@@ -15,7 +15,7 @@
     
   verbose: 1
   seed : 1 # random seed
-  n_threads : 10 # how many cpu threads to use
+  n_threads : 1 # how many cpu threads to use
   cv : 10
   predict_probability: False 
 
