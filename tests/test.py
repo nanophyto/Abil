@@ -197,10 +197,31 @@ class TestRegressors(unittest.TestCase):
         d = pd.read_csv(model_config['local_root'] + model_config['training'])
         target =  "Emiliania huxleyi"
 
+        print('.:')
+        print(os.listdir('.'))
+        print('/home/runner/work/Abil/Abil/tests/: ')
+        print(os.listdir('/home/runner/work/Abil/Abil/tests/'))
+        print('/home/runner/work/Abil/Abil/tests/ModelOutput/ :')
+        print(os.listdir('/home/runner/work/Abil/Abil/tests/ModelOutput/'))
+        print('/home/runner/work/Abil/Abil/tests/ModelOutput/rf :')
+        print(os.listdir('/home/runner/work/Abil/Abil/tests/ModelOutput/rf'))
+
         expected_model_path = "/home/runner/work/Abil/Abil/tests/ModelOutput/rf/model/Emiliania_huxleyi_reg.sav"
 
-        with open(expected_model_path, 'rb') as f:
-            test = pickle.load(f)
+        try:
+            with open(expected_model_path, 'rb') as f:
+                test = pickle.load(f)
+        except:
+            print(":(")
+
+
+        try:
+            expected_model_path = "/home/runner/work/Abil/tests/ModelOutput/rf/model/Emiliania_huxleyi_reg.sav"
+
+            with open(expected_model_path, 'rb') as f:
+                test = pickle.load(f)
+        except:
+            print(":(")
 
         #test = pickle.load(open(expected_model_path, 'rb'))
 
