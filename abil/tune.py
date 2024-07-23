@@ -386,7 +386,7 @@ class tune:
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 zir_scores = cross_validate(zir, self.X_train, self.y, cv=self.cv, verbose =self.verbose, scoring=reg_scoring)
 
-            with open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb')) as f:
+            with open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb') as f:
                 pickle.dump(zir_scores, f)
 
             #pickle.dump(zir_scores, open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb'))
