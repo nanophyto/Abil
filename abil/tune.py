@@ -262,11 +262,19 @@ class tune:
                 clf.fit(self.X_train, y_clf)
 
             m1 = clf.best_estimator_
-            pickle.dump(m1, open(clf_sav_out_model + self.sspecies_no_space + '_clf.sav', 'wb'))
+            
+            with open(clf_sav_out_model  + self.species_no_space + '_clf.sav', 'wb') as f:
+                pickle.dump(m1, f)
+            
+            #pickle.dump(m1, open(clf_sav_out_model + self.sspecies_no_space + '_clf.sav', 'wb'))
             print("exported model to:" + clf_sav_out_model + self.species_no_space + '_clf.sav')
 
             clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
-            pickle.dump(clf_scores, open(clf_sav_out_scores + self.species_no_space + '_clf.sav', 'wb'))
+            
+            with open(clf_sav_out_scores  + self.species_no_space + '_clf.sav', 'wb') as f:
+                pickle.dump(clf_scores, f)
+            
+            #pickle.dump(clf_scores, open(clf_sav_out_scores + self.species_no_space + '_clf.sav', 'wb'))
             print("exported scoring to: " + clf_sav_out_scores + self.species_no_space + '_clf.sav')
 
             print(clf_scores['test_accuracy'])
@@ -367,6 +375,10 @@ class tune:
                 None           
 
             zir.fit(self.X_train, self.y)
+
+            with open(zir_sav_out_model + self.species_no_space + '_zir.sav', 'wb') as f:
+                pickle.dump(zir, f)
+
             pickle.dump(zir, open(zir_sav_out_model + self.species_no_space + '_zir.sav', 'wb'))
             print("exported model to: " + zir_sav_out_model + self.species_no_space + '_zir.sav')
 
@@ -374,8 +386,10 @@ class tune:
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 zir_scores = cross_validate(zir, self.X_train, self.y, cv=self.cv, verbose =self.verbose, scoring=reg_scoring)
 
+            with open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb')) as f:
+                pickle.dump(zir_scores, f)
 
-            pickle.dump(zir_scores, open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb'))
+            #pickle.dump(zir_scores, open(zir_sav_out_scores + self.species_no_space + '_zir.sav', 'wb'))
             print("exported scoring to: " + zir_sav_out_scores + self.species_no_space + '_zir.sav')
 
             print("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
