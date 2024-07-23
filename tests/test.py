@@ -197,7 +197,7 @@ class TestRegressors(unittest.TestCase):
         d = pd.read_csv(model_config['local_root'] + model_config['training'])
         target =  "Emiliania huxleyi"
 
-        expected_model_path = "/home/runner/work/Abil/Abil/tests/ModelOutput/rf/scoring/Emiliania_huxleyi_reg.sav"
+        expected_model_path = "/home/runner/work/Abil/Abil/tests/ModelOutput/rf/model/Emiliania_huxleyi_reg.sav"
 
         with open(expected_model_path, 'rb') as f:
             test = pickle.load(f)
