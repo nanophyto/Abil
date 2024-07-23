@@ -92,7 +92,7 @@ class TestRegressors(unittest.TestCase):
 
         print(os.listdir(self.workspace))
 
-        d = pd.DataFrame({"statement": "fml"})
+        d = pd.DataFrame({"statement": ["fml"]})
 
         d.to_csv(self.workspace + "fml.csv")
 
