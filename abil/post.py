@@ -4,7 +4,7 @@ import glob, os
 import xarray as xr
 import pickle
 import gc
-from skbio.diversity.alpha import shannon
+#from skbio.diversity.alpha import shannon
 
 class post:
     """
