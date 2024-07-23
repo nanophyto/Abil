@@ -314,7 +314,10 @@ class tune:
             m2 = reg_grid_search.best_estimator_
 
 
-            pickle.dump(m2, open(reg_sav_out_model  + self.species_no_space + '_reg.sav', 'wb'))
+            with open(reg_sav_out_model  + self.species_no_space + '_reg.sav', 'wb') as f:
+                pickle.dump(m2)
+
+#            pickle.dump(m2, open(reg_sav_out_model  + self.species_no_space + '_reg.sav', 'wb'))
             print("exported model to: " + reg_sav_out_model  + self.species_no_space + '_reg.sav')
 
 #            pickle.dump(m2, open(reg_sav_out_model  + self.species + '_reg.sav', 'wb'))
@@ -323,7 +326,10 @@ class tune:
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 reg_scores = cross_validate(m2, X_train, y, cv = cv, verbose = self.verbose, scoring=reg_scoring)
 
-            pickle.dump(reg_scores, open(reg_sav_out_scores + self.species_no_space + '_reg.sav', 'wb'))
+            with open(reg_sav_out_scores + self.species_no_space + '_reg.sav', 'wb') as f:
+                pickle.dump(reg_scores, f)
+
+            #pickle.dump(reg_scores, open(reg_sav_out_scores + self.species_no_space + '_reg.sav', 'wb'))
 
             print("exported scoring to: " + reg_sav_out_scores + self.species_no_space + '_reg.sav')
 
