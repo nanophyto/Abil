@@ -36,12 +36,11 @@ class TestRegressors(unittest.TestCase):
 
 
     def test_tune_xgb(self):
-        yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
 
-        with open(yaml_path +'/tests/regressor.yml', 'r') as f:
+        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
             model_config = load(f, Loader=Loader)
 
-        model_config['local_root'] = yaml_path
+        model_config['local_root'] = self.workspace
         predictors = model_config['predictors']
         d = pd.read_csv(model_config['local_root'] + model_config['training'])
         target =  "Emiliania huxleyi"
@@ -55,12 +54,11 @@ class TestRegressors(unittest.TestCase):
         m.train(model="xgb", regressor=True)
 
     def test_tune_knn(self):
-        yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
 
-        with open(yaml_path +'/tests/regressor.yml', 'r') as f:
+        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
             model_config = load(f, Loader=Loader)
 
-        model_config['local_root'] = yaml_path
+        model_config['local_root'] = self.workspace 
         predictors = model_config['predictors']
         d = pd.read_csv(model_config['local_root'] + model_config['training'])
         target =  "Emiliania huxleyi"
@@ -78,13 +76,11 @@ class TestRegressors(unittest.TestCase):
         self.test_tune_randomforest()
         self.test_tune_xgb()
         self.test_tune_knn()
-
-        yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
         
-        with open(yaml_path +'/tests/regressor.yml', 'r') as f:
+        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
             model_config = load(f, Loader=Loader)
 
-        model_config['local_root'] = yaml_path
+        model_config['local_root'] = self.workspace
         predictors = model_config['predictors']
         d = pd.read_csv(model_config['local_root'] + model_config['training'])
         target =  "Emiliania huxleyi"
@@ -104,16 +100,17 @@ class TestRegressors(unittest.TestCase):
 
         self.test_predict_ensemble()
 
-        with open('./examples/configuration/regressor.yml', 'r') as f:
+        with open(self.workspace + '/tests/regressor.yml', 'r') as f:
             model_config = load(f, Loader=Loader)
 
         model_config['hpc']==False
 
         predictors = model_config['predictors']
-        d = pd.read_csv("./examples/data/training.csv")
+        d = pd.read_csv(model_config['local_root'] + model_config['training'])
         d.dropna(subset='FID', inplace=True)
         X_train = d[predictors]
-        X_predict = pd.read_csv("./examples/data/prediction.csv")
+
+        X_predict = pd.read_csv(model_config['local_root'] + model_config['prediction'])
         X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
         X_predict = X_predict[X_train.columns]
 

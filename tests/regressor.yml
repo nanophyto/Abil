@@ -5,7 +5,7 @@
   
   path_in:  /tests/ModelOutput/mapie/predictions/ #root + folder
 
-  env_data_path:  /examples/data/prediction.csv #root + folder
+  prediction:  /examples/data/prediction.csv #root + folder
   targets:  /examples/data/targets.csv #root + folder
   training:  /examples/data/training.csv
 
