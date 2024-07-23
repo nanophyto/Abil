@@ -22,14 +22,12 @@ class post:
             self.path_out = model_config['local_root'] + model_config['path_out']  + str(ci) + "/"
             self.ds = merge_netcdf(model_config['local_root'] + model_config['path_in'] + str(ci) + "/")
             self.traits = pd.read_csv(model_config['local_root'] + model_config['targets'])
-            self.env_data_path =  model_config['local_root'] + model_config['env_data_path']
             self.root  =  model_config['local_root'] 
 
         elif model_config['hpc']==True:
             self.path_out = model_config['hpc_root'] + model_config['path_out']  + str(ci) + "/"
             self.ds = merge_netcdf(model_config['hpc_root'] + model_config['path_in'] + str(ci) + "/")
             self.traits = pd.read_csv(model_config['hpc_root'] + model_config['targets'])
-            self.env_data_path =  model_config['hpc_root'] + model_config['env_data_path']
             self.root  =  model_config['hpc_root'] 
 
         else:
