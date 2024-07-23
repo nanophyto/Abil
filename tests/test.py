@@ -89,6 +89,17 @@ class TestRegressors(unittest.TestCase):
         print("workspace location:")
 
         print(self.workspace)
+
+        print(os.listdir(self.workspace))
+
+        d = pd.DataFrame({"statement": "fml"})
+
+        d.to_csv(self.workspace + "fml.csv")
+
+        print(os.listdir(self.workspace))
+
+        pd.read_csv(self.workspace + "fml.csv")
+
         #self.scoring_path = os.path.join(self.workspace, 'tests/ModelOutput/rf/scoring/')
         #self.model_path = os.path.join(self.workspace, 'tests/ModelOutput/xgb/model/')
         # os.makedirs(self.scoring_path, exist_ok=True)
@@ -192,6 +203,8 @@ class TestRegressors(unittest.TestCase):
         
 
     def test_predict_ensemble(self):
+        self.test_tune_randomforest()
+
         yaml_path = os.path.abspath(os.path.join(sys.path[0] , os.pardir))
         
         with open(yaml_path +'/tests/regressor.yml', 'r') as f:
