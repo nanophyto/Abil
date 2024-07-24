@@ -87,9 +87,165 @@ class TestRegressors(unittest.TestCase):
         integ.integrated_totals(targets, subset_depth=100)
 
 
+
+class TestClassifiers(unittest.TestCase):
+
+    def setUp(self):
+        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+        with open(self.workspace +'/tests/classifier.yml', 'r') as f:
+            self.model_config = load(f, Loader=Loader)
+
+        self.model_config['local_root'] = self.workspace # yaml_path
+        predictors = self.model_config['predictors']
+        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
+        target =  "Emiliania huxleyi"
+        d = d.dropna(subset=[target])
+        d = d.dropna(subset=predictors)
+        self.X_train = d[predictors]
+        self.y = d[target]
+
+        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
+        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
+        self.X_predict = X_predict[predictors]
+
+
+    def test_tune_rf(self):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model="rf", classifier=True)
+
+    def test_tune_xgb(self):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model="xgb", classifier=True)
+
+    def test_tune_knn(self):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model="knn", classifier=True)
+
+    def test_predict_ensemble(self):
+        self.test_tune_rf()
+        self.test_tune_xgb()
+        self.test_tune_knn()
+
+        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
+        m.make_prediction(prediction_inference=True)
+
+
+    def test_post_ensemble(self):
+
+        self.test_predict_ensemble()
+
+        print(self.model_config['local_root'] + self.model_config['path_out'])
+
+        print("checking post predictions:")
+
+        print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
+
+        m = post(self.model_config)
+        m.merge_performance(model="ens") 
+        m.merge_performance(model="xgb", configuration= "reg")
+        m.merge_performance(model="rf", configuration= "reg")
+        m.merge_performance(model="knn", configuration= "reg")
+
+        m.merge_parameters(model="rf")
+        m.merge_parameters(model="xgb")
+        m.merge_parameters(model="knn")
+
+        m.total()
+
+        m.merge_env(self.X_predict)
+
+        m.export_ds("test")
+        m.export_csv("test")
+
+        targets = ['Emiliania huxleyi', 'total']
+        vol_conversion = 1e3 #L-1 to m-3
+        integ = m.integration(m, vol_conversion=vol_conversion)
+        integ.integrated_totals(targets)
+        integ.integrated_totals(targets, subset_depth=100)
+
+
+
+class Test2Phase(unittest.TestCase):
+
+    def setUp(self):
+        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+        with open(self.workspace +'/tests/2-phase.yml', 'r') as f:
+            self.model_config = load(f, Loader=Loader)
+
+        self.model_config['local_root'] = self.workspace # yaml_path
+        predictors = self.model_config['predictors']
+        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
+        target =  "Emiliania huxleyi"
+        d = d.dropna(subset=[target])
+        d = d.dropna(subset=predictors)
+        self.X_train = d[predictors]
+        self.y = d[target]
+
+        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
+        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
+        self.X_predict = X_predict[predictors]
+
+
+    def test_tune_rf(self):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model="rf", classifier=True, regressor=True)
+
+    def test_tune_xgb(self):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model="xgb", classifier=True, regressor=True)
+
+    def test_tune_knn(self):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model="knn", classifier=True, regressor=True)
+
+    def test_predict_ensemble(self):
+        self.test_tune_rf()
+        self.test_tune_xgb()
+        self.test_tune_knn()
+
+        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
+        m.make_prediction(prediction_inference=True)
+
+
+    def test_post_ensemble(self):
+
+        self.test_predict_ensemble()
+
+        print(self.model_config['local_root'] + self.model_config['path_out'])
+
+        print("checking post predictions:")
+
+        print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
+
+        m = post(self.model_config)
+        m.merge_performance(model="ens") 
+        m.merge_performance(model="xgb", configuration= "reg")
+        m.merge_performance(model="rf", configuration= "reg")
+        m.merge_performance(model="knn", configuration= "reg")
+
+        m.merge_parameters(model="rf")
+        m.merge_parameters(model="xgb")
+        m.merge_parameters(model="knn")
+
+        m.total()
+
+        m.merge_env(self.X_predict)
+
+        m.export_ds("test")
+        m.export_csv("test")
+
+        targets = ['Emiliania huxleyi', 'total']
+        vol_conversion = 1e3 #L-1 to m-3
+        integ = m.integration(m, vol_conversion=vol_conversion)
+        integ.integrated_totals(targets)
+        integ.integrated_totals(targets, subset_depth=100)
+
+
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
+    suite.addTest(TestClassifiers('test_post_ensemble'))
     suite.addTest(TestRegressors('test_post_ensemble'))
+    suite.addTest(Test2Phase('test_post_ensemble'))
     runner = unittest.TextTestRunner()
     runner.run(suite)
