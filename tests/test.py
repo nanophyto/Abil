@@ -80,6 +80,12 @@ class TestRegressors(unittest.TestCase):
         m.export_ds("test")
         m.export_csv("test")
 
+        targets = ['Emiliania huxleyi', 'total']
+        vol_conversion = 1e3 #L-1 to m-3
+        integ = m.integration(m, vol_conversion=vol_conversion)
+        integ.integrated_totals(targets)
+        integ.integrated_totals(targets, subset_depth=100)
+
 
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
