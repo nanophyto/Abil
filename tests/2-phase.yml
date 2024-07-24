@@ -13,7 +13,7 @@
     
   verbose: 1
   seed : 1 # random seed
-  n_threads : 3 # how many cpu threads to use
+  n_threads : 1 # how many cpu threads to use
   cv : 3
   predict_probability: False 
 
@@ -42,14 +42,14 @@
         regressor__estimator__n_estimators: [100]
         regressor__estimator__max_features: [4]
         regressor__estimator__max_depth: [50]
-        regressor__estimator__min_samples_leaf: [0.5, 1]
-        regressor__estimator__max_samples: [0.5, 1]     
+        regressor__estimator__min_samples_leaf: [0.5]
+        regressor__estimator__max_samples: [0.5]     
       clf_param_grid:
         estimator__n_estimators: [100]
         estimator__max_features: [3, 4]
         estimator__max_depth: [50, 100]
-        estimator__min_samples_leaf: [0.5, 1]
-        estimator__max_samples: [0.5, 1]   
+        estimator__min_samples_leaf: [0.5]
+        estimator__max_samples: [0.5]   
 
 
     xgb_param_grid:
