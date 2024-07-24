@@ -6,9 +6,9 @@ from yaml import CLoader as Loader
 from abil.tune import tune
 from abil.predict import predict
 from abil.post import post
+from abil.functions import upsample 
 
 unittest.TestLoader.sortTestMethodsUsing = None
-
 
 class BaseTestModel(unittest.TestCase):
 
@@ -21,7 +21,8 @@ class BaseTestModel(unittest.TestCase):
         predictors = self.model_config['predictors']
         data = pd.read_csv(f"{self.model_config['local_root']}{self.model_config['training']}")
         target = "Emiliania huxleyi"
-
+        data[target] = data[target].fillna(0)
+        data = upsample(data, target, ratio=10)
         data = data.dropna(subset=[target] + predictors)
         self.X_train = data[predictors]
         self.y = data[target]
