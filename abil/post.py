@@ -55,16 +55,22 @@ class post:
             with open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb') as file:
                 m = pickle.load(file)
 #            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb'))
-            mean = np.mean(self.d[self.d.columns[i]])
-            R2 = np.mean(m['test_R2'])
-            RMSE = -1*np.mean(m['test_RMSE'])
-            MAE = -1*np.mean(m['test_MAE'])
-            rRMSE = -1*np.mean(m['test_RMSE'])/mean
-            rMAE = -1*np.mean(m['test_MAE'])/mean            
-            target = self.d.columns[i]
-            performance = pd.DataFrame({'target':[target], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
-                                        'rRMSE':[rRMSE], 'rMAE':[rMAE]})
-            all_performance.append(performance)
+            
+            if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
+                #estimate performance of classifier
+                performance = pd.DataFrame({'target':[target]})
+                all_performance.append(performance)
+            else:
+                mean = np.mean(self.d[self.d.columns[i]])
+                R2 = np.mean(m['test_R2'])
+                RMSE = -1*np.mean(m['test_RMSE'])
+                MAE = -1*np.mean(m['test_MAE'])
+                rRMSE = -1*np.mean(m['test_RMSE'])/mean
+                rMAE = -1*np.mean(m['test_MAE'])/mean            
+                target = self.d.columns[i]
+                performance = pd.DataFrame({'target':[target], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
+                                            'rRMSE':[rRMSE], 'rMAE':[rMAE]})
+                all_performance.append(performance)
 
         all_performance = pd.concat(all_performance)
 
