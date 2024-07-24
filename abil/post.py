@@ -45,7 +45,7 @@ class post:
             extension = ".sav"
         else:
             if configuration==None:
-                raise ValueError("configuration should be one of: ['rf', xgb', 'knn', 'mlp']")
+                raise ValueError("configuration should be one of: ['reg', 'clf']") #???
             else:
                 extension = "_" + configuration + ".sav"
 
