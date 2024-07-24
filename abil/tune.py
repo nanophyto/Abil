@@ -378,8 +378,8 @@ class tune:
 
             with open(zir_sav_out_model + self.target_no_space + '_zir.sav', 'wb') as f:
                 pickle.dump(zir, f)
-
-            pickle.dump(zir, open(zir_sav_out_model + self.target_no_space + '_zir.sav', 'wb'))
+                
+            #pickle.dump(zir, open(zir_sav_out_model + self.target_no_space + '_zir.sav', 'wb'))
             print("exported model to: " + zir_sav_out_model + self.target_no_space + '_zir.sav')
 
 

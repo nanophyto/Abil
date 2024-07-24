@@ -22,6 +22,8 @@ class TestRegressors(unittest.TestCase):
         predictors = self.model_config['predictors']
         d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
         target =  "Emiliania huxleyi"
+        d[target] = d[target].fillna(0)
+        d = upsample(d, target, ratio=10)
         d = d.dropna(subset=[target])
         d = d.dropna(subset=predictors)
         self.X_train = d[predictors]
@@ -99,8 +101,11 @@ class TestClassifiers(unittest.TestCase):
         predictors = self.model_config['predictors']
         d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
         target =  "Emiliania huxleyi"
+        d[target] = d[target].fillna(0)
+        d = upsample(d, target, ratio=10)
         d = d.dropna(subset=[target])
         d = d.dropna(subset=predictors)
+
         self.X_train = d[predictors]
         self.y = d[target]
 
@@ -176,6 +181,8 @@ class Test2Phase(unittest.TestCase):
         predictors = self.model_config['predictors']
         d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
         target =  "Emiliania huxleyi"
+        d[target] = d[target].fillna(0)
+        d = upsample(d, target, ratio=10)
         d = d.dropna(subset=[target])
         d = d.dropna(subset=predictors)
         self.X_train = d[predictors]
