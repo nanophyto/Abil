@@ -52,7 +52,9 @@ class post:
         for i in range(len(self.d.columns)):
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
-            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb'))
+            with open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb') as file:
+                m = pickle.load(file)
+#            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb'))
             mean = np.mean(self.d[self.d.columns[i]])
             R2 = np.mean(m['test_R2'])
             RMSE = -1*np.mean(m['test_RMSE'])

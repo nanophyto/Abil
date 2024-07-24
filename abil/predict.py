@@ -343,7 +343,7 @@ class predict:
             else:
                 m= VotingClassifier(estimators=models, weights=w).fit(self.X_train, self.y)
                 if prediction_inference==True:
-                    mapie = MapieClassifier(m, conformity_score=conformity_score, cv=cv) #
+                    mapie = MapieClassifier(m, cv=cv) #
 
             print(np.min(self.y))
 
