@@ -341,7 +341,7 @@ class predict:
                 if prediction_inference==True:
                     mapie = MapieRegressor(m, conformity_score=conformity_score, cv=cv) #            
             else:
-                m= VotingClassifier(estimators=models, weights=w).fit(self.X_train, self.y)
+                m= VotingClassifier(estimators=models, weights=w, voting='soft').fit(self.X_train, self.y)
                 if prediction_inference==True:
                     mapie = MapieClassifier(m, cv=cv) #
 
