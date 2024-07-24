@@ -36,23 +36,23 @@ class post:
         self.d = self.d.dropna()
         self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.model_config = model_config
+
+        if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
+            self.extension = "_clf.sav"
+        elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
+            self.extension = ".sav"
+        else:
+            self.extension = "_reg.sav"
+
        
-    def merge_performance(self, model, configuration=None):
+    def merge_performance(self, model):
         
         all_performance = []
-
-        if model=="ens":
-            extension = ".sav"
-        else:
-            if configuration==None:
-                raise ValueError("configuration should be one of: ['reg', 'clf']") #???
-            else:
-                extension = "_" + configuration + ".sav"
 
         for i in range(len(self.d.columns)):
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
-            with open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb') as file:
+            with open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + self.extension, 'rb') as file:
                 m = pickle.load(file)
             
             if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
@@ -73,10 +73,12 @@ class post:
 
         all_performance = pd.concat(all_performance)
 
-        if configuration==None:
-            all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
-        else:
-            all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_" + configuration + "_performance.csv", index=False)
+        all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
+
+        # if configuration==None:
+        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
+        # else:
+        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_" + configuration + "_performance.csv", index=False)
         
         print("finished merging performance")
 
@@ -89,7 +91,7 @@ class post:
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
 
-            with open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + "_reg.sav", 'rb') as file:
+            with open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + self.extension, 'rb') as file:
                 m = pickle.load(file)
 
             if model == "rf":
