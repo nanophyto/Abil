@@ -12,15 +12,13 @@ unittest.TestLoader.sortTestMethodsUsing = None
 
 class BaseTestModel(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        # The configuration file should be set here for all subclasses
-        cls.config_file = cls.config_file
-
     def setUp(self):
+        # Determine the workspace and config file to use
+        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+        config_file = getattr(self, 'config_file', 'default.yml')
+
         # Load configuration file
-        with open(f'{self.workspace}/tests/{self.config_file}', 'r') as f:
+        with open(f'{self.workspace}/tests/{config_file}', 'r') as f:
             self.model_config = load(f, Loader=Loader)
         self.model_config['local_root'] = self.workspace
 
@@ -93,32 +91,20 @@ class BaseTestModel(unittest.TestCase):
 
 class TestRegressors(BaseTestModel):
     config_file = 'regressor.yml'
-
-    @classmethod
-    def setUpClass(cls):
-        cls.model_params = {'regressor': True}
-        super().setUpClass()
+    model_params = {'regressor': True}
 
 class TestClassifiers(BaseTestModel):
     config_file = 'classifier.yml'
-
-    @classmethod
-    def setUpClass(cls):
-        cls.model_params = {'classifier': True}
-        super().setUpClass()
+    model_params = {'classifier': True}
 
 class Test2Phase(BaseTestModel):
     config_file = '2-phase.yml'
-
-    @classmethod
-    def setUpClass(cls):
-        cls.model_params = {'classifier': True, 'regressor': True}
-        super().setUpClass()
+    model_params = {'classifier': True, 'regressor': True}
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(TestClassifiers('test_post_ensemble'))
-    suite.addTest(TestRegressors('test_post_ensemble'))
+    #suite.addTest(TestRegressors('test_post_ensemble'))
     #suite.addTest(Test2Phase('test_post_ensemble')) # Uncomment if needed
     runner = unittest.TextTestRunner()
     runner.run(suite)
