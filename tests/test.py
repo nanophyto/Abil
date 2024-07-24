@@ -6,7 +6,7 @@ from yaml import load
 from yaml import CLoader as Loader
 import pandas as pd
 from abil.tune import tune
-from abil.functions import example_data, upsample
+from abil.functions import upsample, OffsetGammaConformityScore
 from abil.predict import predict
 from abil.post import post
 
@@ -177,6 +177,45 @@ class TestClassifiers(unittest.TestCase):
 
         m.export_ds("test")
         m.export_csv("test")
+
+
+
+class TestGammaOffset(unittest.TestCase):
+
+    def setUp(self):
+        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+        with open(self.workspace +'/tests/regressor.yml', 'r') as f:
+            self.model_config = load(f, Loader=Loader)
+
+        self.model_config['local_root'] = self.workspace # yaml_path
+        predictors = self.model_config['predictors']
+        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
+        target =  "Emiliania huxleyi"
+        d[target] = d[target].fillna(0)
+        d = upsample(d, target, ratio=10)
+        d = d.dropna(subset=[target])
+        d = d.dropna(subset=predictors)
+        self.X_train = d[predictors]
+        self.y = d[target]
+
+        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
+        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
+        self.X_predict = X_predict[predictors]
+
+
+    def test_post_ensemble(self):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model="rf", regressor=True)
+        m.train(model="xgb", regressor=True)
+        m.train(model="knn", regressor=True)
+
+        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
+
+        m.make_prediction(prediction_inference=True, 
+                        conformity_score=OffsetGammaConformityScore(offset=1e-10))
+        
+
+
 
 
 if __name__ == '__main__':
