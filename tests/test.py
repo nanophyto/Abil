@@ -12,9 +12,15 @@ unittest.TestLoader.sortTestMethodsUsing = None
 
 class BaseTestModel(unittest.TestCase):
 
-    def setUp(self, config_file):
-        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        with open(f'{self.workspace}/tests/{config_file}', 'r') as f:
+    @classmethod
+    def setUpClass(cls):
+        cls.workspace = os.getenv('GITHUB_WORKSPACE', '.')
+        # The configuration file should be set here for all subclasses
+        cls.config_file = cls.config_file
+
+    def setUp(self):
+        # Load configuration file
+        with open(f'{self.workspace}/tests/{self.config_file}', 'r') as f:
             self.model_config = load(f, Loader=Loader)
         self.model_config['local_root'] = self.workspace
 
@@ -32,7 +38,7 @@ class BaseTestModel(unittest.TestCase):
         self.X_predict = X_predict[predictors]
 
     def tune_and_train(self, model, **kwargs):
-        m = tune(self.X_train, self.y, model_config = self.model_config)
+        m = tune(self.X_train, self.y, model_config=self.model_config)
         m.train(model=model, **kwargs)
 
     def test_tune_rf(self):
@@ -85,44 +91,34 @@ class BaseTestModel(unittest.TestCase):
         except:
             pass  # or handle the exception appropriately
 
-
-
-
 class TestRegressors(BaseTestModel):
+    config_file = 'regressor.yml'
 
     @classmethod
     def setUpClass(cls):
         cls.model_params = {'regressor': True}
-
-    def setUp(self):
-        super().setUp(config_file='regressor.yml')
-
+        super().setUpClass()
 
 class TestClassifiers(BaseTestModel):
+    config_file = 'classifier.yml'
 
     @classmethod
     def setUpClass(cls):
         cls.model_params = {'classifier': True}
-
-    def setUp(self):
-        super().setUp(config_file='classifier.yml')
-
+        super().setUpClass()
 
 class Test2Phase(BaseTestModel):
+    config_file = '2-phase.yml'
 
     @classmethod
     def setUpClass(cls):
         cls.model_params = {'classifier': True, 'regressor': True}
-
-    def setUp(self):
-        super().setUp(config_file='2-phase.yml')
-
+        super().setUpClass()
 
 if __name__ == '__main__':
-    # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
     suite.addTest(TestClassifiers('test_post_ensemble'))
     suite.addTest(TestRegressors('test_post_ensemble'))
-#    suite.addTest(Test2Phase('test_post_ensemble'))
+    #suite.addTest(Test2Phase('test_post_ensemble')) # Uncomment if needed
     runner = unittest.TextTestRunner()
     runner.run(suite)
