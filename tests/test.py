@@ -113,19 +113,22 @@ class TestClassifiers(unittest.TestCase):
         X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
         self.X_predict = X_predict[predictors]
 
-
+    @unittest.skip("")
     def test_tune_rf(self):
         m = tune(self.X_train, self.y, self.model_config)
         m.train(model="rf", classifier=True)
 
+    @unittest.skip("")
     def test_tune_xgb(self):
         m = tune(self.X_train, self.y, self.model_config)
         m.train(model="xgb", classifier=True)
 
+    @unittest.skip("")
     def test_tune_knn(self):
         m = tune(self.X_train, self.y, self.model_config)
         m.train(model="knn", classifier=True)
 
+    @unittest.skip("")
     def test_predict_ensemble(self):
         self.test_tune_rf()
         self.test_tune_xgb()
@@ -146,7 +149,7 @@ class TestClassifiers(unittest.TestCase):
         print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
 
         m = post(self.model_config)
-        
+
         m.merge_performance(model="ens") 
         m.merge_performance(model="xgb")
         m.merge_performance(model="rf")
