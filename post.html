@@ -364,6 +364,170 @@ document.write(`
   <section id="post">
 <h1>Post<a class="headerlink" href="#post" title="Link to this heading">#</a></h1>
 <p>Used for post-processing</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="post.post">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">post.</span></span><span class="sig-name descname"><span class="pre">post</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post" title="Link to this definition">#</a></dt>
+<dd><p>Post processing of SDM</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.cwm">
+<span class="sig-name descname"><span class="pre">cwm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.cwm" title="Link to this definition">#</a></dt>
+<dd><p>Calculate community weighted mean values for a given parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>variable</strong> (<em>string</em>) – variable that is used to estimate cwm.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.def_groups">
+<span class="sig-name descname"><span class="pre">def_groups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.def_groups" title="Link to this definition">#</a></dt>
+<dd><p>Define groups of species</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dict</strong> (<em>dictionary</em>)</p></li>
+<li><p><strong>definitions</strong> (<em>A dictionary containing group</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.diversity">
+<span class="sig-name descname"><span class="pre">diversity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#post.post.diversity" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.estimate_carbon">
+<span class="sig-name descname"><span class="pre">estimate_carbon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.estimate_carbon" title="Link to this definition">#</a></dt>
+<dd><p>Estimate carbon content for each species</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>variable</strong> (<em>string</em>) – carbon content to estimate</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.export_csv">
+<span class="sig-name descname"><span class="pre">export_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.export_csv" title="Link to this definition">#</a></dt>
+<dd><p>Export processed dataset to csv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_name</strong> (<em>name csv will be saved as.</em>)</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>data export location is defined in the model_config.yml</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.export_ds">
+<span class="sig-name descname"><span class="pre">export_ds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.export_ds" title="Link to this definition">#</a></dt>
+<dd><p>Export processed dataset to netcdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>name netcdf will be saved as.</em>)</p></li>
+<li><p><strong>author</strong> (<em>author included in netcdf description</em>)</p></li>
+<li><p><strong>description</strong> (<em>title included in netcdf description</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>data export location is defined in the model_config.yml</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="post.post.integration">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">integration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution_lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution_lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_w</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vol_conversion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude_conversion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_mass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.integration" title="Link to this definition">#</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="post.post.integration.calculate_volume">
+<span class="sig-name descname"><span class="pre">calculate_volume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#post.post.integration.calculate_volume" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the volume for each cell and add it as a new field to the dataset.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">Integration</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">resolution_lat</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">resolution_lon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">depth_w</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">vol_conversion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">magnitude_conversion</span><span class="o">=</span><span class="mf">1e-21</span><span class="p">,</span> <span class="n">molar_mass</span><span class="o">=</span><span class="mf">12.01</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Volume calculated:&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="o">.</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.integration.integrate_total">
+<span class="sig-name descname"><span class="pre">integrate_total</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'total'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monthly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.integration.integrate_total" title="Link to this definition">#</a></dt>
+<dd><p>Estimates global integrated values for a single target. Returns the depth integrated annual total.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variable</strong> (<em>str</em>) – The field to be integrated. Default is ‘total’ from PIC or POC Abil output.</p></li>
+<li><p><strong>monthly</strong> (<em>bool</em>) – Whether or not to calculate a monthly average value instead of an annual total. Default is False.</p></li>
+<li><p><strong>subset_depth</strong> (<em>float</em>) – Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">Integration</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">resolution_lat</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">resolution_lon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">depth_w</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">vol_conversion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">magnitude_conversion</span><span class="o">=</span><span class="mf">1e-21</span><span class="p">,</span> <span class="n">molar_mass</span><span class="o">=</span><span class="mf">12.01</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">integration</span><span class="o">.</span><span class="n">integrate_total</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;Calcification&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Final integrated total:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.integration.integrated_totals">
+<span class="sig-name descname"><span class="pre">integrated_totals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monthly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ens'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.integration.integrated_totals" title="Link to this definition">#</a></dt>
+<dd><p>Estimates global integrated values for all targets.</p>
+<p>Considers latitude and depth bin size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>targets</strong> (<em>str</em>) – The fields to be integrated. Default is ‘total’ from PIC or POC Abil output.</p></li>
+<li><p><strong>monthly</strong> (<em>bool</em>) – Whether or not to calculate a monthly average value instead of an annual total. Default is False.</p></li>
+<li><p><strong>subset_depth</strong> (<em>float</em>) – Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.</p></li>
+<li><p><strong>export</strong> (<em>bool</em>) – Whether of not to export integrated totals as .csv. Default is True.</p></li>
+<li><p><strong>model</strong> (<em>str</em>) – The model version to be integrated. Default is “ens”. Other options include {“rf”, “xgb”, “knn”}.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.merge_env">
+<span class="sig-name descname"><span class="pre">merge_env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_predict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.merge_env" title="Link to this definition">#</a></dt>
+<dd><p>Merge model output with environmental data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.merge_parameters">
+<span class="sig-name descname"><span class="pre">merge_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.merge_parameters" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.merge_performance">
+<span class="sig-name descname"><span class="pre">merge_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#post.post.merge_performance" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.return_d">
+<span class="sig-name descname"><span class="pre">return_d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#post.post.return_d" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="post.post.total">
+<span class="sig-name descname"><span class="pre">total</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#post.post.total" title="Link to this definition">#</a></dt>
+<dd><p>Sum target rows to estimate total.</p>
+<p class="rubric">Notes</p>
+<p>Useful for estimating total species abundances if targets are continuous.
+Total is estimated based on the target list defined in model_config.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -385,6 +549,37 @@ document.write(`
               
                 <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post"><code class="docutils literal notranslate"><span class="pre">post</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.cwm"><code class="docutils literal notranslate"><span class="pre">post.cwm()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.def_groups"><code class="docutils literal notranslate"><span class="pre">post.def_groups()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.diversity"><code class="docutils literal notranslate"><span class="pre">post.diversity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.estimate_carbon"><code class="docutils literal notranslate"><span class="pre">post.estimate_carbon()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.export_csv"><code class="docutils literal notranslate"><span class="pre">post.export_csv()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.export_ds"><code class="docutils literal notranslate"><span class="pre">post.export_ds()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.integration"><code class="docutils literal notranslate"><span class="pre">post.integration</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.integration.calculate_volume"><code class="docutils literal notranslate"><span class="pre">post.integration.calculate_volume()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.integration.integrate_total"><code class="docutils literal notranslate"><span class="pre">post.integration.integrate_total()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.integration.integrated_totals"><code class="docutils literal notranslate"><span class="pre">post.integration.integrated_totals()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.merge_env"><code class="docutils literal notranslate"><span class="pre">post.merge_env()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.merge_parameters"><code class="docutils literal notranslate"><span class="pre">post.merge_parameters()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.merge_performance"><code class="docutils literal notranslate"><span class="pre">post.merge_performance()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.return_d"><code class="docutils literal notranslate"><span class="pre">post.return_d()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post.post.total"><code class="docutils literal notranslate"><span class="pre">post.total()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
 
   <div class="sidebar-secondary-item">
 
@@ -429,7 +624,7 @@ document.write(`
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.6.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     <br/>
   </p>
 </div>
