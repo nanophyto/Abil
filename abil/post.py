@@ -54,7 +54,6 @@ class post:
             target_no_space = target.replace(' ', '_')
             with open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb') as file:
                 m = pickle.load(file)
-#            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + extension, 'rb'))
             
             if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
                 #estimate performance of classifier
@@ -92,17 +91,6 @@ class post:
 
             with open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + "_reg.sav", 'rb') as file:
                 m = pickle.load(file)
-
- #           m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + "_reg.sav", 'rb'))
-            # score_reg = np.mean(m['test_MAE'])
-
-            # m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + self.d.columns[i] + "_zir.sav", 'rb'))
-            # score_zir = np.mean(m['test_MAE'])
-
-            # if score_reg > score_zir:
-            #     m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + self.d.columns[i] + "_reg.sav", 'rb'))
-            # elif score_reg < score_zir:
-            #     m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + self.d.columns[i] + "_reg.sav", 'rb'))
 
             if model == "rf":
                 max_depth = m.regressor_.named_steps.estimator.max_depth

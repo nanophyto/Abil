@@ -32,8 +32,6 @@ def def_prediction(path_out, ensemble_config, n, species):
             m = pickle.load(file)
         with open(path_to_scores + species_no_space + '_clf.sav', 'rb') as file:
             scoring = pickle.load(file)
-#        m = pickle.load(open(path_to_param + species_no_space + '_clf.sav', 'rb'))
-#        scoring =  pickle.load(open(path_to_scores + species_no_space + '_clf.sav', 'rb'))    
         scores = np.mean(scoring['test_accuracy'])
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
@@ -42,9 +40,7 @@ def def_prediction(path_out, ensemble_config, n, species):
         with open(path_to_param + species_no_space + '_reg.sav', 'rb') as file:
             m = pickle.load(file)
         with open(path_to_scores + species_no_space + '_reg.sav', 'rb') as file:
-            scoring = pickle.load(file)
-#        m = pickle.load(open(path_to_param + species_no_space + '_reg.sav', 'rb'))
-#        scoring =  pickle.load(open(path_to_scores + species_no_space + '_reg.sav', 'rb'))   
+            scoring = pickle.load(file) 
         scores = abs(np.mean(scoring['test_MAE']))
 
 
@@ -55,8 +51,6 @@ def def_prediction(path_out, ensemble_config, n, species):
             m = pickle.load(file)
         with open(path_to_scores + species_no_space + '_zir.sav', 'rb') as file:
             scoring = pickle.load(file)
-#        m = pickle.load(open(path_to_param + species_no_space + '_zir.sav', 'rb'))
-#        scoring =  pickle.load(open(path_to_scores + species_no_space + '_zir.sav', 'rb'))    
         scores = abs(np.mean(scoring['test_MAE']))
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == False):
@@ -358,7 +352,6 @@ class predict:
 
             with open(model_out_scores + self.target_no_space + '.sav', 'wb') as f:
                 pickle.dump(scores, f)
-#            pickle.dump(scores, open(model_out_scores + self.target + '.sav', 'wb'))   
             print("exporting ensemble scores to: " + model_out_scores)
 
         else:
