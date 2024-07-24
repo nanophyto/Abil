@@ -37,12 +37,21 @@ class post:
         self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.model_config = model_config
 
+        # if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
+        #     self.extension = "_clf.sav"
+        # elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
+        #     self.extension = ".sav"
+        # else:
+        #     self.extension = "_reg.sav"
+
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-            self.extension = "_clf.sav"
+            self.model_type = "clf"
         elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
-            self.extension = ".sav"
-        else:
-            self.extension = "_reg.sav"
+            self.model_type = "zir"
+        if self.model_config['ensemble_config']['regressor'] and not self.model_config['ensemble_config']['classifier']:
+            self.model_type = "reg"
+
+        self.extension = "_" + self.model_type + ".sav"
 
        
     def merge_performance(self, model):
@@ -94,39 +103,51 @@ class post:
             with open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + self.extension, 'rb') as file:
                 m = pickle.load(file)
 
-            if model == "rf":
-                max_depth = m.regressor_.named_steps.estimator.max_depth
-                max_features = m.regressor_.named_steps.estimator.max_features
-                max_samples = m.regressor_.named_steps.estimator.max_samples
-                min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
-                parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'max_features':[max_features], 
-                                           'max_samples':[max_samples], 'min_samples_leaf':[min_samples_leaf]})
-                all_parameters.append(parameters)
-            elif model == "xgb":
-                max_depth = m.regressor_.named_steps.estimator.max_depth
-                subsample = m.regressor_.named_steps.estimator.subsample
-                colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
+            if self.model_type == "reg":
 
-                learning_rate = m.regressor_.named_steps.estimator.learning_rate
-                alpha = m.regressor_.named_steps.estimator.reg_alpha
+                if model == "rf":
+                    max_depth = m.regressor_.named_steps.estimator.max_depth
+                    max_features = m.regressor_.named_steps.estimator.max_features
+                    max_samples = m.regressor_.named_steps.estimator.max_samples
+                    min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
+                    parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'max_features':[max_features], 
+                                            'max_samples':[max_samples], 'min_samples_leaf':[min_samples_leaf]})
+                    all_parameters.append(parameters)
+                elif model == "xgb":
+                    max_depth = m.regressor_.named_steps.estimator.max_depth
+                    subsample = m.regressor_.named_steps.estimator.subsample
+                    colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
 
-                parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
-                                           'learning_rate':[learning_rate], 'alpha':[alpha]                                           
-                                           })
-                all_parameters.append(parameters)
-            elif model == "knn":
-                max_features = m.regressor_.named_steps.estimator.max_features
-                max_samples = m.regressor_.named_steps.estimator.max_samples
+                    learning_rate = m.regressor_.named_steps.estimator.learning_rate
+                    alpha = m.regressor_.named_steps.estimator.reg_alpha
 
-                leaf_size = m.regressor_.named_steps.estimator.estimator.leaf_size
-                n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
-                p = m.regressor_.named_steps.estimator.estimator.p
-                weights = m.regressor_.named_steps.estimator.estimator.weights
+                    parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
+                                            'learning_rate':[learning_rate], 'alpha':[alpha]                                           
+                                            })
+                    all_parameters.append(parameters)
+                elif model == "knn":
+                    max_features = m.regressor_.named_steps.estimator.max_features
+                    max_samples = m.regressor_.named_steps.estimator.max_samples
 
-                parameters = pd.DataFrame({'target':[target], 'max_features':[max_features], 'max_samples':[max_samples],
-                                           'leaf_size':[leaf_size], 'p':[p], 'n_neighbors':[n_neighbors], 'weights':[weights]
-                                           })
-                all_parameters.append(parameters)    
+                    leaf_size = m.regressor_.named_steps.estimator.estimator.leaf_size
+                    n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
+                    p = m.regressor_.named_steps.estimator.estimator.p
+                    weights = m.regressor_.named_steps.estimator.estimator.weights
+
+                    parameters = pd.DataFrame({'target':[target], 'max_features':[max_features], 'max_samples':[max_samples],
+                                            'leaf_size':[leaf_size], 'p':[p], 'n_neighbors':[n_neighbors], 'weights':[weights]
+                                            })
+                    all_parameters.append(parameters) 
+
+            elif self.model_type == "clf":
+                #still to implement!
+                parameters = pd.DataFrame({'target':[target]})
+                all_parameters.append(parameters) 
+
+            elif self.model_type == "zir":
+                #still to implement!
+                parameters = pd.DataFrame({'target':[target]})
+                all_parameters.append(parameters) 
 
         all_parameters= pd.concat(all_parameters)
         all_parameters.to_csv(self.root + self.model_config['path_out'] + model + "_parameters.csv", index=False)

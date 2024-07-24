@@ -215,7 +215,7 @@ class predict:
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
             self.extension = "_clf.sav"
         elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
-            self.extension = ".sav"
+            self.extension = "_.sav"
         else:
             self.extension = "_reg.sav"
 
