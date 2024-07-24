@@ -32,7 +32,7 @@ class BaseTestModel(unittest.TestCase):
         self.X_predict = X_predict[predictors]
 
     def tune_and_train(self, model, **kwargs):
-        m = tune(self.X_train, self.y, config_file = self.model_config)
+        m = tune(self.X_train, self.y, model_config = self.model_config)
         m.train(model=model, **kwargs)
 
     def test_tune_rf(self):
@@ -95,7 +95,7 @@ class TestRegressors(BaseTestModel):
         cls.model_params = {'regressor': True}
 
     def setUp(self):
-        super().setUp('regressor.yml')
+        super().setUp(config_file='regressor.yml')
 
 
 class TestClassifiers(BaseTestModel):
@@ -105,7 +105,7 @@ class TestClassifiers(BaseTestModel):
         cls.model_params = {'classifier': True}
 
     def setUp(self):
-        super().setUp('classifier.yml')
+        super().setUp(config_file='classifier.yml')
 
 
 class Test2Phase(BaseTestModel):
@@ -115,7 +115,7 @@ class Test2Phase(BaseTestModel):
         cls.model_params = {'classifier': True, 'regressor': True}
 
     def setUp(self):
-        super().setUp('2-phase.yml')
+        super().setUp(config_file='2-phase.yml')
 
 
 if __name__ == '__main__':
