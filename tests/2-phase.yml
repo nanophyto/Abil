@@ -1,8 +1,8 @@
 ---
   hpc: False
 
-  path_out:  /tests/ModelOutput/ #root + folder  
-  path_in:  /tests/ModelOutput/mapie/predictions/ #root + folder
+  path_out:  /tests/ModelOutput/2-phase/ #root + folder  
+  path_in:  /tests/ModelOutput/2-phase/mapie/predictions/ #root + folder
 
   prediction:  /examples/data/prediction.csv #root + folder
   targets:  /examples/data/targets.csv #root + folder
