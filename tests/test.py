@@ -1,258 +1,120 @@
 import unittest
-unittest.TestLoader.sortTestMethodsUsing = None
-
-import sys, os
+import os
+import pandas as pd
 from yaml import load
 from yaml import CLoader as Loader
-import pandas as pd
 from abil.tune import tune
-from abil.functions import example_data, upsample
 from abil.predict import predict
 from abil.post import post
 
+unittest.TestLoader.sortTestMethodsUsing = None
 
-class TestRegressors(unittest.TestCase):
 
-    def setUp(self):
+class BaseTestModel(unittest.TestCase):
+
+    def setUp(self, config_file):
         self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        with open(self.workspace +'/tests/regressor.yml', 'r') as f:
+        with open(f'{self.workspace}/tests/{config_file}', 'r') as f:
             self.model_config = load(f, Loader=Loader)
+        self.model_config['local_root'] = self.workspace
 
-        self.model_config['local_root'] = self.workspace # yaml_path
         predictors = self.model_config['predictors']
-        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        target =  "Emiliania huxleyi"
-        d[target] = d[target].fillna(0)
-        d = upsample(d, target, ratio=10)
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-        self.X_train = d[predictors]
-        self.y = d[target]
+        data = pd.read_csv(f"{self.model_config['local_root']}{self.model_config['training']}")
+        target = "Emiliania huxleyi"
 
-        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
+        data = data.dropna(subset=[target] + predictors)
+        self.X_train = data[predictors]
+        self.y = data[target]
+
+        X_predict = pd.read_csv(f"{self.model_config['local_root']}{self.model_config['prediction']}")
         X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
         self.X_predict = X_predict[predictors]
 
+    def tune_and_train(self, model, **kwargs):
+        m = tune(self.X_train, self.y, self.model_config)
+        m.train(model=model, **kwargs)
 
     def test_tune_rf(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="rf", regressor=True)
+        self.tune_and_train("rf", **self.model_params)
 
     def test_tune_xgb(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="xgb", regressor=True)
+        self.tune_and_train("xgb", **self.model_params)
 
     def test_tune_knn(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="knn", regressor=True)
+        self.tune_and_train("knn", **self.model_params)
 
     def test_predict_ensemble(self):
         self.test_tune_rf()
         self.test_tune_xgb()
         self.test_tune_knn()
-
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction(prediction_inference=True)
 
-
     def test_post_ensemble(self):
-
         self.test_predict_ensemble()
 
-        print(self.model_config['local_root'] + self.model_config['path_out'])
-
+        print(f"{self.model_config['local_root']}{self.model_config['path_out']}")
         print("checking post predictions:")
-
-        print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
+        print(os.listdir(f"{self.model_config['local_root']}{self.model_config['path_out']}"))
 
         m = post(self.model_config)
-        m.merge_performance(model="ens") 
-        m.merge_performance(model="xgb", configuration= "reg")
-        m.merge_performance(model="rf", configuration= "reg")
-        m.merge_performance(model="knn", configuration= "reg")
+        models = ["ens", "xgb", "rf", "knn"]
+        for model in models:
+            m.merge_performance(model=model, configuration="reg" if model != "ens" else None)
+            if model != "ens":
+                m.merge_parameters(model=model)
 
-        m.merge_parameters(model="rf")
-        m.merge_parameters(model="xgb")
-        m.merge_parameters(model="knn")
-
-        m.total()
-
+        if self.model_params['regressor']:
+            m.total()
+        
         m.merge_env(self.X_predict)
-
         m.export_ds("test")
         m.export_csv("test")
 
-        targets = ['Emiliania huxleyi', 'total']
-        vol_conversion = 1e3 #L-1 to m-3
-        integ = m.integration(m, vol_conversion=vol_conversion)
-        integ.integrated_totals(targets)
-        integ.integrated_totals(targets, subset_depth=100)
+        if self.model_params['regressor']:
+            targets = ['Emiliania huxleyi', 'total']
+            vol_conversion = 1e3 #L-1 to m-3
+            integ = m.integration(m, vol_conversion=vol_conversion)
+            integ.integrated_totals(targets)
+            integ.integrated_totals(targets, subset_depth=100)
 
 
 
-class TestClassifiers(unittest.TestCase):
+class TestRegressors(BaseTestModel):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model_params = {'regressor': True}
 
     def setUp(self):
-        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        with open(self.workspace +'/tests/classifier.yml', 'r') as f:
-            self.model_config = load(f, Loader=Loader)
-
-        self.model_config['local_root'] = self.workspace # yaml_path
-        predictors = self.model_config['predictors']
-        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        target =  "Emiliania huxleyi"
-        d[target] = d[target].fillna(0)
-        d = upsample(d, target, ratio=10)
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-
-        self.X_train = d[predictors]
-        self.y = d[target]
-
-        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
-        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
-        self.X_predict = X_predict[predictors]
+        super().setUp('regressor.yml')
 
 
-    def test_tune_rf(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="rf", classifier=True)
+class TestClassifiers(BaseTestModel):
 
-    def test_tune_xgb(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="xgb", classifier=True)
-
-    def test_tune_knn(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="knn", classifier=True)
-
-    def test_predict_ensemble(self):
-        self.test_tune_rf()
-        self.test_tune_xgb()
-        self.test_tune_knn()
-
-        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
-        m.make_prediction(prediction_inference=True)
-
-
-    def test_post_ensemble(self):
-
-        self.test_predict_ensemble()
-
-        print(self.model_config['local_root'] + self.model_config['path_out'])
-
-        print("checking post predictions:")
-
-        print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
-
-        m = post(self.model_config)
-        m.merge_performance(model="ens") 
-        m.merge_performance(model="xgb", configuration= "reg")
-        m.merge_performance(model="rf", configuration= "reg")
-        m.merge_performance(model="knn", configuration= "reg")
-
-        m.merge_parameters(model="rf")
-        m.merge_parameters(model="xgb")
-        m.merge_parameters(model="knn")
-
-        m.total()
-
-        m.merge_env(self.X_predict)
-
-        m.export_ds("test")
-        m.export_csv("test")
-
-        targets = ['Emiliania huxleyi', 'total']
-        vol_conversion = 1e3 #L-1 to m-3
-        integ = m.integration(m, vol_conversion=vol_conversion)
-        integ.integrated_totals(targets)
-        integ.integrated_totals(targets, subset_depth=100)
-
-
-
-class Test2Phase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.model_params = {'classifier': True}
 
     def setUp(self):
-        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        with open(self.workspace +'/tests/2-phase.yml', 'r') as f:
-            self.model_config = load(f, Loader=Loader)
-
-        self.model_config['local_root'] = self.workspace # yaml_path
-        predictors = self.model_config['predictors']
-        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        target =  "Emiliania huxleyi"
-        d[target] = d[target].fillna(0)
-        d = upsample(d, target, ratio=10)
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-        self.X_train = d[predictors]
-        self.y = d[target]
-
-        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
-        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
-        self.X_predict = X_predict[predictors]
+        super().setUp('classifier.yml')
 
 
-    def test_tune_rf(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="rf", classifier=True, regressor=True)
+class Test2Phase(BaseTestModel):
 
-    def test_tune_xgb(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="xgb", classifier=True, regressor=True)
+    @classmethod
+    def setUpClass(cls):
+        cls.model_params = {'classifier': True, 'regressor': True}
 
-    def test_tune_knn(self):
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="knn", classifier=True, regressor=True)
-
-    def test_predict_ensemble(self):
-        self.test_tune_rf()
-        self.test_tune_xgb()
-        self.test_tune_knn()
-
-        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
-        m.make_prediction(prediction_inference=True)
-
-
-    def test_post_ensemble(self):
-
-        self.test_predict_ensemble()
-
-        print(self.model_config['local_root'] + self.model_config['path_out'])
-
-        print("checking post predictions:")
-
-        print(os.listdir(self.model_config['local_root'] + self.model_config['path_out']))
-
-        m = post(self.model_config)
-        m.merge_performance(model="ens") 
-        m.merge_performance(model="xgb", configuration= "reg")
-        m.merge_performance(model="rf", configuration= "reg")
-        m.merge_performance(model="knn", configuration= "reg")
-
-        m.merge_parameters(model="rf")
-        m.merge_parameters(model="xgb")
-        m.merge_parameters(model="knn")
-
-        m.total()
-
-        m.merge_env(self.X_predict)
-
-        m.export_ds("test")
-        m.export_csv("test")
-
-        targets = ['Emiliania huxleyi', 'total']
-        vol_conversion = 1e3 #L-1 to m-3
-        integ = m.integration(m, vol_conversion=vol_conversion)
-        integ.integrated_totals(targets)
-        integ.integrated_totals(targets, subset_depth=100)
+    def setUp(self):
+        super().setUp('2-phase.yml')
 
 
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
     suite.addTest(TestClassifiers('test_post_ensemble'))
-#    suite.addTest(TestRegressors('test_post_ensemble'))
+    suite.addTest(TestRegressors('test_post_ensemble'))
 #    suite.addTest(Test2Phase('test_post_ensemble'))
     runner = unittest.TextTestRunner()
     runner.run(suite)
