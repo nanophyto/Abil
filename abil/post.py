@@ -84,7 +84,10 @@ class post:
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
 
-            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + "_reg.sav", 'rb'))
+            with open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + "_reg.sav", 'rb') as file:
+                m = pickle.load(file)
+
+ #           m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + "_reg.sav", 'rb'))
             # score_reg = np.mean(m['test_MAE'])
 
             # m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + self.d.columns[i] + "_zir.sav", 'rb'))
