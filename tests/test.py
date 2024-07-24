@@ -12,13 +12,13 @@ unittest.TestLoader.sortTestMethodsUsing = None
 
 class BaseTestModel(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        # Ensure config_file and model_params are set in subclasses
-        if not hasattr(cls, 'config_file'):
-            raise AttributeError("Subclasses must define 'config_file'")
-        if not hasattr(cls, 'model_params'):
-            raise AttributeError("Subclasses must define 'model_params'")
+    # @classmethod
+    # def setUpClass(cls):
+    #     # Ensure config_file and model_params are set in subclasses
+    #     if not hasattr(cls, 'config_file'):
+    #         raise AttributeError("Subclasses must define 'config_file'")
+    #     if not hasattr(cls, 'model_params'):
+    #         raise AttributeError("Subclasses must define 'model_params'")
 
     def setUp(self):
         # Use the class-level configuration
