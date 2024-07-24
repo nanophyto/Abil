@@ -15,7 +15,7 @@ class BaseTestModel(unittest.TestCase):
     def setUp(self):
         # Determine the workspace and config file to use
         self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        config_file = getattr(self, 'config_file', 'default.yml')
+        config_file = getattr(self, 'config_file')
 
         # Load configuration file
         with open(f'{self.workspace}/tests/{config_file}', 'r') as f:
