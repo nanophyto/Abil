@@ -211,6 +211,14 @@ class predict:
         if (self.ensemble_config["regressor"] !=True) and (self.ensemble_config["regressor"] !=False):
             raise ValueError("regressor should be True or False")
 
+
+        if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
+            self.extension = "_clf.sav"
+        elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
+            self.extension = ".sav"
+        else:
+            self.extension = "_reg.sav"
+
         print("initialized prediction")
         
     def make_prediction(self, prediction_inference=False, alpha=[0.05], cv=None,
@@ -350,9 +358,9 @@ class predict:
             except:
                 None
 
-            with open(model_out_scores + self.target_no_space + '.sav', 'wb') as f:
+            with open(model_out_scores + self.target_no_space + self.extension, 'wb') as f:
                 pickle.dump(scores, f)
-            print("exporting ensemble scores to: " + model_out_scores)
+            print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
