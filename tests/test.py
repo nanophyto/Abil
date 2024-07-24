@@ -12,12 +12,19 @@ unittest.TestLoader.sortTestMethodsUsing = None
 
 class BaseTestModel(unittest.TestCase):
 
-    def setUp(self):
-        # Determine the workspace and config file to use
-        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        config_file = getattr(self, 'config_file')
+    @classmethod
+    def setUpClass(cls):
+        # Ensure config_file and model_params are set in subclasses
+        if not hasattr(cls, 'config_file'):
+            raise AttributeError("Subclasses must define 'config_file'")
+        if not hasattr(cls, 'model_params'):
+            raise AttributeError("Subclasses must define 'model_params'")
 
-        # Load configuration file
+    def setUp(self):
+        # Use the class-level configuration
+        config_file = self.config_file
+
+        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
         with open(f'{self.workspace}/tests/{config_file}', 'r') as f:
             self.model_config = load(f, Loader=Loader)
         self.model_config['local_root'] = self.workspace
@@ -104,7 +111,7 @@ class Test2Phase(BaseTestModel):
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(TestClassifiers('test_post_ensemble'))
-    #suite.addTest(TestRegressors('test_post_ensemble'))
+#    suite.addTest(TestRegressors('test_post_ensemble'))
     #suite.addTest(Test2Phase('test_post_ensemble')) # Uncomment if needed
     runner = unittest.TextTestRunner()
     runner.run(suite)
