@@ -4,12 +4,10 @@ on:
   push:
     branches:
       - main
-      - tidying
 
   pull_request:
     branches:
       - main
-      - tidying
 
 jobs:
   test:
