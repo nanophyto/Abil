@@ -390,7 +390,7 @@ class predict:
             d_ci50 = self.X_predict.copy()
             d_ci50[self.target] = y_pred
             d_ci50 = d_ci50.to_xarray()
-            d_ci50[self.target].to_netcdf(ci50_model_out + self.target_no_space + ".nc") 
+            d_ci50[self.target].to_netcdf(ci50_model_out + self.target_no_space + ".nc", mode='w') 
             print("exported MAPIE CI50 prediction to: " + ci50_model_out + self.target_no_space + ".nc")
             d_ci50 = None
             y_pred = None
@@ -398,13 +398,13 @@ class predict:
             d_low = self.X_predict.copy()
 
             d_low[self.target] = y_pis[:,0,:].flatten()
-            d_low[self.target].to_xarray().to_netcdf(low_model_out + self.target_no_space + ".nc") 
+            d_low[self.target].to_xarray().to_netcdf(low_model_out + self.target_no_space + ".nc", mode='w') 
             print("exported MAPIE " + ci_LL + " prediction to: " + low_model_out + self.target_no_space + ".nc")
             d_low = None
 
             d_up = self.X_predict.copy()
             d_up[self.target] = y_pis[:,1,:].flatten()
-            d_up[self.target].to_xarray().to_netcdf(up_model_out + self.target_no_space + ".nc") 
+            d_up[self.target].to_xarray().to_netcdf(up_model_out + self.target_no_space + ".nc", mode='w') 
             print("exported MAPIE " + ci_HL + " prediction to: " + up_model_out + self.target_no_space + ".nc")
             d_up = None
 
