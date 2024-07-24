@@ -45,9 +45,9 @@ class TestRegressors(unittest.TestCase):
 
         m = post(self.model_config)
         m.merge_performance(model="ens") 
-        m.merge_performance(model="xgb", configuration= "reg")
-        m.merge_performance(model="rf", configuration= "reg")
-        m.merge_performance(model="knn", configuration= "reg")
+        m.merge_performance(model="xgb")
+        m.merge_performance(model="rf")
+        m.merge_performance(model="knn")
 
         m.merge_parameters(model="rf")
         m.merge_parameters(model="xgb")
@@ -106,9 +106,9 @@ class Test2Phase(unittest.TestCase):
 
         m = post(self.model_config)
         m.merge_performance(model="ens") 
-        m.merge_performance(model="xgb", configuration= "reg")
-        m.merge_performance(model="rf", configuration= "reg")
-        m.merge_performance(model="knn", configuration= "reg")
+        m.merge_performance(model="xgb")
+        m.merge_performance(model="rf")
+        m.merge_performance(model="knn")
 
         m.merge_parameters(model="rf")
         m.merge_parameters(model="xgb")
@@ -126,7 +126,6 @@ class Test2Phase(unittest.TestCase):
         integ = m.integration(m, vol_conversion=vol_conversion)
         integ.integrated_totals(targets)
         integ.integrated_totals(targets, subset_depth=100)
-
 
 
 
@@ -174,20 +173,10 @@ class TestClassifiers(unittest.TestCase):
         m.merge_parameters(model="xgb")
         m.merge_parameters(model="knn")
 
-        m.total()
-
         m.merge_env(self.X_predict)
 
         m.export_ds("test")
         m.export_csv("test")
-
-        targets = ['Emiliania huxleyi', 'total']
-        vol_conversion = 1e3 #L-1 to m-3
-        integ = m.integration(m, vol_conversion=vol_conversion)
-        integ.integrated_totals(targets)
-        integ.integrated_totals(targets, subset_depth=100)
-
-
 
 
 if __name__ == '__main__':
