@@ -23,7 +23,7 @@ set your directory:
             from abil.tune import tune
             from abil.predict import predict
             from abil.post import post
-            from abil.functions import example_data
+            from abil.functions import example_data, upsample
             import os, sys
 
             #define root directory:
@@ -42,6 +42,9 @@ set your directory:
 
             #define your target value (in this case the species *E. huxleyi*)
             target =  "Emiliania huxleyi"
+
+            #upsample data needed
+
 
             #drop any missing values:
             d = d.dropna(subset=[target])

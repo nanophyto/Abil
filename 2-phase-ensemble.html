@@ -379,7 +379,7 @@ Linux/MacOS</label><div class="sd-tab-content docutils">
 <span class="kn">from</span> <span class="nn">abil.tune</span> <span class="kn">import</span> <span class="n">tune</span>
 <span class="kn">from</span> <span class="nn">abil.predict</span> <span class="kn">import</span> <span class="n">predict</span>
 <span class="kn">from</span> <span class="nn">abil.post</span> <span class="kn">import</span> <span class="n">post</span>
-<span class="kn">from</span> <span class="nn">abil.functions</span> <span class="kn">import</span> <span class="n">example_data</span>
+<span class="kn">from</span> <span class="nn">abil.functions</span> <span class="kn">import</span> <span class="n">example_data</span><span class="p">,</span> <span class="n">upsample</span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
 
 <span class="c1">#define root directory:</span>
@@ -398,6 +398,9 @@ Linux/MacOS</label><div class="sd-tab-content docutils">
 
 <span class="c1">#define your target value (in this case the species *E. huxleyi*)</span>
 <span class="n">target</span> <span class="o">=</span>  <span class="s2">&quot;Emiliania huxleyi&quot;</span>
+
+<span class="c1">#upsample data needed</span>
+
 
 <span class="c1">#drop any missing values:</span>
 <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">target</span><span class="p">])</span>
