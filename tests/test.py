@@ -114,6 +114,8 @@ class Test2Phase(unittest.TestCase):
         m.merge_parameters(model="xgb")
         m.merge_parameters(model="knn")
 
+        m.estimate_carbon("pg poc")
+
         m.total()
 
         m.merge_env(self.X_predict)

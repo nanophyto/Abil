@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - estimate_carbon
   pull_request:
     branches:
-      - main
+      - estimate_carbon
 
 jobs:
   test:
@@ -14,8 +14,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
-#        python-version: ['3.11']
+#        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.11']
 
     steps:
     - name: Checkout repository
