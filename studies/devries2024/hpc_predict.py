@@ -5,11 +5,8 @@ import sys
 from yaml import load
 from yaml import CLoader as Loader
 from abil.predict import predict
-from abil.functions import upsample
+from abil.functions import upsample, OffsetGammaConformityScore
 from sklearn.preprocessing import OneHotEncoder
-
-from abil.ConformityScores import OffsetGammaConformityScore
-
 
 try:
     print(sys.argv[1])
