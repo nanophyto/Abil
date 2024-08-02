@@ -10,7 +10,7 @@ class post:
     """
     Post processing of SDM
     """
-    def __init__(self, model_config, ci=50):
+    def __init__(self, model_config, pi="50"):
 
         def merge_netcdf(path_in):
             print("merging...")
@@ -19,14 +19,14 @@ class post:
             return(ds)
         
         if model_config['hpc']==False:
-            self.path_out = model_config['local_root'] + model_config['path_out']  + str(ci) + "/"
-            self.ds = merge_netcdf(model_config['local_root'] + model_config['path_in'] + str(ci) + "/")
+            self.path_out = model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
+            self.ds = merge_netcdf(model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + pi + "/")
             self.traits = pd.read_csv(model_config['local_root'] + model_config['targets'])
             self.root  =  model_config['local_root'] 
 
         elif model_config['hpc']==True:
-            self.path_out = model_config['hpc_root'] + model_config['path_out']  + str(ci) + "/"
-            self.ds = merge_netcdf(model_config['hpc_root'] + model_config['path_in'] + str(ci) + "/")
+            self.path_out = model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
+            self.ds = merge_netcdf(model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + pi + "/")
             self.traits = pd.read_csv(model_config['hpc_root'] + model_config['targets'])
             self.root  =  model_config['hpc_root'] 
 
@@ -36,6 +36,7 @@ class post:
         self.d = self.d.dropna()
         self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.model_config = model_config
+        self.pi = pi
 
         # if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
         #     self.extension = "_clf.sav"
@@ -61,7 +62,7 @@ class post:
         for i in range(len(self.d.columns)):
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
-            with open(self.root + self.model_config['path_out'] + model + "/scoring/" + target_no_space + self.extension, 'rb') as file:
+            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/scoring/" + model + "/" + target_no_space + self.extension, 'rb') as file:
                 m = pickle.load(file)
             
             if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
@@ -81,8 +82,11 @@ class post:
                 all_performance.append(performance)
 
         all_performance = pd.concat(all_performance)
-
-        all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
+        try: #make new dir if needed
+            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/")
+        except:
+            None
+        all_performance.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/" + model + "_performance.csv", index=False)
 
         # if configuration==None:
         #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
@@ -100,7 +104,7 @@ class post:
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
 
-            with open(self.root + self.model_config['path_out'] + model + "/model/" + target_no_space + self.extension, 'rb') as file:
+            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/model/" + model + "/" + target_no_space + self.extension, 'rb') as file:
                 m = pickle.load(file)
 
             if self.model_type == "reg":
@@ -150,7 +154,7 @@ class post:
                 all_parameters.append(parameters) 
 
         all_parameters= pd.concat(all_parameters)
-        all_parameters.to_csv(self.root + self.model_config['path_out'] + model + "_parameters.csv", index=False)
+        all_parameters.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/" + model + "_parameters.csv", index=False)
         
         print("finished merging parameters")
 
@@ -418,9 +422,8 @@ class post:
             if export:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 avg_str = "_monthly_avg" if monthly else ""
-                file_name = f"{self.parent.root}{self.parent.model_config['path_out']}{model}_integrated_totals{depth_str}{avg_str}.csv"
-                totals.to_csv(file_name, index=False)
-                print(f"Exported totals to: {file_name}")     
+                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/" + model + '_integrated_totals_PI' + self.parent.pi + depth_str + avg_str + ".csv", index=False)
+                print(f"Exported totals")     
 
 
     def merge_env(self, X_predict):
@@ -492,8 +495,8 @@ class post:
         #to add loop defining units of variables
 
         print(self.d.head())
-        ds.to_netcdf(self.path_out + file_name + ".nc")
-        print("exported ds to: " + self.path_out + file_name + ".nc")
+        ds.to_netcdf(self.path_out + file_name + "_PI" + self.pi + ".nc")
+        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + ".nc")
         #add nice metadata
 
 
@@ -517,6 +520,6 @@ class post:
             None
     
         print(self.d.head())
-        self.d.to_csv(self.path_out + file_name + ".csv")
-        print("exported d to: " + self.path_out + file_name + ".csv")
+        self.d.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
         #add nice metadata
