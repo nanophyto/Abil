@@ -6,7 +6,7 @@ from yaml import load
 from yaml import CLoader as Loader
 import pandas as pd
 from abil.tune import tune
-from abil.functions import upsample#, OffsetGammaConformityScore
+from abil.functions import upsample, OffsetGammaConformityScore
 from abil.predict import predict
 from abil.post import post
 
