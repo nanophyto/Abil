@@ -293,7 +293,7 @@ class post:
             >>> print("Volume calculated:", int.ds['volume'].values)
 
             """            
-            ds = self.parent.ds
+            ds = self.parent.d.to_xarray()
             resolution_lat = self.resolution_lat
             resolution_lon = self.resolution_lon
             depth_w = self.depth_w
@@ -331,7 +331,7 @@ class post:
 
             volume = area * depth_w
             ds['volume'] = (('lat', 'lon'), volume)
-            self.parent.ds = ds
+            self.parent.d = ds.to_dataframe()
         
         def integrate_total(self, variable='total', monthly=False, subset_depth=None):
             """
@@ -356,7 +356,7 @@ class post:
             >>> print("Final integrated total:", result.values)
             """
             
-            ds = self.parent.ds
+            ds = self.parent.d.to_xarray()
             vol_conversion = self.vol_conversion
             magnitude_conversion = self.magnitude_conversion
             molar_mass = self.molar_mass
@@ -407,13 +407,15 @@ class post:
                 The model version to be integrated. Default is "ens". Other options include {"rf", "xgb", "knn"}.
     
             """
-            ds = self.parent.ds
+            ds = self.parent.d.to_xarray()
             if "total" in ds:
                 targets = np.append(targets, 'total')
             totals = []
+            print(targets)
     
             for target in targets:
                 try:
+                    print(target)
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
                     total_df = pd.DataFrame({'total': [total.values], 'variable': target})
                     totals.append(total_df)
