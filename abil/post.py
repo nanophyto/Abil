@@ -411,7 +411,6 @@ class post:
             if "total" in ds:
                 targets = np.append(targets, 'total')
             totals = []
-            print(targets)
     
             for target in targets:
                 try:
