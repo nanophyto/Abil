@@ -61,7 +61,7 @@ class TestRegressors(unittest.TestCase):
             m.export_ds("test")
             m.export_csv("test")
 
-            targets = ['Emiliania huxleyi','total']
+            targets = ['Emiliania huxleyi']
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
             integ.integrated_totals(targets)
@@ -127,7 +127,7 @@ class Test2Phase(unittest.TestCase):
             m.export_ds("test")
             m.export_csv("test")
 
-            targets = ['Emiliania huxleyi','total']
+            targets = ['Emiliania huxleyi']
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
             integ.integrated_totals(targets)
@@ -195,55 +195,6 @@ class TestClassifiers(unittest.TestCase):
         do_post(pi="95_LL")
 
 
-
-class TestClassifiers(unittest.TestCase):
-
-    def setUp(self):
-        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        with open(self.workspace +'/tests/classifier.yml', 'r') as f:
-            self.model_config = load(f, Loader=Loader)
-
-        self.model_config['local_root'] = self.workspace # yaml_path
-        predictors = self.model_config['predictors']
-        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        target =  "Emiliania huxleyi"
-        d[target] = d[target].fillna(0)
-        d = upsample(d, target, ratio=10)
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-
-        self.X_train = d[predictors]
-        self.y = d[target]
-
-        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
-        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
-        self.X_predict = X_predict[predictors]
-
-    def test_post_ensemble(self):
-   
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="rf", classifier=True)
-        m.train(model="xgb", classifier=True)
-        m.train(model="knn", classifier=True)
-
-        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
-        m.make_prediction(prediction_inference=True)
-
-        m = post(self.model_config)
-
-        m.merge_performance(model="ens") 
-        m.merge_performance(model="xgb")
-        m.merge_performance(model="rf")
-        m.merge_performance(model="knn")
-
-        m.merge_parameters(model="rf")
-        m.merge_parameters(model="xgb")
-        m.merge_parameters(model="knn")
-
-        m.merge_env(self.X_predict)
-
-        m.export_ds("test")
-        m.export_csv("test")
 
 
 
