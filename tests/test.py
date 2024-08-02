@@ -6,6 +6,7 @@ from yaml import load
 from yaml import CLoader as Loader
 import pandas as pd
 from abil.tune import tune
+
 from abil.functions import upsample, OffsetGammaConformityScore
 from abil.predict import predict
 from abil.post import post
@@ -126,6 +127,7 @@ class Test2Phase(unittest.TestCase):
 
             m.merge_env(self.X_predict)
 
+
             m.export_ds("test")
             m.export_csv("test")
 
@@ -197,8 +199,6 @@ class TestClassifiers(unittest.TestCase):
 
 
 
-
-
 class TestGammaOffset(unittest.TestCase):
 
     def setUp(self):
@@ -233,8 +233,6 @@ class TestGammaOffset(unittest.TestCase):
         m.make_prediction(prediction_inference=True, 
                         conformity_score=OffsetGammaConformityScore(offset=1e-10))
         
-
-
 
 
 if __name__ == '__main__':

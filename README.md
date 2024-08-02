@@ -1,9 +1,11 @@
 
+
 # Abil.py &middot; [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/nanophyto/Abil/LICENSE) [![Build Status](https://github.com/nanophyto/Abil/actions/workflows/ci.yml/badge.svg?branch=Continuous-integration)](https://github.com/nanophyto/Abil/actions/workflows/ci.yml?query=branch%3AContinuous-integration)
 
 ## Overview
 
-Abil.py provides functions to interpolate distributions of biogeochemical observations using Machine Learning algorithms in Python. The library is optimized to interpolate many predictions in parallel and is thus particularly suited for distribution models of species, genes and transcripts. The library relies on scikit-learn and MAPIE.
+Abil.py provides functions to interpolate distributions of biogeochemical observations using Machine Learning algorithms in Python. The library is optimized to interpolate many predictions in parallel and is thus particularly suited for distribution models of species, genes and transcripts. The library relies on [scikit-learn](https://scikit-learn.org/) and [MAPIE](https://mapie.readthedocs.io/).
+
 
 Current support (v0.09):
 
