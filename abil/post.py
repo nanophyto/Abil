@@ -83,10 +83,10 @@ class post:
 
         all_performance = pd.concat(all_performance)
         try: #make new dir if needed
-            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/")
+            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/")
         except:
             None
-        all_performance.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/" + model + "_performance.csv", index=False)
+        all_performance.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/" + model + "_performance.csv", index=False)
 
         # if configuration==None:
         #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
@@ -154,7 +154,11 @@ class post:
                 all_parameters.append(parameters) 
 
         all_parameters= pd.concat(all_parameters)
-        all_parameters.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/" + model + "_parameters.csv", index=False)
+        try: #make new dir if needed
+            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/")
+        except:
+            None
+        all_parameters.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/" + model + "_parameters.csv", index=False)
         
         print("finished merging parameters")
 
@@ -422,7 +426,11 @@ class post:
             if export:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 avg_str = "_monthly_avg" if monthly else ""
-                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/" + model + '_integrated_totals_PI' + self.parent.pi + depth_str + avg_str + ".csv", index=False)
+                try: #make new dir if needed
+                    os.makedirs(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/")
+                except:
+                    None
+                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/" + model + '_integrated_totals_PI' + self.parent.pi + depth_str + avg_str + ".csv", index=False)
                 print(f"Exported totals")     
 
 
