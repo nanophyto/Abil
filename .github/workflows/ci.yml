@@ -3,11 +3,11 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - rethink-model-output-export
 
   pull_request:
     branches:
-      - main
+      - rethink-model-output-export
 
 jobs:
   test:
