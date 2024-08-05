@@ -1,0 +1,11 @@
+netcdf4
+dask
+numpy
+pandas
+pyyaml
+xarray
+xgboost
+scikit-learn
+scipy
+mapie
+scikit-bio

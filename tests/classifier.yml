@@ -1,24 +1,22 @@
 ---
   hpc: False
-  local_root: /home/phyto/Abil/
-  hpc_root: /user/work/ba18321/Abil/
 
-  path_out:  examples/ModelOutput/ #root + folder
-  path_in:  examples/ModelOutput/mapie/predictions/ #root + folder
+  run_name: classifier #update for specific run name
+  path_out:  /tests/ModelOutput/ #root + folder  
+  path_in:  /predictions/mapie/ #root + folder
 
-  env_data_path:  examples/data/prediction.csv #root + folder
-  targets:  examples/data/targets.csv #root + folder
-  training:  examples/data/training.csv
+  prediction:  /examples/data/prediction.csv #root + folder
+  targets:  /examples/data/targets.csv #root + folder
+  training:  /examples/data/training.csv
 
   predictors: ["temperature", "din", 
      "irradiance"]
-    
 
   verbose: 1
   seed : 1 # random seed
-  n_threads : 10 # how many cpu threads to use
-  cv : 10
-  predict_probability: True
+  n_threads : 1 # how many cpu threads to use
+  cv : 3
+  predict_probability: False 
 
   ensemble_config: 
     classifier: True
@@ -27,7 +25,7 @@
     m2: "xgb"
     m3: "knn"
      
-  upsample: False
+  upsample: True
   stratify: True
 
   clf_scoring:
@@ -37,10 +35,10 @@
     rf_param_grid:
       clf_param_grid:
         estimator__n_estimators: [100]
-        estimator__max_features: [3, 4]
-        estimator__max_depth: [50, 100]
-        estimator__min_samples_leaf: [0.5, 1]
-        estimator__max_samples: [0.5, 1]   
+        estimator__max_features: [3]
+        estimator__max_depth: [50]
+        estimator__min_samples_leaf: [0.5]
+        estimator__max_samples: [0.5]   
 
     xgb_param_grid:
       clf_param_grid:  

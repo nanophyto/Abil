@@ -4,13 +4,13 @@ import glob, os
 import xarray as xr
 import pickle
 import gc
-from skbio.diversity.alpha import shannon
+#from skbio.diversity.alpha import shannon
 
 class post:
     """
     Post processing of SDM
     """
-    def __init__(self, model_config, ci=50):
+    def __init__(self, model_config, pi="50"):
 
         def merge_netcdf(path_in):
             print("merging...")
@@ -19,17 +19,15 @@ class post:
             return(ds)
         
         if model_config['hpc']==False:
-            self.path_out = model_config['local_root'] + model_config['path_out']  + str(ci) + "/"
-            self.ds = merge_netcdf(model_config['local_root'] + model_config['path_in'] + str(ci) + "/")
+            self.path_out = model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
+            self.ds = merge_netcdf(model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + pi + "/")
             self.traits = pd.read_csv(model_config['local_root'] + model_config['targets'])
-            self.env_data_path =  model_config['local_root'] + model_config['env_data_path']
             self.root  =  model_config['local_root'] 
 
         elif model_config['hpc']==True:
-            self.path_out = model_config['hpc_root'] + model_config['path_out']  + str(ci) + "/"
-            self.ds = merge_netcdf(model_config['hpc_root'] + model_config['path_in'] + str(ci) + "/")
+            self.path_out = model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
+            self.ds = merge_netcdf(model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + pi + "/")
             self.traits = pd.read_csv(model_config['hpc_root'] + model_config['targets'])
-            self.env_data_path =  model_config['hpc_root'] + model_config['env_data_path']
             self.root  =  model_config['hpc_root'] 
 
         else:
@@ -38,36 +36,62 @@ class post:
         self.d = self.d.dropna()
         self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.model_config = model_config
+        self.pi = pi
+
+        # if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
+        #     self.extension = "_clf.sav"
+        # elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
+        #     self.extension = ".sav"
+        # else:
+        #     self.extension = "_reg.sav"
+
+        if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
+            self.model_type = "clf"
+        elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
+            self.model_type = "zir"
+        if self.model_config['ensemble_config']['regressor'] and not self.model_config['ensemble_config']['classifier']:
+            self.model_type = "reg"
+
+        self.extension = "_" + self.model_type + ".sav"
+
        
-    def merge_performance(self, model, configuration=None):
+    def merge_performance(self, model):
         
         all_performance = []
 
-        if model=="ens":
-            extension = ".sav"
-        else:
-            extension = "_" + configuration + ".sav"
-
         for i in range(len(self.d.columns)):
+            target = self.d.columns[i]
+            target_no_space = target.replace(' ', '_')
+            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/scoring/" + model + "/" + target_no_space + self.extension, 'rb') as file:
+                m = pickle.load(file)
             
-            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + self.d.columns[i] + extension, 'rb'))
-            mean = np.mean(self.d[self.d.columns[i]])
-            R2 = np.mean(m['test_R2'])
-            RMSE = -1*np.mean(m['test_RMSE'])
-            MAE = -1*np.mean(m['test_MAE'])
-            rRMSE = -1*np.mean(m['test_RMSE'])/mean
-            rMAE = -1*np.mean(m['test_MAE'])/mean            
-            species = self.d.columns[i]
-            performance = pd.DataFrame({'species':[species], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
-                                        'rRMSE':[rRMSE], 'rMAE':[rMAE]})
-            all_performance.append(performance)
+            if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
+                #estimate performance of classifier
+                performance = pd.DataFrame({'target':[target]})
+                all_performance.append(performance)
+            else:
+                mean = np.mean(self.d[self.d.columns[i]])
+                R2 = np.mean(m['test_R2'])
+                RMSE = -1*np.mean(m['test_RMSE'])
+                MAE = -1*np.mean(m['test_MAE'])
+                rRMSE = -1*np.mean(m['test_RMSE'])/mean
+                rMAE = -1*np.mean(m['test_MAE'])/mean            
+                target = self.d.columns[i]
+                performance = pd.DataFrame({'target':[target], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
+                                            'rRMSE':[rRMSE], 'rMAE':[rMAE]})
+                all_performance.append(performance)
 
         all_performance = pd.concat(all_performance)
+        try: #make new dir if needed
+            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/")
+        except:
+            None
+        all_performance.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/" + model + "_performance.csv", index=False)
 
-        if configuration==None:
-            all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
-        else:
-            all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_" + configuration + "_performance.csv", index=False)
+        # if configuration==None:
+        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
+        # else:
+        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_" + configuration + "_performance.csv", index=False)
         
         print("finished merging performance")
 
@@ -77,55 +101,64 @@ class post:
 
         for i in range(len(self.d.columns)):
             
-            species = self.d.columns[i]
+            target = self.d.columns[i]
+            target_no_space = target.replace(' ', '_')
 
-            m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + self.d.columns[i] + "_reg.sav", 'rb'))
-            # score_reg = np.mean(m['test_MAE'])
+            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/model/" + model + "/" + target_no_space + self.extension, 'rb') as file:
+                m = pickle.load(file)
 
-            # m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/scoring/" + self.d.columns[i] + "_zir.sav", 'rb'))
-            # score_zir = np.mean(m['test_MAE'])
+            if self.model_type == "reg":
 
-            # if score_reg > score_zir:
-            #     m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + self.d.columns[i] + "_reg.sav", 'rb'))
-            # elif score_reg < score_zir:
-            #     m = pickle.load(open(self.root + self.model_config['path_out'] + model + "/model/" + self.d.columns[i] + "_reg.sav", 'rb'))
+                if model == "rf":
+                    max_depth = m.regressor_.named_steps.estimator.max_depth
+                    max_features = m.regressor_.named_steps.estimator.max_features
+                    max_samples = m.regressor_.named_steps.estimator.max_samples
+                    min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
+                    parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'max_features':[max_features], 
+                                            'max_samples':[max_samples], 'min_samples_leaf':[min_samples_leaf]})
+                    all_parameters.append(parameters)
+                elif model == "xgb":
+                    max_depth = m.regressor_.named_steps.estimator.max_depth
+                    subsample = m.regressor_.named_steps.estimator.subsample
+                    colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
 
-            if model == "rf":
-                max_depth = m.regressor_.named_steps.estimator.max_depth
-                max_features = m.regressor_.named_steps.estimator.max_features
-                max_samples = m.regressor_.named_steps.estimator.max_samples
-                min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
-                parameters = pd.DataFrame({'species':[species], 'max_depth':[max_depth], 'max_features':[max_features], 
-                                           'max_samples':[max_samples], 'min_samples_leaf':[min_samples_leaf]})
-                all_parameters.append(parameters)
-            elif model == "xgb":
-                max_depth = m.regressor_.named_steps.estimator.max_depth
-                subsample = m.regressor_.named_steps.estimator.subsample
-                colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
+                    learning_rate = m.regressor_.named_steps.estimator.learning_rate
+                    alpha = m.regressor_.named_steps.estimator.reg_alpha
 
-                learning_rate = m.regressor_.named_steps.estimator.learning_rate
-                alpha = m.regressor_.named_steps.estimator.reg_alpha
+                    parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
+                                            'learning_rate':[learning_rate], 'alpha':[alpha]                                           
+                                            })
+                    all_parameters.append(parameters)
+                elif model == "knn":
+                    max_features = m.regressor_.named_steps.estimator.max_features
+                    max_samples = m.regressor_.named_steps.estimator.max_samples
 
-                parameters = pd.DataFrame({'species':[species], 'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
-                                           'learning_rate':[learning_rate], 'alpha':[alpha]                                           
-                                           })
-                all_parameters.append(parameters)
-            elif model == "knn":
-                max_features = m.regressor_.named_steps.estimator.max_features
-                max_samples = m.regressor_.named_steps.estimator.max_samples
+                    leaf_size = m.regressor_.named_steps.estimator.estimator.leaf_size
+                    n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
+                    p = m.regressor_.named_steps.estimator.estimator.p
+                    weights = m.regressor_.named_steps.estimator.estimator.weights
 
-                leaf_size = m.regressor_.named_steps.estimator.estimator.leaf_size
-                n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
-                p = m.regressor_.named_steps.estimator.estimator.p
-                weights = m.regressor_.named_steps.estimator.estimator.weights
+                    parameters = pd.DataFrame({'target':[target], 'max_features':[max_features], 'max_samples':[max_samples],
+                                            'leaf_size':[leaf_size], 'p':[p], 'n_neighbors':[n_neighbors], 'weights':[weights]
+                                            })
+                    all_parameters.append(parameters) 
 
-                parameters = pd.DataFrame({'species':[species], 'max_features':[max_features], 'max_samples':[max_samples],
-                                           'leaf_size':[leaf_size], 'p':[p], 'n_neighbors':[n_neighbors], 'weights':[weights]
-                                           })
-                all_parameters.append(parameters)    
+            elif self.model_type == "clf":
+                #still to implement!
+                parameters = pd.DataFrame({'target':[target]})
+                all_parameters.append(parameters) 
+
+            elif self.model_type == "zir":
+                #still to implement!
+                parameters = pd.DataFrame({'target':[target]})
+                all_parameters.append(parameters) 
 
         all_parameters= pd.concat(all_parameters)
-        all_parameters.to_csv(self.root + self.model_config['path_out'] + model + "_parameters.csv", index=False)
+        try: #make new dir if needed
+            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/")
+        except:
+            None
+        all_parameters.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/" + model + "_parameters.csv", index=False)
         
         print("finished merging parameters")
 
@@ -260,7 +293,7 @@ class post:
             >>> print("Volume calculated:", int.ds['volume'].values)
 
             """            
-            ds = self.parent.ds
+            ds = self.parent.d.to_xarray()
             resolution_lat = self.resolution_lat
             resolution_lon = self.resolution_lon
             depth_w = self.depth_w
@@ -298,7 +331,7 @@ class post:
 
             volume = area * depth_w
             ds['volume'] = (('lat', 'lon'), volume)
-            self.parent.ds = ds
+            self.parent.d = ds.to_dataframe()
         
         def integrate_total(self, variable='total', monthly=False, subset_depth=None):
             """
@@ -323,7 +356,7 @@ class post:
             >>> print("Final integrated total:", result.values)
             """
             
-            ds = self.parent.ds
+            ds = self.parent.d.to_xarray()
             vol_conversion = self.vol_conversion
             magnitude_conversion = self.magnitude_conversion
             molar_mass = self.molar_mass
@@ -374,13 +407,14 @@ class post:
                 The model version to be integrated. Default is "ens". Other options include {"rf", "xgb", "knn"}.
     
             """
-            ds = self.parent.ds
+            ds = self.parent.d.to_xarray()
             if "total" in ds:
                 targets = np.append(targets, 'total')
             totals = []
     
             for target in targets:
                 try:
+                    print(target)
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
                     total_df = pd.DataFrame({'total': [total.values], 'variable': target})
                     totals.append(total_df)
@@ -393,9 +427,12 @@ class post:
             if export:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 avg_str = "_monthly_avg" if monthly else ""
-                file_name = f"{self.parent.root}{self.parent.model_config['path_out']}{model}_integrated_totals{depth_str}{avg_str}.csv"
-                totals.to_csv(file_name, index=False)
-                print(f"Exported totals to: {file_name}")     
+                try: #make new dir if needed
+                    os.makedirs(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/")
+                except:
+                    None
+                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/" + model + '_integrated_totals_PI' + self.parent.pi + depth_str + avg_str + ".csv", index=False)
+                print(f"Exported totals")     
 
 
     def merge_env(self, X_predict):
@@ -467,8 +504,8 @@ class post:
         #to add loop defining units of variables
 
         print(self.d.head())
-        ds.to_netcdf(self.path_out + file_name + ".nc")
-        print("exported ds to: " + self.path_out + file_name + ".nc")
+        ds.to_netcdf(self.path_out + file_name + "_PI" + self.pi + ".nc")
+        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + ".nc")
         #add nice metadata
 
 
@@ -492,6 +529,6 @@ class post:
             None
     
         print(self.d.head())
-        self.d.to_csv(self.path_out + file_name + ".csv")
-        print("exported d to: " + self.path_out + file_name + ".csv")
+        self.d.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
         #add nice metadata

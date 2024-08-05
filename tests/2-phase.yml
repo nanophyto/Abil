@@ -1,32 +1,30 @@
 ---
   hpc: False
-  local_root: /home/mv23682/Documents/Abil_output_branch/Abil/
-  hpc_root: /user/work/ba18321/Abil/
 
-  run_name: example_name/ #rename for each run
-  path_out: examples/ModelOutput/ #root + folder
-  path_in:  examples/ModelOutput/predictions/mapie/ #root + folder
+  run_name: 2-phase #update for specific run name
+  path_out:  /tests/ModelOutput/ #root + folder 
+  path_in:  /predictions/mapie/ #root + folder
 
-  env_data_path:  examples/data/prediction.csv #root + folder
-  targets:  examples/data/targets.csv #root + folder
-  training:  examples/data/training.csv
+  prediction:  /examples/data/prediction.csv #root + folder
+  targets:  /examples/data/targets.csv #root + folder
+  training:  /examples/data/training.csv
 
   predictors: ["temperature", "din", 
      "irradiance"]
     
-    
   verbose: 1
   seed : 1 # random seed
-  n_threads : 3 # how many cpu threads to use
+  n_threads : 1 # how many cpu threads to use
   cv : 3
   predict_probability: False 
 
   ensemble_config: 
-    classifier: False
+    classifier: True
     regressor: True
     m1: "rf"
-    m2: "xgb"
-    m3: "knn"
+    m2: "knn"
+    m3: "xgb"
+
 
   upsample: False
   stratify: True
@@ -46,14 +44,14 @@
         regressor__estimator__n_estimators: [100]
         regressor__estimator__max_features: [4]
         regressor__estimator__max_depth: [50]
-        regressor__estimator__min_samples_leaf: [0.5, 1]
-        regressor__estimator__max_samples: [0.5, 1]     
+        regressor__estimator__min_samples_leaf: [0.5]
+        regressor__estimator__max_samples: [0.5]     
       clf_param_grid:
         estimator__n_estimators: [100]
         estimator__max_features: [3, 4]
         estimator__max_depth: [50, 100]
-        estimator__min_samples_leaf: [0.5, 1]
-        estimator__max_samples: [0.5, 1]   
+        estimator__min_samples_leaf: [0.5]
+        estimator__max_samples: [0.5]   
 
 
     xgb_param_grid:
