@@ -46,6 +46,7 @@ class TestRegressors(unittest.TestCase):
         m.make_prediction(prediction_inference=True)
         targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
         targets = targets.iloc[:1]
+        targets = targets['Target'].values
 
         def do_post(pi):
             m = post(self.model_config, pi=pi)
@@ -116,6 +117,7 @@ class Test2Phase(unittest.TestCase):
         m.make_prediction(prediction_inference=True)
         targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
         targets = targets.iloc[:1]
+        targets = targets['Target'].values
 
         def do_post(pi):
             m = post(self.model_config, pi=pi)
