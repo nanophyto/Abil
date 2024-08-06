@@ -68,6 +68,7 @@ class TestRegressors(unittest.TestCase):
 
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
+            print(targets)
             integ.integrated_totals(targets)
             integ.integrated_totals(targets, subset_depth=100)
 
