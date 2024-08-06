@@ -370,10 +370,10 @@ class post:
             
             if rate:
                 total = (ds[variable] * ds['volume'] * days_per_month).sum(dim=['lat', 'lon', 'depth', 'time'])
-                total = (total / molar_mass) * vol_conversion * magnitude_conversion
+                total = (total * molar_mass) * vol_conversion * magnitude_conversion
             else:
                 total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
-                total = (total / molar_mass) * vol_conversion * magnitude_conversion
+                total = (total * molar_mass) * vol_conversion * magnitude_conversion
 
             if monthly:
                 total /= 12
