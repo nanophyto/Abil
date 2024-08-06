@@ -45,8 +45,7 @@ class TestRegressors(unittest.TestCase):
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction(prediction_inference=True)
         targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
-        n_spp = 0
-        target =  targets['Target'][n_spp]
+        targets = targets.iloc[:1]
 
         def do_post(pi):
             m = post(self.model_config, pi=pi)
@@ -69,8 +68,8 @@ class TestRegressors(unittest.TestCase):
 
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
-            integ.integrated_totals(target)
-            integ.integrated_totals(target, subset_depth=100)
+            integ.integrated_totals(targets)
+            integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")
         do_post(pi="95_UL")
@@ -115,8 +114,7 @@ class Test2Phase(unittest.TestCase):
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction(prediction_inference=True)
         targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
-        n_spp = 0
-        target =  targets['Target'][n_spp]
+        targets = targets.iloc[:1]
 
         def do_post(pi):
             m = post(self.model_config, pi=pi)
@@ -140,8 +138,8 @@ class Test2Phase(unittest.TestCase):
 
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
-            integ.integrated_totals(target)
-            integ.integrated_totals(target, subset_depth=100)
+            integ.integrated_totals(targets)
+            integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")
         do_post(pi="95_UL")
