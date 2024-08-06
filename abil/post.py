@@ -412,7 +412,7 @@ class post:
                 targets = np.append(targets, 'total')
             totals = []
     
-            for target in targets:
+            for target in targets['Target'].values:
                 try:
                     print(target)
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
