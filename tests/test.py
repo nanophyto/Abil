@@ -6,7 +6,6 @@ from yaml import load
 from yaml import CLoader as Loader
 import pandas as pd
 from abil.tune import tune
-
 from abil.functions import upsample, OffsetGammaConformityScore
 from abil.predict import predict
 from abil.post import post
@@ -22,7 +21,9 @@ class TestRegressors(unittest.TestCase):
         self.model_config['local_root'] = self.workspace # yaml_path
         predictors = self.model_config['predictors']
         d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        target =  "Emiliania huxleyi"
+        targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
+        n_spp = 0
+        target =  targets['Target'][n_spp]
         d[target] = d[target].fillna(0)
         d = upsample(d, target, ratio=10)
         d = d.dropna(subset=[target])
@@ -43,6 +44,9 @@ class TestRegressors(unittest.TestCase):
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction(prediction_inference=True)
+        targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
+        n_spp = 0
+        target =  targets['Target'][n_spp]
 
         def do_post(pi):
             m = post(self.model_config, pi=pi)
@@ -63,11 +67,10 @@ class TestRegressors(unittest.TestCase):
             m.export_ds("test")
             m.export_csv("test")
 
-            targets = ['Emiliania huxleyi']
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
-            integ.integrated_totals(targets)
-            integ.integrated_totals(targets, subset_depth=100)
+            integ.integrated_totals(target)
+            integ.integrated_totals(target, subset_depth=100)
 
         do_post(pi="50")
         do_post(pi="95_UL")
@@ -86,7 +89,9 @@ class Test2Phase(unittest.TestCase):
         self.model_config['local_root'] = self.workspace # yaml_path
         predictors = self.model_config['predictors']
         d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        target =  "Emiliania huxleyi"
+        targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
+        n_spp = 0
+        target =  targets['Target'][n_spp]
         d[target] = d[target].fillna(0)
         d = upsample(d, target, ratio=10)
         d = d.dropna(subset=[target])
@@ -109,7 +114,9 @@ class Test2Phase(unittest.TestCase):
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction(prediction_inference=True)
-
+        targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
+        n_spp = 0
+        target =  targets['Target'][n_spp]
 
         def do_post(pi):
             m = post(self.model_config, pi=pi)
@@ -131,11 +138,10 @@ class Test2Phase(unittest.TestCase):
             m.export_ds("test")
             m.export_csv("test")
 
-            targets = ['Emiliania huxleyi']
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
-            integ.integrated_totals(targets)
-            integ.integrated_totals(targets, subset_depth=100)
+            integ.integrated_totals(target)
+            integ.integrated_totals(target, subset_depth=100)
 
         do_post(pi="50")
         do_post(pi="95_UL")
@@ -153,7 +159,9 @@ class TestClassifiers(unittest.TestCase):
         self.model_config['local_root'] = self.workspace # yaml_path
         predictors = self.model_config['predictors']
         d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        target =  "Emiliania huxleyi"
+        targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
+        n_spp = 0
+        target =  targets['Target'][n_spp]
         d[target] = d[target].fillna(0)
         d = upsample(d, target, ratio=10)
         d = d.dropna(subset=[target])
