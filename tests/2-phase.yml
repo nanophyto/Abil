@@ -1,8 +1,9 @@
 ---
   hpc: False
 
-  path_out:  /tests/ModelOutput/2-phase/ #root + folder  
-  path_in:  /tests/ModelOutput/2-phase/mapie/predictions/ #root + folder
+  run_name: 2-phase #update for specific run name
+  path_out:  /tests/ModelOutput/ #root + folder 
+  path_in:  /predictions/mapie/ #root + folder
 
   prediction:  /examples/data/prediction.csv #root + folder
   targets:  /examples/data/targets.csv #root + folder
@@ -18,11 +19,12 @@
   predict_probability: False 
 
   ensemble_config: 
-    classifier: False
+    classifier: True
     regressor: True
     m1: "rf"
-    m2: "xgb"
-    m3: "knn"
+    m2: "knn"
+    m3: "xgb"
+
 
   upsample: False
   stratify: True

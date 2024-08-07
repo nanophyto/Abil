@@ -1,8 +1,9 @@
 ---
   hpc: False
 
-  path_out:  /tests/ModelOutput/classifier/ #root + folder  
-  path_in:  /tests/ModelOutput/classifier/mapie/predictions/ #root + folder
+  run_name: classifier #update for specific run name
+  path_out:  /tests/ModelOutput/ #root + folder  
+  path_in:  /predictions/mapie/ #root + folder
 
   prediction:  /examples/data/prediction.csv #root + folder
   targets:  /examples/data/targets.csv #root + folder
@@ -24,7 +25,7 @@
     m2: "xgb"
     m3: "knn"
      
-  upsample: False
+  upsample: True
   stratify: True
 
   clf_scoring:

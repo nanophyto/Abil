@@ -1,10 +1,11 @@
 ---
   hpc: False
-  local_root: /home/phyto/Abil/
+  local_root: /home/mv23682/Documents/Abil_output_branch/Abil/
   hpc_root: /user/work/ba18321/Abil/
 
+  run_name: example_name/ #rename for each run
   path_out: examples/ModelOutput/ #root + folder
-  path_in:  examples/ModelOutput/mapie/ #root + folder
+  path_in:  examples/ModelOutput/predictions/mapie/ #root + folder
 
   env_data_path:  examples/data/prediction.csv #root + folder
   targets:  examples/data/targets.csv #root + folder

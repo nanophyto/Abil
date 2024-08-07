@@ -91,9 +91,9 @@ class tune:
         self.regions = regions
 
         if model_config['hpc']==False:
-            self.path_out = model_config['local_root'] + model_config['path_out'] 
+            self.path_out = model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + "/"
         elif model_config['hpc']==True:
-            self.path_out = model_config['hpc_root'] + model_config['path_out'] 
+            self.path_out = model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + "/"
         else:
             raise ValueError("hpc True or False not defined in yml")
 
@@ -227,8 +227,8 @@ class tune:
             clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
             clf_scoring = self.model_config['clf_scoring']
 
-            clf_sav_out_scores = self.path_out + model + "/scoring/"
-            clf_sav_out_model = self.path_out + model + "/model/"
+            clf_sav_out_scores = self.path_out + "scoring/" + model + "/"
+            clf_sav_out_model = self.path_out + "model/" + model + "/"
 
 
             try: #make new dir if needed
@@ -296,8 +296,8 @@ class tune:
             reg_param_grid = self.model_config['param_grid'][model + '_param_grid']['reg_param_grid']
 
             print(reg_param_grid)
-            reg_sav_out_scores = self.path_out + model + "/scoring/"
-            reg_sav_out_model = self.path_out + model + "/model/"
+            reg_sav_out_scores = self.path_out + "scoring/" + model + "/"
+            reg_sav_out_model = self.path_out + "model/" + model + "/"
 
             try: #make new dir if needed
                 os.makedirs(reg_sav_out_scores)
@@ -353,8 +353,8 @@ class tune:
                 regressor=m2,
             )
 
-            zir_sav_out_scores = self.path_out + model + "/scoring/"
-            zir_sav_out_model = self.path_out + model + "/model/"
+            zir_sav_out_scores = self.path_out + "scoring/" + model + "/"
+            zir_sav_out_model = self.path_out + "model/" + model + "/"
 
             try: #make new dir if needed
                 os.makedirs(zir_sav_out_scores)
