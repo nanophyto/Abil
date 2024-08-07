@@ -382,7 +382,7 @@ class post:
             return total
 
 
-        def integrated_totals(self, targets, monthly=False, subset_depth=None, 
+        def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
                              export=True, model="ens"):
             """
             Estimates global integrated values for all targets.
@@ -408,6 +408,8 @@ class post:
     
             """
             ds = self.parent.d.to_xarray()
+            if targets == None:
+                targets = self.targets
             if "total" in ds:
                 targets = np.append(targets, 'total')
             totals = []
@@ -533,11 +535,13 @@ class post:
         print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
         #add nice metadata
 
-    def merge_obs(self, file_name, targets):
+    def merge_obs(self, file_name, targets=None):
         """
         Merge model output with observational data
         """
         # Select and rename the target columns for d
+        if targets == None:
+            targets = self.targets
         d = self.d[targets]
 
         mod_columns = {target: target + '_mod' for target in targets}
