@@ -537,11 +537,10 @@ class post:
         """
         Merge model output with observational data
         """
-        d = self.d
+        # Select and rename the target columns for d
+        d = self.d[targets]
 
-        # Select and rename the target columns for df1
         mod_columns = {target: target + '_mod' for target in targets}
-        d = d[targets]
         d.rename(mod_columns, inplace=True, axis=1)
         d.reset_index(inplace=True)
         d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
@@ -569,6 +568,7 @@ class post:
 
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
-        out.export_csv(file_name)
+        out.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
 
         print('training merged with predictions')
