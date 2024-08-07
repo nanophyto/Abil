@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - merge-training-data-with-model-prediction
   pull_request:
     branches:
-      - main
+      - merge-training-data-with-model-prediction
 
 jobs:
   test:

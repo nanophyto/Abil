@@ -532,3 +532,44 @@ class post:
         self.d.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
         print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
         #add nice metadata
+
+    def merge_obs(self, file_name, targets):
+        """
+        Merge model output with observational data
+        """
+        ds = self.d.to_xarray()
+
+        # Select and rename the target columns for df1
+        mod_columns = {target: target + '_mod' for target in targets}
+        df1 = ds.to_dataframe()[self.targets]
+        df1.rename(mod_columns, inplace=True, axis=1)
+        df1.reset_index(inplace=True)
+        df1.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
+
+        # Read the training targets from the training.csv file defined in model_config
+        try:
+            df2_path = self.root + self.model_config['training']
+            df2 = pd.read_csv(df2_path)
+        except:
+            raise FileNotFoundError(f"Dataset not found at {df2_path}")
+        
+
+        df2.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
+        df2['dummy'] = 1
+
+        out = pd.concat([df2, df1], axis=1)
+        out = out[out['dummy'] == 1].drop(['dummy'], axis=1)
+
+        # Calculate residuals
+        for target in targets:
+            out[target + '_resid'] = out[target] - out[target + '_mod']
+
+        # Define the columns to keep in the final DataFrame
+        keep_columns = list(targets) + list(mod_columns.values()) + [target + '_resid' for target in targets]
+
+        out = out[keep_columns]
+        file_name = f"{file_name}_obs"
+        self.d = out
+        self.export_csv(file_name)
+
+        print('training merged with predictions')

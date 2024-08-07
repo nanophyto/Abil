@@ -63,6 +63,7 @@ class TestRegressors(unittest.TestCase):
             m.total()
 
             m.merge_env(self.X_predict)
+            m.merge_obs("test",targets)
 
             m.export_ds("test")
             m.export_csv("test")
@@ -134,6 +135,7 @@ class Test2Phase(unittest.TestCase):
             m.total()
 
             m.merge_env(self.X_predict)
+            m.merge_obs("test",targets)
 
 
             m.export_ds("test")
