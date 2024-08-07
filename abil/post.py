@@ -262,7 +262,7 @@ class post:
                 Conversion to m^3, e.g., l to m^3 would be 1e3, default is 1 (no conversion).
             
             magnitude_conversion : float
-                Prefix conversion, e.g., umol to Tmol would be 1e-21, default is 1 (no conversion).
+                Prefix conversion, e.g., umol to Pmol would be 1e-21, default is 1 (no conversion).
             
             molar_mass : float
                 Conversion from mol to grams, default is 1 (no conversion). Optional: 12.01 (carbon).
@@ -370,10 +370,10 @@ class post:
             
             if rate:
                 total = (ds[variable] * ds['volume'] * days_per_month).sum(dim=['lat', 'lon', 'depth', 'time'])
-                total = (total / molar_mass) * vol_conversion * magnitude_conversion
+                total = (total * molar_mass) * vol_conversion * magnitude_conversion
             else:
                 total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
-                total = (total / molar_mass) * vol_conversion * magnitude_conversion
+                total = (total * molar_mass) * vol_conversion * magnitude_conversion
 
             if monthly:
                 total /= 12
