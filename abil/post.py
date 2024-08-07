@@ -537,11 +537,11 @@ class post:
         """
         Merge model output with observational data
         """
-        ds = self.d.to_xarray()
+        d = self.d
 
         # Select and rename the target columns for df1
         mod_columns = {target: target + '_mod' for target in targets}
-        df1 = ds.to_dataframe()[self.targets]
+        df1 = d.to_dataframe()[self.targets]
         df1.rename(mod_columns, inplace=True, axis=1)
         df1.reset_index(inplace=True)
         df1.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
@@ -569,7 +569,6 @@ class post:
 
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
-        self.d = out
-        self.export_csv(file_name)
+        out.export_csv(file_name)
 
         print('training merged with predictions')
