@@ -541,7 +541,7 @@ class post:
 
         # Select and rename the target columns for df1
         mod_columns = {target: target + '_mod' for target in targets}
-        df1 = d.to_dataframe()[self.targets]
+        df1 = d[self.targets]
         df1.rename(mod_columns, inplace=True, axis=1)
         df1.reset_index(inplace=True)
         df1.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
