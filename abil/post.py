@@ -568,6 +568,7 @@ class post:
 
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
+        print(out.head())
         out.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
         print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
 
