@@ -1,18 +1,22 @@
 ---
   hpc: False
+
   local_root: /home/mv23682/Documents/Abil/
   hpc_root: /user/work/mv23682/Abil/
 
-  path_out: studies/wiseman2024/ModelOutput/ #root + folder
-  path_in: studies/wiseman2024/ModelOutput/mapie/predictions/ #root + folder
 
-  env_data_path: studies/wiseman2024/data/env_data_no_sat.csv #root + folder
+  run_name: regressor #update for specific run name
+  path_out:  /studies/wiseman2024/ModelOutput/ #root + folder
+  path_in:  /predictions/mapie/ #root + folder
+
+  prediction: studies/wiseman2024/data/env_data_nosat.csv #root + folder
   targets: studies/wiseman2024/data/traits_calc.csv #root + folder
-  training: studies/wiseman2024/data/calcif_env.csv
+  training: studies/wiseman2024/data/calcif_env_nosat.csv
 
   predictors: ["temperature", 
     "si", "phosphate", "din", 
-    "o2", "mld", "DIC", "TA"]
+    "o2", "mld", "DIC", "TA",
+    "si_n","PAR"]
  
     
   verbose: 1
@@ -32,7 +36,7 @@
   upsample: False
   stratify: False
 
-  reg_scoring:
+  reg_scoring:ur talk via the Exordo software. This will need to be completed a couple of days prior to the conference, please be aware of this and plan accordingly
    R2: r2
    MAE: neg_mean_absolute_error
    RMSE: neg_root_mean_squared_error
@@ -42,9 +46,9 @@
     rf_param_grid:
       reg_param_grid:
         regressor__estimator__n_estimators: [250]
-        regressor__estimator__max_features:  ['sqrt', 0.1, 0.2, 0.4, 0.6, 0.8, 1]
+        regressor__estimator__max_features:  [ur talk via the Exordo software. This will need to be completed a couple of days prior to the conference, please be aware of this and plan accordingly'sqrt', 0.1, 0.2, 0.4, 0.6, 0.8, 1]
         regressor__estimator__max_depth: [2, 10, 51, 75, 100]
-        regressor__estimator__min_samples_leaf: [1, 5, 13, 25, 37, 50]
+        regressor__estimator__min_samples_leaf: [1, 5, 13, 25, 37,ur talk via the Exordo software. This will need to be completed a couple of days prior to the conference, please be aware of this and plan accordingly 50]
         regressor__estimator__max_samples: [0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 1]   
 
     xgb_param_grid:

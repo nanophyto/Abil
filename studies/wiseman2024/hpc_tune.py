@@ -9,7 +9,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 try:
     print(sys.argv[1])
-    with open('/user/work/mv23682/Abil/wiseman2024/ensemble_regressor.yml', 'r') as f:
+    with open('/user/work/mv23682/Abil/studies/wiseman2024/ensemble_regressor.yml', 'r') as f:
         model_config = load(f, Loader=Loader)
 
     model_config['hpc'] = True
@@ -43,7 +43,7 @@ d = pd.read_csv(root + model_config['training'])
 target =  targets['Target'][n_spp]
 d[target] = d[target].fillna(0)
 d = d.dropna(subset=[target])
-d = d.dropna(subset=['FID'])
+d = d.dropna(subset=predictors)
 
 y = d[target]
 X_train = d[predictors]
@@ -51,4 +51,4 @@ X_train = d[predictors]
 #setup model:
 m = tune(X_train, y, model_config, regions=None)
 #run model:
-m.train(model=model, regressor=True, log="yes")
+m.train(model=model, regressor=True)
