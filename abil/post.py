@@ -541,10 +541,10 @@ class post:
 
         # Select and rename the target columns for df1
         mod_columns = {target: target + '_mod' for target in targets}
-        df1 = d[targets]
-        df1.rename(mod_columns, inplace=True, axis=1)
-        df1.reset_index(inplace=True)
-        df1.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
+        d = d[targets]
+        d.rename(mod_columns, inplace=True, axis=1)
+        d.reset_index(inplace=True)
+        d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
 
         # Read the training targets from the training.csv file defined in model_config
         try:
@@ -557,7 +557,7 @@ class post:
         df2.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
         df2['dummy'] = 1
 
-        out = pd.concat([df2, df1], axis=1)
+        out = pd.concat([df2, d], axis=1)
         out = out[out['dummy'] == 1].drop(['dummy'], axis=1)
 
         # Calculate residuals
