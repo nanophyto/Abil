@@ -36,7 +36,7 @@
   upsample: False
   stratify: False
 
-  reg_scoring:ur talk via the Exordo software. This will need to be completed a couple of days prior to the conference, please be aware of this and plan accordingly
+  reg_scoring:
    R2: r2
    MAE: neg_mean_absolute_error
    RMSE: neg_root_mean_squared_error
