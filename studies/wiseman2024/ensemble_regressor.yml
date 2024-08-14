@@ -5,8 +5,8 @@
   hpc_root: /user/work/mv23682/Abil/
 
 
-  run_name: regressor #update for specific run name
-  path_out:  /studies/wiseman2024/ModelOutput/ #root + folder
+  run_name: run_name #update for specific run name
+  path_out:  studies/wiseman2024/ModelOutput/ #root + folder
   path_in:  /predictions/mapie/ #root + folder
 
   prediction: studies/wiseman2024/data/env_data_nosat.csv #root + folder
@@ -21,7 +21,7 @@
     
   verbose: 1
   seed : 1 # random seed
-  n_threads : 10 # how many cpu threads to use
+  n_threads : 10 # how many cpu threads to use, reduce when using higher cv's in MAPIE
   cv : 10
   predict_probability: False 
 
@@ -46,9 +46,9 @@
     rf_param_grid:
       reg_param_grid:
         regressor__estimator__n_estimators: [250]
-        regressor__estimator__max_features:  [ur talk via the Exordo software. This will need to be completed a couple of days prior to the conference, please be aware of this and plan accordingly'sqrt', 0.1, 0.2, 0.4, 0.6, 0.8, 1]
+        regressor__estimator__max_features:  ['sqrt', 0.1, 0.2, 0.4, 0.6, 0.8, 1]
         regressor__estimator__max_depth: [2, 10, 51, 75, 100]
-        regressor__estimator__min_samples_leaf: [1, 5, 13, 25, 37,ur talk via the Exordo software. This will need to be completed a couple of days prior to the conference, please be aware of this and plan accordingly 50]
+        regressor__estimator__min_samples_leaf: [1, 5, 13, 25, 37, 50]
         regressor__estimator__max_samples: [0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 1]   
 
     xgb_param_grid:

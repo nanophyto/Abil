@@ -46,4 +46,4 @@ X_train = d[predictors]
 print("finished loading data")
 
 m = predict(X_train, y, X_predict, model_config, n_jobs=n_jobs)
-m.make_prediction(prediction_inference=True,conformity_score=GammaConformityScore(),alpha=[0.05])
+m.make_prediction(prediction_inference=True,conformity_score=GammaConformityScore(),alpha=[0.05],cv=5)
