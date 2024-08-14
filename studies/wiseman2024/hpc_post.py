@@ -43,6 +43,7 @@ def do_post(pi):
     m.merge_parameters(model="knn")
 
     #m.merge_env(X_predict)
+    m.merge_obs(current_date,targets)
 
     m.export_ds(current_date)
     m.export_csv(current_date)
