@@ -382,7 +382,7 @@ class post:
             return total
 
 
-        def integrated_totals(self, targets, monthly=False, subset_depth=None, 
+        def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
                              export=True, model="ens"):
             """
             Estimates global integrated values for all targets.
@@ -408,10 +408,12 @@ class post:
     
             """
             ds = self.parent.d.to_xarray()
+            if targets == None:
+                targets = self.targets
             if "total" in ds:
                 targets = np.append(targets, 'total')
             totals = []
-    
+
             for target in targets:
                 try:
                     print(target)
@@ -532,3 +534,46 @@ class post:
         self.d.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
         print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
         #add nice metadata
+
+    def merge_obs(self, file_name, targets=None):
+        """
+        Merge model output with observational data
+        """
+        # Select and rename the target columns for d
+        if targets == None:
+            targets = self.targets
+        d = self.d[targets]
+
+        mod_columns = {target: target + '_mod' for target in targets}
+        d.rename(mod_columns, inplace=True, axis=1)
+        d.reset_index(inplace=True)
+        d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
+
+        # Read the training targets from the training.csv file defined in model_config
+        try:
+            df2_path = self.root + self.model_config['training']
+            df2 = pd.read_csv(df2_path)
+        except:
+            raise FileNotFoundError(f"Dataset not found at {df2_path}")
+        
+
+        df2.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
+        df2['dummy'] = 1
+
+        out = pd.concat([df2, d], axis=1)
+        out = out[out['dummy'] == 1].drop(['dummy'], axis=1)
+
+        # Calculate residuals
+        for target in targets:
+            out[target + '_resid'] = out[target] - out[target + '_mod']
+
+        # Define the columns to keep in the final DataFrame
+        keep_columns = list(targets) + list(mod_columns.values()) + [target + '_resid' for target in targets]
+
+        out = out[keep_columns]
+        file_name = f"{file_name}_obs"
+        print(out.head())
+        out.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
+
+        print('training merged with predictions')
