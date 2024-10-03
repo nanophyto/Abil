@@ -373,11 +373,11 @@ class OffsetGammaConformityScore(BaseRegressionScore):
         self,
         y: ArrayLike,
     ) -> None:
-        if not self._all_strictly_positive(y):
+        if not self._all_non_negative(y):
             raise ValueError(
                 f"At least one of the observed target is negative "
                 f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be strictly positive, "
+                "All values must be non-negative, "
                 "in conformity with the offset Gamma distribution support."
             )
 
@@ -385,19 +385,19 @@ class OffsetGammaConformityScore(BaseRegressionScore):
         self,
         y_pred: ArrayLike,
     ) -> None:
-        if not self._all_strictly_positive(y_pred):
+        if not self._all_non_negative(y_pred):
             raise ValueError(
                 f"At least one of the predicted target is negative "
                 f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be strictly positive, "
+                "All values must be non-negative, "
                 "in conformity with the offset Gamma distribution support."
             )
 
     @staticmethod
-    def _all_strictly_positive(
+    def _all_non_negative(
         y: ArrayLike,
     ) -> bool:
-        return not np.any(np.less_equal(y, 0))
+        return np.all(np.greater_equal(y, 0))
 
     def get_signed_conformity_scores(
         self,
