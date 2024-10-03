@@ -16,7 +16,7 @@ from sklearn.metrics import make_scorer
 
 from mapie._machine_precision import EPSILON
 from mapie._typing import ArrayLike, NDArray
-from mapie.conformity_scores import GammaConformityScore
+from mapie.conformity_scores import BaseRegressionScore
 
 
 def tau_scoring(y, y_pred):
@@ -349,7 +349,7 @@ def inverse_weighting(values):
 
 
 
-class OffsetGammaConformityScore(GammaConformityScore):
+class OffsetGammaConformityScore(BaseRegressionScore):
     """
     Gamma conformity score.
 
@@ -366,18 +366,18 @@ class OffsetGammaConformityScore(GammaConformityScore):
         sym: bool = False,
         offset=0,
     ) -> None:
-        super().__init__(sym=sym, consistency_check=False)
+        super().__init__(sym=sym, consistency_check=False, eps=EPSILON)
         self.offset = offset  # Adding a new instance variable 'new_variable' initialized to None
 
     def _check_observed_data(
         self,
         y: ArrayLike,
     ) -> None:
-        if not self._all_non_negative(y):
+        if not self._all_strictly_positive(y):
             raise ValueError(
                 f"At least one of the observed target is negative "
                 f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be non-negative, "
+                "All values must be strictly positive, "
                 "in conformity with the offset Gamma distribution support."
             )
 
@@ -385,25 +385,25 @@ class OffsetGammaConformityScore(GammaConformityScore):
         self,
         y_pred: ArrayLike,
     ) -> None:
-        if not self._all_non_negative(y_pred):
+        if not self._all_strictly_positive(y_pred):
             raise ValueError(
                 f"At least one of the predicted target is negative "
                 f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be non-negative, "
+                "All values must be strictly positive, "
                 "in conformity with the offset Gamma distribution support."
             )
 
     @staticmethod
-    def _all_non_negative(
+    def _all_strictly_positive(
         y: ArrayLike,
     ) -> bool:
-        return np.all(np.greater_equal(y, 0))
+        return not np.any(np.less_equal(y, 0))
 
     def get_signed_conformity_scores(
         self,
-        X: ArrayLike,
         y: ArrayLike,
         y_pred: ArrayLike,
+        **kwargs
     ) -> NDArray:
         """
         Compute the signed conformity scores from the observed values
@@ -416,9 +416,9 @@ class OffsetGammaConformityScore(GammaConformityScore):
 
     def get_estimation_distribution(
         self,
-        X: ArrayLike,
         y_pred: ArrayLike,
-        conformity_scores: ArrayLike
+        conformity_scores: ArrayLike,
+        **kwargs
     ) -> NDArray:
         """
         Compute samples of the estimation distribution from the predicted
