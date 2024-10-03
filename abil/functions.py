@@ -366,7 +366,7 @@ class OffsetGammaConformityScore(GammaConformityScore):
         sym: bool = False,
         offset=0,
     ) -> None:
-        super().__init__(sym=sym, consistency_check=False, eps=EPSILON)
+        super().__init__(sym=sym, consistency_check=False)
         self.offset = offset  # Adding a new instance variable 'new_variable' initialized to None
 
     def _check_observed_data(
