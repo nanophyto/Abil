@@ -16,7 +16,7 @@ from sklearn.metrics import make_scorer
 
 from mapie._machine_precision import EPSILON
 from mapie._typing import ArrayLike, NDArray
-from mapie.conformity_scores import ConformityScore
+from mapie.conformity_scores import GammaConformityScore
 
 
 def tau_scoring(y, y_pred):
@@ -349,7 +349,7 @@ def inverse_weighting(values):
 
 
 
-class OffsetGammaConformityScore(ConformityScore):
+class OffsetGammaConformityScore(GammaConformityScore):
     """
     Gamma conformity score.
 
