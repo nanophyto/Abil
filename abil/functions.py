@@ -16,7 +16,7 @@ from sklearn.metrics import make_scorer
 
 from mapie._machine_precision import EPSILON
 from mapie._typing import ArrayLike, NDArray
-from mapie.conformity_scores import ConformityScore
+from mapie.conformity_scores import BaseRegressionScore
 
 
 def tau_scoring(y, y_pred):
@@ -349,7 +349,7 @@ def inverse_weighting(values):
 
 
 
-class OffsetGammaConformityScore(ConformityScore):
+class OffsetGammaConformityScore(BaseRegressionScore):
     """
     Gamma conformity score.
 
@@ -401,9 +401,9 @@ class OffsetGammaConformityScore(ConformityScore):
 
     def get_signed_conformity_scores(
         self,
-        X: ArrayLike,
         y: ArrayLike,
         y_pred: ArrayLike,
+        **kwargs
     ) -> NDArray:
         """
         Compute the signed conformity scores from the observed values
@@ -416,9 +416,9 @@ class OffsetGammaConformityScore(ConformityScore):
 
     def get_estimation_distribution(
         self,
-        X: ArrayLike,
         y_pred: ArrayLike,
-        conformity_scores: ArrayLike
+        conformity_scores: ArrayLike,
+        **kwargs
     ) -> NDArray:
         """
         Compute samples of the estimation distribution from the predicted
