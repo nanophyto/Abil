@@ -408,7 +408,7 @@ class post:
     
             """
             ds = self.parent.d.to_xarray()
-            if targets == None:
+            if targets.all == None:
                 targets = self.targets
             if "total" in ds:
                 targets = np.append(targets, 'total')
@@ -540,7 +540,7 @@ class post:
         Merge model output with observational data
         """
         # Select and rename the target columns for d
-        if targets == None:
+        if targets.all == None:
             targets = self.targets
         d = self.d[targets]
 
