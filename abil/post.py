@@ -375,23 +375,20 @@ class post:
                 ds = ds.sel(depth=slice(0, subset_depth))
 
             if rate:
-                print("Initiate rate integrated_total")
                 if monthly:
                     # Calculate monthly total (separately for each month)
-                    print("Calculating monthly rate")
-                    print("Time dimension size: ", ds['time'].size)
-                    print(f"Processing target: {variable} for available months: {available_time}")
                     total = []
                     for i,month in enumerate(available_time):
-                        print(f"Processing month: {month}")
                         monthly_total = (ds[variable].isel(time=i) * ds['volume'].isel(time=i) * days_per_month[i]).sum(dim=['lat', 'lon', 'depth'])
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
+                    print(f"All monthly totals: {total.values}")
                 else:
                     # Calculate annual total
                     total = (ds[variable] * ds['volume'] * days_per_month.mean()).sum(dim=['lat', 'lon', 'depth', 'time'])
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
+                    print("Final integrated total:", total.values)
             else:
                 if monthly:
                     # Calculate monthly total (separately for each month)
@@ -406,8 +403,7 @@ class post:
                     # Calculate annual total
                     total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
-            
-            print("Final integrated total:", total.values)
+                    print("Final integrated total:", total.values)
             return total
 
 
