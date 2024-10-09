@@ -372,6 +372,8 @@ class post:
             if rate:
                 if monthly:
                     # Calculate monthly total (separately for each month)
+                    print("Calculating monthly rate")
+                    print("Time dimension size: ", ds['time'].size)
                     total = []
                     for month in range(12):
                         monthly_total = (ds[variable].isel(time=month) * ds['volume'] * days_per_month[month]).sum(dim=['lat', 'lon', 'depth'])
@@ -385,6 +387,8 @@ class post:
             else:
                 if monthly:
                     # Calculate monthly total (separately for each month)
+                    print("Calculating monthly total")
+                    print("Time dimension size: ", ds['time'].size)
                     total = []
                     for month in range(12):
                         monthly_total = (ds[variable].isel(time=month) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
@@ -434,10 +438,11 @@ class post:
 
             for target in targets:
                 try:
-                    print(target)
-                    print('Attempting integration')
+                    print(f"Processing target: {target}")
+                    print("Attempting integration")
+                    print(f"Shape of {target}: ", ds[target].shape)
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
-                    print('Writing totals to DataFrame')
+                    print("Writing totals to DataFrame")
                     total_df = pd.DataFrame({'total': [total.values], 'variable': target})
                     print('Appending totals')
                     totals.append(total_df)
