@@ -69,7 +69,7 @@ class TestRegressors(unittest.TestCase):
             m.export_csv("test")
 
             vol_conversion = 1e3 #L-1 to m-3
-            integ = m.integration(m, vol_conversion=vol_conversion)
+            integ = m.integration(m, vol_conversion=vol_conversion,rate=True)
             integ.integrated_totals(targets)
             integ.integrated_totals(targets, monthly=True)
             integ.integrated_totals(targets, subset_depth=100)

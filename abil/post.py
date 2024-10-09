@@ -458,29 +458,6 @@ class post:
             if export:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 month_str = "_monthly_int" if monthly else ""
-
-                # Check if we need to add the total sum to the DataFrame
-                if monthly:
-                    # Create a list to hold the new rows for total sums
-                    total_sum_rows = []
-
-                    # Iterate through each unique variable in the totals DataFrame
-                    for variable in totals['variable'].unique():
-                        # Calculate the sum of totals for the current variable
-                        variable_sum = totals.loc[totals['variable'] == variable, 'total'].sum()
-                        print(totals.loc[totals['variable'] == variable, 'total'])
-                        print(variable_sum)
-                        # Create a new row with the total sum for this variable
-                        total_sum_rows.append({'total': variable_sum, 'variable': f'Annual {variable}'})
-
-                    # Convert the list of total sums into a DataFrame
-                    total_sum_df = pd.DataFrame(total_sum_rows)
-
-                    # Append the sum DataFrame to the totals DataFrame
-                    totals = pd.concat([totals, total_sum_df], ignore_index=True)
-
-                    print(totals.values)
-
                 try: #make new dir if needed
                     os.makedirs(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/")
                 except:
