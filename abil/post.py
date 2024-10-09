@@ -402,9 +402,9 @@ class post:
                     for i,month in enumerate(available_time):
                         print(f"Processing month: {month}, index = {i}")
                         monthly_total = (ds[variable].isel(time=i) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
-                        print("ds[variable] dimension size: ",ds[variable].isel(time=i).size)
-                        print("ds[volume] dimension size: ",ds['volume'].size)
-                        print("Monthly_total dimension size: ",monthly_total.size)
+                        print("ds[variable] dimension size: ",ds[variable].isel(time=i).shape)
+                        print("ds[volume] dimension size: ",ds['volume'].shape)
+                        print("Monthly_total dimension size: ",monthly_total.shape)
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         print(f"Monthly total for {month}: {monthly_total}")
                         total.append(monthly_total)
