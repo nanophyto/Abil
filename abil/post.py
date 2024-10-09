@@ -401,8 +401,10 @@ class post:
                         print(f"Processing month: {month}")
                         monthly_total = (ds[variable].isel(time=month) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
+                        print(f"Monthly total for {month}: {monthly_total}")
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
+                    print(f"All monthly totals: {total}")
                 else:
                     # Calculate annual total
                     total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
@@ -457,7 +459,7 @@ class post:
                 except Exception as e:
                     print(f"Some targets do not have predictions! Missing: {target}")
                     print(f"Error: {e}")
-
+            print(f"Integrated_totals pre-concat: {totals}")
             totals = pd.concat(totals)
 
             if export:
