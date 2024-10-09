@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - wiseman2024
+      - 75-add-monthly-integrated-totals
   pull_request:
     branches:
-      - wiseman2024
+      - 75-add-monthly-integrated-totals
 
 jobs:
   test:
