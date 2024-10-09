@@ -397,9 +397,9 @@ class post:
                     print("Calculating monthly total")
                     print("Time dimension size: ", ds['time'].size)
                     total = []
-                    for month in available_time:
-                        print(f"Processing month: {month}")
-                        monthly_total = (ds[variable].isel(time=month) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
+                    for i,month in enumerate(available_time):
+                        print(f"Processing month: {month}, index = {i}")
+                        monthly_total = (ds[variable].isel(time=i) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         print(f"Monthly total for {month}: {monthly_total}")
                         total.append(monthly_total)
