@@ -392,7 +392,7 @@ class post:
                     total = xr.concat(total, dim="month")
                 else:
                     # Calculate annual total
-                    total = (ds[variable] * ds['volume'] * days_per_month).sum(dim=['lat', 'lon', 'depth', 'time'])
+                    total = (ds[variable] * ds['volume'] * days_per_month.mean()).sum(dim=['lat', 'lon', 'depth', 'time'])
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
             else:
                 if monthly:
