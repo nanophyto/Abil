@@ -72,6 +72,7 @@ class TestRegressors(unittest.TestCase):
             integ = m.integration(m, vol_conversion=vol_conversion)
             print(targets)
             integ.integrated_totals(targets)
+            integ.integrated_totals(targets, monthly=True)
             integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")
@@ -144,6 +145,7 @@ class Test2Phase(unittest.TestCase):
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
             integ.integrated_totals(targets)
+            integ.integrated_totals(targets, monthly=True)
             integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")

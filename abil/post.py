@@ -362,21 +362,39 @@ class post:
             molar_mass = self.molar_mass
             rate = self.rate
 
-            days_per_month = 365.25 / 12  # approx days/month
+            # Average number of days for each month (accounting for leap years)
+            days_per_month = np.array([31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
 
 
             if subset_depth:
                 ds = ds.sel(depth=slice(0, subset_depth))
-            
-            if rate:
-                total = (ds[variable] * ds['volume'] * days_per_month).sum(dim=['lat', 'lon', 'depth', 'time'])
-                total = (total * molar_mass) * vol_conversion * magnitude_conversion
-            else:
-                total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
-                total = (total * molar_mass) * vol_conversion * magnitude_conversion
 
-            if monthly:
-                total /= 12
+            if rate:
+                if monthly:
+                    # Calculate monthly total (separately for each month)
+                    total = []
+                    for month in range(12):
+                        monthly_total = (ds[variable].isel(time=month) * ds['volume'] * days_per_month[month]).sum(dim=['lat', 'lon', 'depth'])
+                        monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
+                        total.append(monthly_total)
+                    total = xr.concat(total, dim="month")
+                else:
+                    # Calculate annual total
+                    total = (ds[variable] * ds['volume'] * days_per_month).sum(dim=['lat', 'lon', 'depth', 'time'])
+                    total = (total * molar_mass) * vol_conversion * magnitude_conversion
+            else:
+                if monthly:
+                    # Calculate monthly total (separately for each month)
+                    total = []
+                    for month in range(12):
+                        monthly_total = (ds[variable].isel(time=month) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
+                        monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
+                        total.append(monthly_total)
+                    total = xr.concat(total, dim="month")
+                else:
+                    # Calculate annual total
+                    total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
+                    total = (total * molar_mass) * vol_conversion * magnitude_conversion
             
             print("Final integrated total:", total.values)
             return total
