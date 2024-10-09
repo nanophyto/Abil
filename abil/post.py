@@ -381,9 +381,9 @@ class post:
                     print("Time dimension size: ", ds['time'].size)
                     print(f"Processing target: {variable} for available months: {available_time}")
                     total = []
-                    for month in available_time:
+                    for i,month in enumerate(available_time):
                         print(f"Processing month: {month}")
-                        monthly_total = (ds[variable].isel(time=month) * ds['volume'] * days_per_month[month]).sum(dim=['lat', 'lon', 'depth'])
+                        monthly_total = (ds[variable].isel(time=month) * ds['volume'].isel(time=i) * days_per_month[i]).sum(dim=['lat', 'lon', 'depth'])
                         print("ds[variable] dimension size: ",ds[variable].isel(time=month.size))
                         print("Monthly_total dimension size: ",monthly_total.size)
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
@@ -401,7 +401,7 @@ class post:
                     total = []
                     for i,month in enumerate(available_time):
                         print(f"Processing month: {month}, index = {i}")
-                        monthly_total = (ds[variable].isel(time=i) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
+                        monthly_total = (ds[variable].isel(time=i) * ds['volume']).isel(time=i).sum(dim=['lat', 'lon', 'depth'])
                         print("ds[variable] dimension size: ",ds[variable].isel(time=i).shape)
                         print("ds[volume] dimension size: ",ds['volume'].shape)
                         print("Monthly_total dimension size: ",monthly_total.shape)
