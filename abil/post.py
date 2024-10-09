@@ -435,8 +435,11 @@ class post:
             for target in targets:
                 try:
                     print(target)
+                    print('Attempting integration')
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
+                    print('Writing totals to DataFrame')
                     total_df = pd.DataFrame({'total': [total.values], 'variable': target})
+                    print('Appending totals')
                     totals.append(total_df)
                 except Exception as e:
                     print(f"Some targets do not have predictions! Missing: {target}")
