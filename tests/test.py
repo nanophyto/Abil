@@ -70,11 +70,8 @@ class TestRegressors(unittest.TestCase):
 
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
-            print('Checking annual integration for:',targets)
             integ.integrated_totals(targets)
-            print('Checking monthly integration for:',targets)
             integ.integrated_totals(targets, monthly=True)
-            print('Checking subset depth integration for:',targets)
             integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")
@@ -146,11 +143,8 @@ class Test2Phase(unittest.TestCase):
 
             vol_conversion = 1e3 #L-1 to m-3
             integ = m.integration(m, vol_conversion=vol_conversion)
-            print('Checking annual integration for:',targets)
             integ.integrated_totals(targets)
-            print('Checking monthly integration for:',targets)
             integ.integrated_totals(targets, monthly=True)
-            print('Checking subset depth integration for:',targets)
             integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")

@@ -457,12 +457,25 @@ class post:
 
             if export:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
-                avg_str = "_monthly_avg" if monthly else ""
+                month_str = "_monthly_int" if monthly else ""
+
+                    # Check if we need to add the total sum to the DataFrame
+                if monthly:
+                    # Calculate the sum of all monthly totals
+                    total_sum = totals['total'].sum()  # Assuming 'total' is the column you want to sum
+                    # Create a new DataFrame to append the sum
+                    total_sum_df = pd.DataFrame({'total': [total_sum], 'variable': ['Total']})
+
+                    # Append the sum DataFrame to the totals DataFrame
+                    totals = pd.concat([totals, total_sum_df], ignore_index=True)
+
+                    print(totals.values)
+
                 try: #make new dir if needed
                     os.makedirs(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/")
                 except:
                     None
-                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/" + model + '_integrated_totals_PI' + self.parent.pi + depth_str + avg_str + ".csv", index=False)
+                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/" + model + '_integrated_totals_PI' + self.parent.pi + depth_str + month_str + ".csv", index=False)
                 print(f"Exported totals")     
 
 
