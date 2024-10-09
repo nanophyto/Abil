@@ -384,6 +384,8 @@ class post:
                     for month in available_time:
                         print(f"Processing month: {month}")
                         monthly_total = (ds[variable].isel(time=month) * ds['volume'] * days_per_month[month]).sum(dim=['lat', 'lon', 'depth'])
+                        print("ds[variable] dimension size: ",ds[variable].isel(time=month.size))
+                        print("Monthly_total dimension size: ",monthly_total.size)
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
@@ -400,6 +402,8 @@ class post:
                     for i,month in enumerate(available_time):
                         print(f"Processing month: {month}, index = {i}")
                         monthly_total = (ds[variable].isel(time=i) * ds['volume']).sum(dim=['lat', 'lon', 'depth'])
+                        print("ds[variable] dimension size: ",ds[variable].isel(time=month.size))
+                        print("Monthly_total dimension size: ",monthly_total.size)
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         print(f"Monthly total for {month}: {monthly_total}")
                         total.append(monthly_total)
