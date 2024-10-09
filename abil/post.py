@@ -396,20 +396,13 @@ class post:
             else:
                 if monthly:
                     # Calculate monthly total (separately for each month)
-                    print("Calculating monthly total")
-                    print("Time dimension size: ", ds['time'].size)
                     total = []
                     for i,month in enumerate(available_time):
-                        print(f"Processing month: {month}, index = {i}")
                         monthly_total = (ds[variable].isel(time=i) * ds['volume']).isel(time=i).sum(dim=['lat', 'lon', 'depth'])
-                        print("ds[variable] dimension size: ",ds[variable].isel(time=i).shape)
-                        print("ds[volume] dimension size: ",ds['volume'].shape)
-                        print("Monthly_total dimension size: ",monthly_total.shape)
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
-                        print(f"Monthly total for {month}: {monthly_total}")
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
-                    print(f"All monthly totals: {total}")
+                    print(f"All monthly totals: {total.values}")
                 else:
                     # Calculate annual total
                     total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
@@ -454,17 +447,12 @@ class post:
             for target in targets:
                 try:
                     print(f"Processing target: {target}")
-                    print("Attempting integration")
-                    print(f"Shape of {target}: ", ds[target].shape)
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
-                    print("Writing totals to DataFrame")
                     total_df = pd.DataFrame({'total': [total.values], 'variable': target})
-                    print('Appending totals')
                     totals.append(total_df)
                 except Exception as e:
                     print(f"Some targets do not have predictions! Missing: {target}")
                     print(f"Error: {e}")
-            print(f"Integrated_totals pre-concat: {totals}")
             totals = pd.concat(totals)
 
             if export:
