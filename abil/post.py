@@ -467,7 +467,7 @@ class post:
                     # Iterate through each unique variable in the totals DataFrame
                     for variable in totals['variable'].unique():
                         # Calculate the sum of totals for the current variable
-                        variable_sum = totals.loc[totals['variable'] == variable, 'total'].sum()
+                        variable_sum = totals.loc[totals['variable'] == variable, 'total'].sum(dim=all)
                         print(variable_sum)
                         # Create a new row with the total sum for this variable
                         total_sum_rows.append({'total': variable_sum, 'variable': f'Annual {variable}'})
