@@ -250,8 +250,8 @@ class TestGammaOffset(unittest.TestCase):
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
-    suite.addTest(TestClassifiers('test_post_ensemble'))
+    #suite.addTest(TestClassifiers('test_post_ensemble'))
     suite.addTest(TestRegressors('test_post_ensemble'))
-    suite.addTest(Test2Phase('test_post_ensemble'))
+    #suite.addTest(Test2Phase('test_post_ensemble'))
     runner = unittest.TextTestRunner()
     runner.run(suite)

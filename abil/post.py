@@ -355,7 +355,7 @@ class post:
             >>> result = integration.integrate_total(variable='Calcification')
             >>> print("Final integrated total:", result.values)
             """
-            
+            print("Initiate integrated_total")
             ds = self.parent.d.to_xarray()
             vol_conversion = self.vol_conversion
             magnitude_conversion = self.magnitude_conversion
@@ -375,6 +375,7 @@ class post:
                 ds = ds.sel(depth=slice(0, subset_depth))
 
             if rate:
+                print("Initiate rate integrated_total")
                 if monthly:
                     # Calculate monthly total (separately for each month)
                     print("Calculating monthly rate")
