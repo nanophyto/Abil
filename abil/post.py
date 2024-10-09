@@ -468,7 +468,7 @@ class post:
                     for variable in totals['variable'].unique():
                         # Calculate the sum of totals for the current variable
                         variable_sum = totals.loc[totals['variable'] == variable, 'total'].sum()
-                        print(variable_sum.values)
+                        print(variable_sum)
                         # Create a new row with the total sum for this variable
                         total_sum_rows.append({'total': variable_sum, 'variable': f'Annual {variable}'})
 
