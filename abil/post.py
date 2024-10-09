@@ -363,8 +363,13 @@ class post:
             rate = self.rate
 
             # Average number of days for each month (accounting for leap years)
-            days_per_month = np.array([31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+            days_per_month_full = np.array([31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+            
+            # Get the available time points (months) from the dataset
+            available_time = ds['time'].values  # Assuming 'time' is an array of 1, 2, 3, and 12
 
+            # Subset the days_per_month array to only include the available months
+            days_per_month = days_per_month_full[available_time - 1]
 
             if subset_depth:
                 ds = ds.sel(depth=slice(0, subset_depth))
@@ -374,6 +379,7 @@ class post:
                     # Calculate monthly total (separately for each month)
                     print("Calculating monthly rate")
                     print("Time dimension size: ", ds['time'].size)
+                    print(f"Processing target: {variable} for available months: {available_time}")
                     total = []
                     for month in range(12):
                         monthly_total = (ds[variable].isel(time=month) * ds['volume'] * days_per_month[month]).sum(dim=['lat', 'lon', 'depth'])
