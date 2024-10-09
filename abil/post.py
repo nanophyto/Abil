@@ -459,12 +459,20 @@ class post:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 month_str = "_monthly_int" if monthly else ""
 
-                    # Check if we need to add the total sum to the DataFrame
+                # Check if we need to add the total sum to the DataFrame
                 if monthly:
-                    # Calculate the sum of all monthly totals
-                    total_sum = totals['total'].sum()  # Assuming 'total' is the column you want to sum
-                    # Create a new DataFrame to append the sum
-                    total_sum_df = pd.DataFrame({'total': [total_sum], 'variable': ['Total']})
+                    # Create a list to hold the new rows for total sums
+                    total_sum_rows = []
+
+                    # Iterate through each unique variable in the totals DataFrame
+                    for variable in totals['variable'].unique():
+                        # Calculate the sum of totals for the current variable
+                        variable_sum = totals.loc[totals['variable'] == variable, 'total'].sum()
+                        # Create a new row with the total sum for this variable
+                        total_sum_rows.append({'total': variable_sum, 'variable': f'Total {variable}'})
+                        
+                    # Convert the list of total sums into a DataFrame
+                    total_sum_df = pd.DataFrame(total_sum_rows)
 
                     # Append the sum DataFrame to the totals DataFrame
                     totals = pd.concat([totals, total_sum_df], ignore_index=True)
