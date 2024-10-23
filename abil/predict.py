@@ -188,6 +188,8 @@ class predict:
         else:
             self.cv = KFold(n_splits=model_config['cv'])
 
+        self.n_splits=model_config['cv']
+
         self.X_predict = X_predict
         X_predict = None
         self.ensemble_config = model_config['ensemble_config']
