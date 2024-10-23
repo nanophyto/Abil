@@ -222,7 +222,7 @@ class predict:
         print("initialized prediction")
         
     def make_prediction(self, prediction_inference=False, alpha=[0.05], cv=None,
-                        conformity_score = AbsoluteConformityScore()):
+                        conformity_score = AbsoluteConformityScore(), cross_fold_estimation=False):
 
         """
         Calculates performance of model(s) and exports prediction(s) to netcdf
