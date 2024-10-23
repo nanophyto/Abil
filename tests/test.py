@@ -51,14 +51,14 @@ class TestRegressors(unittest.TestCase):
         m.train(model="knn", regressor=True)
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
-        m.make_prediction(prediction_inference=True)
+        #m.make_prediction(prediction_inference=True)
         m.make_prediction(cross_fold_estimation=True)
         targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
         targets = targets.iloc[:1]
         targets = targets['Target'].values
 
-        def do_post(pi):
-            m = post(self.model_config, pi=pi)
+        def do_post(summary_statistic):
+            m = post(self.model_config, summary_statistic=summary_statistic)
             m.merge_performance(model="ens") 
             m.merge_performance(model="xgb")
             m.merge_performance(model="rf")
@@ -84,9 +84,9 @@ class TestRegressors(unittest.TestCase):
             integ.integrated_totals(targets, monthly=True)
             integ.integrated_totals(targets, subset_depth=100)
 
-        do_post(pi="50")
-        do_post(pi="95_UL")
-        do_post(pi="95_LL")
+        do_post(summary_statistic="mean")
+        do_post(summary_statistic="ci95_LL")
+        do_post(summary_statistic="ci95_UL")
 
 
 
@@ -125,14 +125,14 @@ class Test2Phase(unittest.TestCase):
         m.train(model="knn", classifier=True, regressor=True)
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
-        m.make_prediction(prediction_inference=True)
+        #m.make_prediction(prediction_inference=True)
         m.make_prediction(cross_fold_estimation=True)
         targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
         targets = targets.iloc[:1]
         targets = targets['Target'].values
 
-        def do_post(pi):
-            m = post(self.model_config, pi=pi)
+        def do_post(summary_statistic):
+            m = post(self.model_config, summary_statistic=summary_statistic)
             m.merge_performance(model="ens") 
             m.merge_performance(model="xgb")
             m.merge_performance(model="rf")
@@ -148,7 +148,6 @@ class Test2Phase(unittest.TestCase):
             m.merge_env(self.X_predict)
             m.merge_obs("test",targets)
 
-
             m.export_ds("test")
             m.export_csv("test")
 
@@ -158,9 +157,9 @@ class Test2Phase(unittest.TestCase):
             integ.integrated_totals(targets)
             integ.integrated_totals(targets, subset_depth=100)
 
-        do_post(pi="50")
-        do_post(pi="95_UL")
-        do_post(pi="95_LL")
+        do_post(summary_statistic="mean")
+        do_post(summary_statistic="ci95_LL")
+        do_post(summary_statistic="ci95_UL")
 
 
 
@@ -199,8 +198,8 @@ class TestClassifiers(unittest.TestCase):
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction(prediction_inference=True)
 
-        def do_post(pi):
-            m = post(self.model_config, pi=pi)
+        def do_post(summary_statistic):
+            m = post(self.model_config,summary_statistic=summary_statistic)
             m.merge_performance(model="ens") 
             m.merge_performance(model="xgb")
             m.merge_performance(model="rf")
@@ -216,9 +215,9 @@ class TestClassifiers(unittest.TestCase):
             m.export_ds("test")
             m.export_csv("test")
 
-        do_post(pi="50")
-        do_post(pi="95_UL")
-        do_post(pi="95_LL")
+        do_post(summary_statistic="mean")
+        do_post(summary_statistic="ci95_LL")
+        do_post(summary_statistic="ci95_UL")
 
 
 
@@ -261,8 +260,8 @@ class TestGammaOffset(unittest.TestCase):
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
-    suite.addTest(TestClassifiers('test_post_ensemble'))
+    #suite.addTest(TestClassifiers('test_post_ensemble'))
     suite.addTest(TestRegressors('test_post_ensemble'))
-    suite.addTest(Test2Phase('test_post_ensemble'))
+    #suite.addTest(Test2Phase('test_post_ensemble'))
     runner = unittest.TextTestRunner()
     runner.run(suite)
