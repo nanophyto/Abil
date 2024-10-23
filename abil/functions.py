@@ -8,7 +8,7 @@ from sklearn.base import BaseEstimator, RegressorMixin, clone, is_regressor, is_
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold, cross_val_predict
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.datasets import make_regression
 from sklearn.metrics import make_scorer
@@ -347,7 +347,64 @@ def inverse_weighting(values):
     return normalized_weights
 
 
-
+def cross_fold_stats(m, X_train, y, cv, n_repeats=100, n_jobs=-1):
+    print("using cross folds for error estimation")
+    y_pred_matrix = np.column_stack(
+        [
+            cross_val_predict(
+                m, 
+                X=X_train.iloc[perm := np.random.RandomState(seed=i).permutation(len(X_train))],
+                y=y.iloc[perm],
+                cv=cv,
+                n_jobs=n_jobs
+            )
+            for i in range(n_repeats)
+        ]
+    )
+    # Calculate summary statistics
+    mean_preds = np.mean(y_pred_matrix, axis=1)
+    std_preds = np.std(y_pred_matrix, axis=1)
+    # Calculate the 2.5th and 97.5th percentiles for the confidence intervals
+    lower_bound = np.quantile(y_pred_matrix, 0.025, axis=1)
+    upper_bound = np.quantile(y_pred_matrix, 0.975, axis=1)
+    summary_stats = pd.DataFrame({
+        'Mean': mean_preds,
+        'Standard Deviation': std_preds,
+        'Lower Bound CI (95%)': lower_bound,
+        'Upper Bound CI (95%)': upper_bound
+    })
+    # Include indices in the summary statistics
+    summary_stats.index = X_train.index
+    # Print the head of the summary stats matrix
+    print("\nSummary Statistics (first 5 rows):\n", summary_stats.head())
+    return summary_stats, y_pred_matrix
+# Example usage
+if __name__ == "__main__":
+    import numpy as np
+    import pandas as pd
+    from sklearn.datasets import make_regression
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.model_selection import KFold
+    from joblib import parallel_backend
+    # Generate sample data
+    X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
+    X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+    # Generate random latitude and longitude
+    latitudes = np.random.uniform(-90, 90, size=X_train.shape[0])  # Random latitude values
+    longitudes = np.random.uniform(-180, 180, size=X_train.shape[0])  # Random longitude values
+    # Set latitude and longitude as MultiIndex
+    X_train.index = pd.MultiIndex.from_tuples(zip(latitudes, longitudes), names=['Latitude', 'Longitude'])
+    
+    y_train = pd.Series(y)
+    n_splits = 5
+    # Define the model and cross-validation strategy
+    model = RandomForestRegressor(n_estimators=100)
+    cv = KFold(n_splits=n_splits)
+    # Call the function
+    with parallel_backend("loky", n_jobs=-1):
+        predictions_matrix = cross_fold_stats(model, X_train, y_train, cv, n_repeats=100)
+    # Check predictions
+    print("Predictions matrix:\n", predictions_matrix)
 
 class OffsetGammaConformityScore(BaseRegressionScore):
     """
