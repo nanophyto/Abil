@@ -3,22 +3,19 @@
   local_root: /home/phyto/CoccoML/
   hpc_root: /user/work/ba18321/Abil/
 
-  run_name: all_env_sep_2024 #update for specific run name
-  
-  path_out:  studies/devries2024/ModelOutput/ #root + folder
-  path_in:  /predictions/mapie/ #root + folder
-  
-  prediction:  studies/devries2024/data/env_data_no_sat.csv #root + folder
-  targets:  studies/devries2024/data/targets.csv #root + folder
-  training:  studies/devries2024/data/obs_env.csv
-  
+  path_out: ModelOutput/ #root + folder
+  path_in: ModelOutput/mapie/predictions/ #root + folder
+
+  env_data_path: devries2024/data/envdata_final.csv #root + folder
+  targets: devries2024/data/traits.csv #root + folder
   
   predictors: ["temperature", "si", 
     "phosphate", "din", 
     "o2", "mld", "DIC", 
-    "TA", "PAR", 
+    "TA", "irradiance", 
     "chlor_a"]
     
+  training: data/obs_env.csv
 
   verbose: 3
   seed : 1 # random seed
@@ -61,7 +58,7 @@
         estimator__max_samples: [0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 1]     
 
 
-    xgb_param_grid:
+    xgb_param_grid:28
       reg_param_grid:  
         regressor__estimator__learning_rate: [0.01, 0.015, 0.025, 0.05, 0.1]
         regressor__estimator__n_estimators: [100]
@@ -78,7 +75,6 @@
         estimator__colsample_bytree: [0.5, 0.667, 0.8, 0.9, 0.95, 0.975, 1]
         estimator__gamma: [0] 
         estimator__reg_alpha: [0, 0.1]
-        
     knn_param_grid:
       reg_param_grid:  
         regressor__estimator__max_samples: [0.6, 0.8, 0.85, 0.9, 1]

@@ -11,13 +11,13 @@ current_date = datetime.today().strftime('%Y-%m-%d')
 
 try:
     print(sys.argv[0])
-    with open('/user/work/ba18321/Abil/studies/devries2024/2-phase.yml', 'r') as f:
+    with open('/user/work/ba18321/Abil/devries2024/2-phase.yml', 'r') as f:
         model_config = load(f, Loader=Loader)
     model_config['hpc'] = True
     root = model_config['hpc_root']
 
 except:
-    with open('/home/phyto/Abil/studies/devries2024/2-phase.yml', 'r') as f:
+    with open('/home/phyto/Abil/devries2024/2-phase.yml', 'r') as f:
         model_config = load(f, Loader=Loader)
     model_config['hpc'] = False
     root = model_config['local_root']
