@@ -368,15 +368,26 @@ class predict:
             raise ValueError("at least one model should be defined in the ensemble")
 
         if cross_fold_estimation==True:
-            predictions = cross_fold_stats(m, self.X_train, self.y, self.cv, self.n_splits)[0]
-            prediction_out = self.path_out + "predictions/cross_validation/" 
+            predictions = cross_fold_stats(m, self.X_train, self.y, self.cv, self.n_splits)
 
-            try: #make new dir if needed
-                os.makedirs(prediction_out)
-            except:
-                None
+            def export_netcdf(variable="mean"):
 
-            predictions.to_xarray().to_netcdf(prediction_out + self.target_no_space + ".nc", mode='w') 
+                path_out = self.path_out + "predictions/cross_validation/" + variable + "/"
+
+                try: #make new dir if needed
+                    os.makedirs(path_out)
+                except:
+                    None
+
+                df_out = predictions[variable].to_frame()
+                df_out.rename(columns={variable:self.target}, inplace=True)
+                df_out.to_xarray().to_netcdf(path_out + self.target_no_space + ".nc", mode='w') 
+            
+            export_netcdf(variable="mean")
+            export_netcdf(variable="sd")
+            export_netcdf(variable="ci95_LL")
+            export_netcdf(variable="ci95_UL")
+
 
         if prediction_inference==True:
             print()
