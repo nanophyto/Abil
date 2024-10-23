@@ -8,8 +8,6 @@ from sklearn.model_selection import KFold
 from mapie.regression import MapieRegressor
 from mapie.classification import  MapieClassifier
 from mapie.conformity_scores import GammaConformityScore, AbsoluteConformityScore
-from sklearn.pipeline import make_pipeline
-from sklearn.model_selection import cross_val_predict
 
 
 from sklearn.model_selection import cross_validate
@@ -17,9 +15,9 @@ from joblib import Parallel, delayed
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau, cross_fold_stats
+    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
 else:
-    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau, cross_fold_stats
+    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
 
 def def_prediction(path_out, ensemble_config, n, species):
 
@@ -195,7 +193,6 @@ class predict:
         self.ensemble_config = model_config['ensemble_config']
         self.model_config = model_config
 
-        self.n_splits = model_config['cv']
         self.n_jobs = n_jobs
 
         if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == False):
@@ -225,7 +222,7 @@ class predict:
         print("initialized prediction")
         
     def make_prediction(self, prediction_inference=False, alpha=[0.05], cv=None,
-                        conformity_score = AbsoluteConformityScore(), cross_fold_estimation=False):
+                        conformity_score = AbsoluteConformityScore()):
 
         """
         Calculates performance of model(s) and exports prediction(s) to netcdf
@@ -367,9 +364,6 @@ class predict:
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
-
-        if cross_fold_estimation==True:
-            cross_fold_stats(m, self.X_train, self.y, self.cv, self.n_splits)
 
 
         if prediction_inference==True:

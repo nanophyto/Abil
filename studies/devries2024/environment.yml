@@ -13,5 +13,5 @@ dependencies:
   - ipykernel
   - scikit-learn==1.3.0
   - scipy
-  - mapie==0.8.6
+  - mapie
   - scikit-bio

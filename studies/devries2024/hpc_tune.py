@@ -10,7 +10,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 try:
     print(sys.argv[1])
-    with open('/user/work/ba18321/Abil/studies/devries2024/2-phase.yml', 'r') as f:
+    with open('/user/work/ba18321/Abil/devries2024/2-phase.yml', 'r') as f:
         model_config = load(f, Loader=Loader)
 
     model_config['hpc'] = True
@@ -22,7 +22,7 @@ try:
     predictors = model_config['predictors']
 
 except:
-    with open('/home/phyto/Abil/studies/devries2024/2-phase.yml', 'r') as f:
+    with open('/home/phyto/Abil/devries2024/2-phase.yml', 'r') as f:
         model_config = load(f, Loader=Loader)
     model_config['hpc'] = False
     n_jobs = 8
@@ -30,7 +30,7 @@ except:
     root = model_config['local_root']
     model_config['cv'] = 3
     
-    with open('/home/phyto/Abil/studies/devries2024/2-phase.yml', 'r') as f:
+    with open('/home/phyto/Abil/devries2024/2-phase.yml', 'r') as f:
         model_config_local = load(f, Loader=Loader)    
     
     model_config['param_grid'] = model_config_local['param_grid'] 
@@ -43,9 +43,8 @@ targets = pd.read_csv(root + model_config['targets'])
 d = pd.read_csv(root + model_config['training'])
 target =  targets['Target'][n_spp]
 d[target] = d[target].fillna(0)
-predictors = model_config['predictors']
-d = d.dropna(subset=[predictors])
 d = d.dropna(subset=[target])
+d = d.dropna(subset=['FID'])
 d = upsample(d, target, ratio=10)
 
 y = d[target]

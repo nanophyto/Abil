@@ -4,12 +4,11 @@ import xarray as xr
 from inspect import signature
 from scipy.stats import kendalltau
 
-
 from sklearn.base import BaseEstimator, RegressorMixin, clone, is_regressor, is_classifier
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold, cross_val_predict
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.datasets import make_regression
 from sklearn.metrics import make_scorer
@@ -271,15 +270,14 @@ class LogGridSearch:
 
 
 class UpsampledZeroStratifiedKFold:
-    def __init__(self, n_splits=3, random_state=None):
+    def __init__(self, n_splits=3):
         self.n_splits = n_splits
-        self.random_state=random_state
 
     def split(self, X, y, groups=None):
         #convert target variable to binary for stratified sampling
         y_binary = np.where(y!=0, 1, 0)
 
-        for rx, tx in StratifiedKFold(n_splits=self.n_splits, random_state=self.random_state).split(X,y_binary):
+        for rx, tx in StratifiedKFold(n_splits=self.n_splits).split(X,y_binary):
             nix = np.where(y_binary[rx]==0)[0]
             pix = np.where(y_binary[rx]==1)[0]
             pixu = np.random.choice(pix, size=nix.shape[0], replace=True)
@@ -293,9 +291,8 @@ class UpsampledZeroStratifiedKFold:
     
     
 class ZeroStratifiedKFold:
-    def __init__(self, n_splits=3, random_state=None):
+    def __init__(self, n_splits=3):
         self.n_splits = n_splits
-        self.random_state=random_state
 
     def split(self, X, y, groups=None):
         #convert target variable to binary for stratified sampling
@@ -303,7 +300,7 @@ class ZeroStratifiedKFold:
 
         # Check if there are any zeros in the array
         if any(element == 0 for element in y_binary):
-            for rx, tx in StratifiedKFold(n_splits=self.n_splits, random_state=self.random_state).split(X,y_binary):
+            for rx, tx in StratifiedKFold(n_splits=self.n_splits).split(X,y_binary):
                 yield rx, tx
         else:
             for rx, tx in KFold(n_splits=self.n_splits).split(X,y_binary):
@@ -349,75 +346,6 @@ def inverse_weighting(values):
     normalized_weights = [weight / total_inverse_weight for weight in inverse_weights]
     return normalized_weights
 
-def cross_fold_stats(m, X_train, y, cv, n_repeats=100, n_jobs=-1):
-    print("using cross folds for error estimation")
-    y_pred_matrix = np.column_stack(
-        [
-            cross_val_predict(
-                m, 
-                X=X_train.iloc[perm := np.random.RandomState(seed=i).permutation(len(X_train))],
-                y=y.iloc[perm],
-                cv=cv,
-                n_jobs=n_jobs
-            )
-            for i in range(n_repeats)
-        ]
-    )
-    # Calculate summary statistics
-    mean_preds = np.mean(y_pred_matrix, axis=1)
-    std_preds = np.std(y_pred_matrix, axis=1)
-
-    # Calculate the 2.5th and 97.5th percentiles for the confidence intervals
-    lower_bound = np.quantile(y_pred_matrix, 0.025, axis=1)
-    upper_bound = np.quantile(y_pred_matrix, 0.975, axis=1)
-
-    summary_stats = pd.DataFrame({
-        'Mean': mean_preds,
-        'Standard Deviation': std_preds,
-        'Lower Bound CI (95%)': lower_bound,
-        'Upper Bound CI (95%)': upper_bound
-    })
-
-    # Include indices in the summary statistics
-    summary_stats.index = X_train.index
-
-    # Print the head of the summary stats matrix
-    print("\nSummary Statistics (first 5 rows):\n", summary_stats.head())
-    return summary_stats, y_pred_matrix
-
-
-
-# Example usage
-if __name__ == "__main__":
-    import numpy as np
-    import pandas as pd
-    from sklearn.datasets import make_regression
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.model_selection import KFold
-    from joblib import parallel_backend
-
-    # Generate sample data
-    X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
-    X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
-    # Generate random latitude and longitude
-    latitudes = np.random.uniform(-90, 90, size=X_train.shape[0])  # Random latitude values
-    longitudes = np.random.uniform(-180, 180, size=X_train.shape[0])  # Random longitude values
-
-    # Set latitude and longitude as MultiIndex
-    X_train.index = pd.MultiIndex.from_tuples(zip(latitudes, longitudes), names=['Latitude', 'Longitude'])
-    
-    y_train = pd.Series(y)
-    n_splits = 5
-    # Define the model and cross-validation strategy
-    model = RandomForestRegressor(n_estimators=100)
-    cv = KFold(n_splits=n_splits)
-
-    # Call the function
-    with parallel_backend("loky", n_jobs=-1):
-        predictions_matrix = cross_fold_stats(model, X_train, y_train, cv, n_repeats=100)
-
-    # Check predictions
-    print("Predictions matrix:\n", predictions_matrix)
 
 
 
@@ -503,5 +431,4 @@ class OffsetGammaConformityScore(BaseRegressionScore):
         """
         self._check_predicted_data(y_pred)
         return np.multiply(y_pred, np.add(1, conformity_scores))
-
 
