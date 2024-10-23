@@ -15,9 +15,9 @@ from joblib import Parallel, delayed
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
+    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau, cross_fold_stats
 else:
-    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
+    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau, cross_fold_stats
 
 def def_prediction(path_out, ensemble_config, n, species):
 
