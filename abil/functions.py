@@ -367,17 +367,18 @@ def cross_fold_stats(m, X_train, y, cv, n_repeats=100, n_jobs=-1):
     # Calculate the 2.5th and 97.5th percentiles for the confidence intervals
     lower_bound = np.quantile(y_pred_matrix, 0.025, axis=1)
     upper_bound = np.quantile(y_pred_matrix, 0.975, axis=1)
+    y_pred_matrix=None
     summary_stats = pd.DataFrame({
-        'Mean': mean_preds,
-        'Standard Deviation': std_preds,
-        'Lower Bound CI (95%)': lower_bound,
-        'Upper Bound CI (95%)': upper_bound
+        'mean': mean_preds,
+        'sd': std_preds,
+        'ci95_LL': lower_bound,
+        'ci95_UL': upper_bound
     })
     # Include indices in the summary statistics
     summary_stats.index = X_train.index
     # Print the head of the summary stats matrix
     print("\nSummary Statistics (first 5 rows):\n", summary_stats.head())
-    return summary_stats, y_pred_matrix
+    return summary_stats #, y_pred_matrix
 # Example usage
 if __name__ == "__main__":
     import numpy as np
