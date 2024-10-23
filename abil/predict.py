@@ -368,7 +368,7 @@ class predict:
             raise ValueError("at least one model should be defined in the ensemble")
 
         if cross_fold_estimation==True:
-            predictions = cross_fold_stats(m, self.X_train, self.y, self.cv, self.n_splits)
+            predictions = cross_fold_stats(m, self.X_train, self.y, self.cv, self.n_splits)[0]
             predictions.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
             prediction_out = self.path_out + "predictions/cross_validation/" 
 
