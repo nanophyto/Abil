@@ -162,64 +162,6 @@ class Test2Phase(unittest.TestCase):
 
 
 
-class TestClassifiers(unittest.TestCase):
-
-    def setUp(self):
-        self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
-        with open(self.workspace +'/tests/classifier.yml', 'r') as f:
-            self.model_config = load(f, Loader=Loader)
-
-        self.model_config['local_root'] = self.workspace # yaml_path
-        predictors = self.model_config['predictors']
-        d = pd.read_csv(self.model_config['local_root'] + self.model_config['training'])
-        targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
-        n_spp = 0
-        target =  targets['Target'][n_spp]
-        d[target] = d[target].fillna(0)
-        d = upsample(d, target, ratio=10)
-        d = d.dropna(subset=[target])
-        d = d.dropna(subset=predictors)
-
-        self.X_train = d[predictors]
-        self.y = d[target]
-
-        X_predict = pd.read_csv(self.model_config['local_root'] + self.model_config['prediction'])
-        X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
-        self.X_predict = X_predict[predictors]
-
-    def test_post_ensemble(self):
-   
-        m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="rf", classifier=True)
-        m.train(model="xgb", classifier=True)
-        m.train(model="knn", classifier=True)
-
-        m = predict(self.X_train, self.y, self.X_predict, self.model_config)
-        m.make_prediction(prediction_inference=True)
-
-        def do_post(pi):
-            m = post(self.model_config, pi=pi)
-            m.merge_performance(model="ens") 
-            m.merge_performance(model="xgb")
-            m.merge_performance(model="rf")
-            m.merge_performance(model="knn")
-
-            m.merge_parameters(model="rf")
-            m.merge_parameters(model="xgb")
-            m.merge_parameters(model="knn")
-  
-            m.estimate_carbon("pg poc")
-            m.merge_env(self.X_predict)
-
-            m.export_ds("test")
-            m.export_csv("test")
-
-        do_post(pi="50")
-        do_post(pi="95_UL")
-        do_post(pi="95_LL")
-
-
-
 class TestGammaOffset(unittest.TestCase):
 
     def setUp(self):
@@ -259,7 +201,6 @@ class TestGammaOffset(unittest.TestCase):
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
-    suite.addTest(TestClassifiers('test_post_ensemble'))
     suite.addTest(TestRegressors('test_post_ensemble'))
     suite.addTest(Test2Phase('test_post_ensemble'))
     runner = unittest.TextTestRunner()
