@@ -9,7 +9,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from joblib import parallel_backend
-from xgboost import XGBClassifier, XGBRegressor
+from xgboost import XGBRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_validate, KFold
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, BaggingRegressor, BaggingClassifier
