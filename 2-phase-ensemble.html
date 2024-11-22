@@ -354,47 +354,34 @@ Linux/MacOS</label><div class="sd-tab-content docutils">
 <span class="kn">from</span> <span class="nn">abil.tune</span> <span class="kn">import</span> <span class="n">tune</span>
 <span class="kn">from</span> <span class="nn">abil.predict</span> <span class="kn">import</span> <span class="n">predict</span>
 <span class="kn">from</span> <span class="nn">abil.post</span> <span class="kn">import</span> <span class="n">post</span>
-<span class="kn">from</span> <span class="nn">abil.functions</span> <span class="kn">import</span> <span class="n">example_data</span><span class="p">,</span> <span class="n">upsample</span>
+<span class="kn">from</span> <span class="nn">abil.functions</span> <span class="kn">import</span> <span class="n">example_data</span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
 
 <span class="c1">#define root directory:</span>
-<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">&#39;/home/phyto/Abil/&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">&#39;/home/phyto-2/Abil/&#39;</span><span class="p">)</span>
 
 <span class="c1">#load configuration yaml:</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./examples/configuration/2-phase.yml&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./tests/2-phase.yml&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">Loader</span><span class="p">)</span>
 
-<span class="c1">#load the training data:</span>
-<span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">model_config</span><span class="p">[</span><span class="s1">&#39;local_root&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">model_config</span><span class="p">[</span><span class="s1">&#39;training&#39;</span><span class="p">])</span>
 
-<span class="c1">#define your environmental predictors</span>
-<span class="c1">#(note that these should be found in your training.csv!):</span>
-<span class="n">predictors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;din&quot;</span><span class="p">,</span> <span class="s2">&quot;irradiance&quot;</span><span class="p">]</span>
-
-<span class="c1">#define your target value (in this case the species *E. huxleyi*)</span>
-<span class="n">target</span> <span class="o">=</span>  <span class="s2">&quot;Emiliania huxleyi&quot;</span>
-
-<span class="c1">#upsample data needed</span>
+<span class="n">model_config</span><span class="p">[</span><span class="s1">&#39;local_root&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;./&quot;</span>
 
 
-<span class="c1">#drop any missing values:</span>
-<span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">target</span><span class="p">])</span>
-<span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="n">predictors</span><span class="p">)</span>
+<span class="c1">#create some example training data:</span>
+<span class="n">target_name</span> <span class="o">=</span>  <span class="s2">&quot;Emiliania huxleyi&quot;</span>
 
-<span class="c1">#define your X and y:</span>
-<span class="n">X_train</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">predictors</span><span class="p">]</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">target</span><span class="p">]</span>
+<span class="n">X_train</span><span class="p">,</span> <span class="n">X_predict</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">example_data</span><span class="p">(</span><span class="n">target_name</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                        <span class="n">noise</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">train_to_predict_ratio</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">59</span><span class="p">)</span>
 
 <span class="c1">#train your model:</span>
-<span class="n">m</span> <span class="o">=</span> <span class="n">tune</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">model_config</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">tune</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">model_config</span><span class="p">)</span>
 <span class="n">m</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;rf&quot;</span><span class="p">,</span> <span class="n">classifier</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="c1">#predict your model:</span>
-<span class="n">X_predict</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;./examples/data/prediction.csv&quot;</span><span class="p">)</span>
-<span class="n">X_predict</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">,</span> <span class="s2">&quot;lat&quot;</span><span class="p">,</span> <span class="s2">&quot;lon&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">m</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">X_predict</span><span class="o">=</span><span class="n">X_predict</span><span class="p">,</span>
     <span class="n">model_config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">m</span><span class="o">.</span><span class="n">make_prediction</span><span class="p">(</span><span class="n">prediction_inference</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">make_prediction</span><span class="p">()</span>
 
 <span class="c1">#post:</span>
 <span class="n">m</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
