@@ -59,19 +59,18 @@ def parallel_predict(prediction_function, X_predict, n_threads=1):
     return(combined_predictions)
 
 
-def export_prediction(m, species, X_predict, model_config, 
-                      ensemble_config, ens_model_out, n_threads=1):
+def export_prediction(m, target, target_no_space, X_predict, model_out, n_threads=1):
 
     d = X_predict.copy()
-    d[species] = parallel_predict(m.predict, X_predict, n_threads)
+    d[target] = parallel_predict(m.predict, X_predict, n_threads)
     d = d.to_xarray()
     
     try: #make new dir if needed
-        os.makedirs(ens_model_out)
+        os.makedirs(model_out)
     except:
         None
 
-    d[species].to_netcdf(ens_model_out + species + ".nc") 
+    d[target].to_netcdf(model_out + target_no_space + ".nc") 
 
 
 class predict:
@@ -197,9 +196,8 @@ class predict:
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = self.path_out + "predictions/" + model_name + "/" 
-            export_prediction(m, self.target_no_space, self.X_predict, 
-                              self.model_config, self.ensemble_config, 
-                              model_out, n_threads=self.n_jobs)
+            export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)
 
         elif number_of_models >=2:
                     
@@ -211,10 +209,9 @@ class predict:
             for i in range(number_of_models):
                 m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
-                model_out = self.path_out + "predictions/" + model_name + "/"  
-                export_prediction(m, self.target_no_space, self.X_predict, 
-                                  self.model_config, self.ensemble_config, 
-                                  model_out, n_threads=self.n_jobs)
+                model_out = self.path_out + "predictions/ens/50/" #temporary until tree/bag CI is implemented! 
+                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)
 
                 print("exporting " + model_name + " prediction to: " + model_out)
 

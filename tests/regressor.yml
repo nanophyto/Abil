@@ -3,7 +3,7 @@
 
   run_name: regressor #update for specific run name
   path_out:  /tests/ModelOutput/ #root + folder
-  path_in:  /predictions/mapie/ #root + folder
+  path_in:  /predictions/ens/ #root + folder
 
   prediction:  /examples/data/prediction.csv #root + folder
   targets:  /examples/data/targets.csv #root + folder
@@ -39,7 +39,7 @@
     rf_param_grid:
       reg_param_grid:
         regressor__estimator__n_estimators: [100]
-        regressor__estimator__max_features: [4]
+        regressor__estimator__max_features: [0.2, 0.4, 0.8]
         regressor__estimator__max_depth: [50]
         regressor__estimator__min_samples_leaf: [0.5]
         regressor__estimator__max_samples: [0.5]     

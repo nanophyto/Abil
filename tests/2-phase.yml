@@ -3,7 +3,7 @@
 
   run_name: 2-phase #update for specific run name
   path_out:  /tests/ModelOutput/ #root + folder 
-  path_in:  /predictions/mapie/ #root + folder
+  path_in:  /predictions/ens/ #root + folder
 
   prediction:  /examples/data/prediction.csv #root + folder
   targets:  /examples/data/targets.csv #root + folder
