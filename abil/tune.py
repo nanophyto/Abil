@@ -9,7 +9,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from joblib import parallel_backend
-from xgboost import XGBRegressor
+from xgboost import XGBClassifier, XGBRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_validate, KFold
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, BaggingRegressor, BaggingClassifier
@@ -222,62 +222,8 @@ class tune:
         #if (classifier ==True) and (regressor ==True):
         #    raise ValueError("2-phase model not supported, choose classifier OR regressor")
 
-        if classifier ==True:
-            print("training classifier")
-            clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
-            clf_scoring = self.model_config['clf_scoring']
-
-            clf_sav_out_scores = self.path_out + "scoring/" + model + "/"
-            clf_sav_out_model = self.path_out + "model/" + model + "/"
-
-
-            try: #make new dir if needed
-                os.makedirs(clf_sav_out_scores)
-            except:
-                None
-
-            try: #make new dir if needed
-                os.makedirs(clf_sav_out_model)
-            except:
-                None
-
-            clf_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
-                      ('estimator', clf_estimator)])
-
-            clf = GridSearchCV(
-                estimator=clf_pipe,
-                param_grid= clf_param_grid,
-                scoring= 'balanced_accuracy',
-                cv = self.cv,
-                verbose = self.verbose
-            )
-
-            y_clf =  self.y.copy()
-            print("length of y_clf:")
-            print(len(y_clf))
-
-            y_clf[y_clf > 0] = 1
-            print(y_clf)
-            with parallel_backend('multiprocessing', self.n_jobs):
-                clf.fit(self.X_train, y_clf)
-
-            m1 = clf.best_estimator_
-            
-            with open(clf_sav_out_model  + self.target_no_space + '_clf.sav', 'wb') as f:
-                pickle.dump(m1, f)
-            
-            print("exported model to:" + clf_sav_out_model + self.target_no_space + '_clf.sav')
-
-            clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
-            
-            with open(clf_sav_out_scores  + self.target_no_space + '_clf.sav', 'wb') as f:
-                pickle.dump(clf_scores, f)
-            
-            print("exported scoring to: " + clf_sav_out_scores + self.target_no_space + '_clf.sav')
-
-            print(clf_scores['test_accuracy'])
-            print("clf balanced accuracy " + str((round(np.mean(clf_scores['test_accuracy']), 2))))
-
+        if (classifier ==True) and (regressor !=True):        
+            raise ValueError("classifiers are not supported")
 
         if regressor ==True:
             if classifier==True:
@@ -343,9 +289,62 @@ class tune:
                 print("reg tau: " + str(round(np.mean(reg_scores['test_tau']), 2)))
 
 
-        if (classifier ==True) and (regressor ==True):
-            #raise ValueError("2-phase model not supported, choose classifier OR regressor")
-        
+        if (classifier ==True) and (regressor ==True):      
+            
+            print("training classifier")
+            clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
+            clf_scoring = self.model_config['clf_scoring']
+
+            clf_sav_out_scores = self.path_out + "scoring/" + model + "/"
+            clf_sav_out_model = self.path_out + "model/" + model + "/"
+
+            try: #make new dir if needed
+                os.makedirs(clf_sav_out_scores)
+            except:
+                None
+
+            try: #make new dir if needed
+                os.makedirs(clf_sav_out_model)
+            except:
+                None
+
+            clf_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
+                      ('estimator', clf_estimator)])
+
+            clf = GridSearchCV(
+                estimator=clf_pipe,
+                param_grid= clf_param_grid,
+                scoring= 'balanced_accuracy',
+                cv = self.cv,
+                verbose = self.verbose
+            )
+
+            y_clf =  self.y.copy()
+            print("length of y_clf:")
+            print(len(y_clf))
+
+            y_clf[y_clf > 0] = 1
+            print(y_clf)
+            with parallel_backend('multiprocessing', self.n_jobs):
+                clf.fit(self.X_train, y_clf)
+
+            m1 = clf.best_estimator_
+            
+            with open(clf_sav_out_model  + self.target_no_space + '_clf.sav', 'wb') as f:
+                pickle.dump(m1, f)
+            
+            print("exported model to:" + clf_sav_out_model + self.target_no_space + '_clf.sav')
+
+            clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
+            
+            with open(clf_sav_out_scores  + self.target_no_space + '_clf.sav', 'wb') as f:
+                pickle.dump(clf_scores, f)
+            
+            print("exported scoring to: " + clf_sav_out_scores + self.target_no_space + '_clf.sav')
+
+            print(clf_scores['test_accuracy'])
+            print("clf balanced accuracy " + str((round(np.mean(clf_scores['test_accuracy']), 2))))
+
             print("training zero-inflated regressor")
 
             zir = ZeroInflatedRegressor(
