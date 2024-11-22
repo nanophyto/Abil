@@ -3,10 +3,9 @@ import numpy as np
 import pickle
 import os
 import time
-from sklearn.ensemble import VotingRegressor, VotingClassifier
+from sklearn.ensemble import VotingRegressor
 from sklearn.model_selection import KFold
 from mapie.regression import MapieRegressor
-from mapie.classification import  MapieClassifier
 from mapie.conformity_scores import GammaConformityScore, AbsoluteConformityScore
 
 
@@ -24,15 +23,8 @@ def def_prediction(path_out, ensemble_config, n, species):
     path_to_scores  = path_out + "scoring/" + ensemble_config["m"+str(n+1)] + "/"
     path_to_param  = path_out + "model/"  +  ensemble_config["m"+str(n+1)] + "/"
 
-
     if (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == False):
-        print("predicting classifier")
-        species_no_space = species.replace(' ', '_')
-        with open(path_to_param + species_no_space + '_clf.sav', 'rb') as file:
-            m = pickle.load(file)
-        with open(path_to_scores + species_no_space + '_clf.sav', 'rb') as file:
-            scoring = pickle.load(file)
-        scores = np.mean(scoring['test_accuracy'])
+        raise ValueError("classifiers are not supported")
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         print("predicting regressor")
@@ -54,8 +46,7 @@ def def_prediction(path_out, ensemble_config, n, species):
         scores = abs(np.mean(scoring['test_MAE']))
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == False):
-
-        print("Both regressor and classifier are defined as false")
+        raise ValueError("Both regressor and classifier are defined as false")
 
     return(m, scores)
 
@@ -102,13 +93,7 @@ def export_prediction(m, species, X_predict, model_config,
                       ensemble_config, ens_model_out, n_threads=1):
 
     d = X_predict.copy()
-    if (model_config['predict_probability'] == True) and (ensemble_config["regressor"] ==False):
-        print("predicting probabilities")
-        d[species] = parallel_predict(m.predict_proba, X_predict, n_threads)
-    elif (model_config['predict_probability'] == True) and (ensemble_config["regressor"] ==True):
-        print("error: can't predict probabilities if the model is a regressor")
-    else:
-        d[species] = parallel_predict(m.predict, X_predict, n_threads)
+    d[species] = parallel_predict(m.predict, X_predict, n_threads)
     d = d.to_xarray()
     
     try: #make new dir if needed
@@ -196,24 +181,22 @@ class predict:
         self.n_jobs = n_jobs
 
         if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == False):
-            self.scoring = model_config['clf_scoring']
-            self.y[self.y > 0] = 1
-
+            raise ValueError("classifiers are not supported")
         elif (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == False):
             raise ValueError("classifier and regressor can't both be False")
         else:
             self.scoring = check_tau(self.model_config['reg_scoring']) 
 
-
-        if (self.ensemble_config["classifier"] !=True) and (self.ensemble_config["classifier"] !=False):
-            raise ValueError("classifier should be True or False")
+        #unsure if this is required...
+#        if (self.ensemble_config["classifier"] !=True) and (self.ensemble_config["classifier"] !=False):
+#            raise ValueError("classifier should be True or False")
         
         if (self.ensemble_config["regressor"] !=True) and (self.ensemble_config["regressor"] !=False):
             raise ValueError("regressor should be True or False")
 
 
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-            self.extension = "_clf.sav"
+            raise ValueError("classifiers are not supported")
         elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
             self.extension = "_zir.sav"
         else:
@@ -228,7 +211,7 @@ class predict:
         Calculates performance of model(s) and exports prediction(s) to netcdf
 
         If more than one model is defined an weighted ensemble is generated using 
-        a voting Regressor or Classifier.
+        a voting Regressor.
 
         To determine model error Prediction Inference is implemented using MAPIE.
 
@@ -306,9 +289,7 @@ class predict:
                 if prediction_inference==True:
                     mapie = MapieRegressor(m, conformity_score=conformity_score, cv=cv) #            
             else:
-                if prediction_inference==True:
-                    mapie = MapieClassifier(m, conformity_score=conformity_score, cv=cv) #
-
+                raise ValueError("classifiers are not supported")
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = self.path_out + "predictions/" + model_name + "/" 
@@ -343,9 +324,7 @@ class predict:
                 if prediction_inference==True:
                     mapie = MapieRegressor(m, conformity_score=conformity_score, cv=cv) #            
             else:
-                m= VotingClassifier(estimators=models, weights=w, voting='soft').fit(self.X_train, self.y)
-                if prediction_inference==True:
-                    mapie = MapieClassifier(m, cv=cv) #
+                raise ValueError("classifiers are not supported")
 
             print(np.min(self.y))
 
