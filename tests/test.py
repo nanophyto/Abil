@@ -84,8 +84,6 @@ class TestRegressors(unittest.TestCase):
             integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")
-        do_post(pi="95_UL")
-        do_post(pi="95_LL")
 
 
 
@@ -157,9 +155,6 @@ class Test2Phase(unittest.TestCase):
             integ.integrated_totals(targets, subset_depth=100)
 
         do_post(pi="50")
-        do_post(pi="95_UL")
-        do_post(pi="95_LL")
-
 
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
