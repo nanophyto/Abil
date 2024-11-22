@@ -33,7 +33,6 @@
    R2: r2
    MAE: neg_mean_absolute_error
    RMSE: neg_root_mean_squared_error
-   tau: kendall_tau
 
   param_grid:
     rf_param_grid:

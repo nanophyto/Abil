@@ -22,9 +22,9 @@ from sklearn.gaussian_process import GaussianProcessClassifier, GaussianProcessR
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold, check_tau
+    from abil.functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 else:
-    from functions import  ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold, check_tau
+    from functions import  ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 
 class tune:
     """
@@ -237,7 +237,7 @@ class tune:
 
             print("training regressor")
 
-            reg_scoring = check_tau(self.model_config['reg_scoring']) 
+            reg_scoring = self.model_config['reg_scoring']
 
             reg_param_grid = self.model_config['param_grid'][model + '_param_grid']['reg_param_grid']
 
@@ -285,8 +285,6 @@ class tune:
                 print("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
             if "R2" in reg_scoring:
                 print("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
-            if "tau" in reg_scoring:
-                print("reg tau: " + str(round(np.mean(reg_scores['test_tau']), 2)))
 
 
         if (classifier ==True) and (regressor ==True):      

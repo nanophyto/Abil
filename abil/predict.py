@@ -11,9 +11,9 @@ from joblib import Parallel, delayed
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
+    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 else:
-    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
+    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 
 def def_prediction(path_out, ensemble_config, n, species):
 
@@ -153,7 +153,7 @@ class predict:
         elif (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == False):
             raise ValueError("classifier and regressor can't both be False")
         else:
-            self.scoring = check_tau(self.model_config['reg_scoring']) 
+            self.scoring = self.model_config['reg_scoring']
 
         #unsure if this is required...
 #        if (self.ensemble_config["classifier"] !=True) and (self.ensemble_config["classifier"] !=False):

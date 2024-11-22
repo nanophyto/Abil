@@ -4,6 +4,7 @@ import glob, os
 import xarray as xr
 import pickle
 import gc
+from yaml import dump, Dumper
 #from skbio.diversity.alpha import shannon
 
 class post:
@@ -38,6 +39,8 @@ class post:
         self.model_config = model_config
         self.pi = pi
 
+        # Export model_config to a YAML file
+        self.export_model_config()
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
             raise ValueError("classifiers are not supported")
         elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
@@ -46,6 +49,23 @@ class post:
             self.model_type = "reg"
 
         self.extension = "_" + self.model_type + ".sav"
+        
+        
+    def export_model_config(self):
+        """
+        Export the model_config dictionary to a YAML file in self.path_out.
+        """
+        try:
+            os.makedirs(self.path_out, exist_ok=True)  # Ensure the output directory exists
+            yml_file_path = os.path.join(self.path_out, "model_config.yml")
+            
+            # Write the model_config dictionary to a YAML file
+            with open(yml_file_path, 'w') as yml_file:
+                dump(self.model_config, yml_file, Dumper=Dumper, default_flow_style=False)
+            
+            print(f"Model configuration exported to: {yml_file_path}")
+        except Exception as e:
+            print(f"Error exporting model_config to YAML: {e}")   
 
        
     def merge_performance(self, model):
