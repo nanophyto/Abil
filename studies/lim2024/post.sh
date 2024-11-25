@@ -7,11 +7,11 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --account=GEOG024542
 
-module  load apptainer/1.3.1 
+module  load apptainer/1.1.9 openmpi/4.1.2 
 
-singularity exec \
+srun singularity exec \
 -B/user/work/$(whoami):/user/work/$(whoami) \
-/user/work/$(whoami)/Abil/studies/wiseman2024/singularity/abil.sif \
+/user/work/$(whoami)/Abil/singularity/abil.sif \
 python /user/work/$(whoami)/Abil/studies/wiseman2024/hpc_post.py 
 
 export SINGULARITY_CACHEDIR=/user/work/$(whoami)/.singularity

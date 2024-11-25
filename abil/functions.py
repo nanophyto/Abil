@@ -2,42 +2,17 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from inspect import signature
-from scipy.stats import kendalltau
 
 from sklearn.base import BaseEstimator, RegressorMixin, clone, is_regressor, is_classifier
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold, cross_val_predict
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.datasets import make_regression
 from sklearn.metrics import make_scorer
+from sklearn.utils import resample
 
-
-from mapie._machine_precision import EPSILON
-from mapie._typing import ArrayLike, NDArray
-from mapie.conformity_scores import BaseRegressionScore
-
-
-def tau_scoring(y, y_pred):
-    tau, p_value = kendalltau(y, y_pred)
-    return(tau)
-
-def tau_scoring_p(y, y_pred):
-    tau, p_value = kendalltau(y, y_pred)
-    return(p_value)
-
-def check_tau(scoring):
-
-    if 'tau' in scoring:
-        scoring['tau'] = make_scorer(tau_scoring)
-        scoring['tau_p'] = make_scorer(tau_scoring_p)
-        print(scoring)
-
-    else:
-        scoring = scoring
-
-    return scoring
 
 def do_log(self, x):
     y = np.log(x+1)
@@ -309,27 +284,143 @@ class ZeroStratifiedKFold:
     def get_n_splits(self, X, y, groups=None):
         return self.n_splits
     
+import numpy as np
+import pandas as pd
+from sklearn.datasets import make_regression
 
+def example_data(
+    y_name, 
+    n_samples=100, 
+    n_features=5, 
+    noise=0.1, 
+    train_to_predict_ratio=0.7, 
+    zero_to_non_zero_ratio=0.5, 
+    random_state=59
+):
+    """
+    Generate training and prediction datasets with ['lat', 'lon', 'depth', 'time'] indices.
+    Includes zeros in the target and allows upsampling of zero values.
+    
+    Parameters:
+        y_name (str): Name of the target variable.
+        n_samples (int): Total number of samples to generate (training + prediction).
+        n_features (int): Number of features for the dataset.
+        noise (float): Noise level for the regression data.
+        train_to_predict_ratio (float): Ratio of training to prediction data.
+        zero_to_non_zero_ratio (float): Ratio of zero to non-zero target values after upsampling.
+        random_state (int): Random seed for reproducibility.
 
-def example_data(y_name, n_samples=100, n_features=5, noise=20, random_state=59):
-    #example data:
+    Returns:
+        X_train (pd.DataFrame): Training feature dataset with MultiIndex.
+        X_predict (pd.DataFrame): Prediction feature dataset with MultiIndex.
+        y (pd.Series): Target variable for training dataset.
+    """
+    np.random.seed(random_state)  # Set random seed for reproducibility
+    
+    # Generate regression data
     X, y = make_regression(n_samples=n_samples, n_features=n_features, noise=noise, random_state=random_state)
-    # scale so values are strictly positive:
-    scaler = MinMaxScaler()  
-    scaler.fit(y.reshape(-1,1))  
-    y = scaler.transform(y.reshape(-1,1))
-    # add exp transformation to data
-    # make distribution exponential:
-    y = np.exp(y)-1
-    #cut tail
-    y[y <= 0.5] = 0
-    y = np.squeeze(y)
-    y = pd.Series(y)
-    y = pd.DataFrame({y_name: y})
-    y.name = y_name
-    X = pd.DataFrame(X)
-    X = X.add_prefix('Feature_')
-    return(X, y)
+    
+    # Introduce zeros randomly in the target variable
+    zero_fraction = 0.2  # Fraction of zero values to introduce
+    zero_indices = np.random.choice(len(y), size=int(len(y) * zero_fraction), replace=False)
+    y[zero_indices] = 0
+    
+    # Ensure target values are non-negative by taking absolute values
+    y = np.abs(y)
+    
+    # Split data into training and prediction sets
+    train_size = int(n_samples * train_to_predict_ratio)
+    X_train, X_predict = X[:train_size], X[train_size:]
+    y_train = y[:train_size]
+    
+    # Upsample zeros in the training set
+    X_train_df = pd.DataFrame(X_train, columns=[f"feature_{i+1}" for i in range(X_train.shape[1])])
+    y_train_series = pd.Series(y_train, name=y_name)
+    
+    zero_mask = y_train_series == 0
+    non_zero_mask = y_train_series > 0
+    
+    X_zeros = X_train_df[zero_mask]
+    y_zeros = y_train_series[zero_mask]
+    X_non_zeros = X_train_df[non_zero_mask]
+    y_non_zeros = y_train_series[non_zero_mask]
+    
+    # Upsample zeros to achieve the desired zero_to_non_zero_ratio
+    upsample_count = int(len(y_non_zeros) * zero_to_non_zero_ratio)
+    X_zeros_upsampled, y_zeros_upsampled = resample(
+        X_zeros, y_zeros, 
+        replace=True, 
+        n_samples=upsample_count, 
+        random_state=random_state
+    )
+    
+    # Combine upsampled data
+    X_train_combined = pd.concat([X_non_zeros, X_zeros_upsampled], axis=0)
+    y_train_combined = pd.concat([y_non_zeros, y_zeros_upsampled], axis=0)
+    
+    # Shuffle combined data
+    combined_indices = np.random.permutation(X_train_combined.index)
+    X_train_combined = X_train_combined.loc[combined_indices]
+    y_train_combined = y_train_combined.loc[combined_indices]
+    
+    # Generate random latitude, longitude, depth, and time
+    latitudes_train = np.random.uniform(-90, 90, size=X_train_combined.shape[0])
+    longitudes_train = np.random.uniform(-180, 180, size=X_train_combined.shape[0])
+    depths_train = np.random.uniform(0, 200, size=X_train_combined.shape[0])
+    times_train = np.random.randint(1, 13, size=X_train_combined.shape[0])
+    
+    latitudes_predict = np.random.uniform(-90, 90, size=X_predict.shape[0])
+    longitudes_predict = np.random.uniform(-180, 180, size=X_predict.shape[0])
+    depths_predict = np.random.uniform(0, 200, size=X_predict.shape[0])
+    times_predict = np.random.randint(1, 13, size=X_predict.shape[0])
+    
+    # Set MultiIndex for X_train and X_predict
+    X_train_combined.index = pd.MultiIndex.from_arrays(
+        [latitudes_train, longitudes_train, depths_train, times_train],
+        names=['lat', 'lon', 'depth', 'time']
+    )
+    X_predict = pd.DataFrame(X_predict, columns=[f"feature_{i+1}" for i in range(X_predict.shape[1])])
+    X_predict.index = pd.MultiIndex.from_arrays(
+        [latitudes_predict, longitudes_predict, depths_predict, times_predict],
+        names=['lat', 'lon', 'depth', 'time']
+    )
+    
+    # Set y_train index
+    y_train_combined.index = X_train_combined.index
+    
+    return X_train_combined, X_predict, y_train_combined
+
+
+# def example_training_data(y_name, n_samples=100, n_features=5, noise=0.1, random_state=59):
+    
+#     X, y = make_regression(n_samples=n_samples, n_features=n_features, noise=noise)
+#     X_train = pd.DataFrame(X, columns=[f"feature_{i+1}" for i in range(X.shape[1])])
+
+#     # Generate random latitude and longitude and set as MultiIndex
+#     latitudes = np.random.uniform(-90, 90, size=X_train.shape[0])
+#     longitudes = np.random.uniform(-180, 180, size=X_train.shape[0])
+#     X_train.index = pd.MultiIndex.from_tuples(zip(latitudes, longitudes), names=['Latitude', 'Longitude'])
+
+#     #convert y to pandas and define name:
+#     y = pd.Series(y)
+#     y.name = y_name
+#     return(X_train, y)
+
+
+
+# def example_predict_data(n_samples=100, n_features=5, noise=0.1, random_state=59):
+
+#     # Generate new sample data for X_predict (this is the data for which we do not have y)
+#     X_predict, _ = make_regression(n_samples=n_samples, n_features=n_features, noise=noise)
+#     X_predict = pd.DataFrame(X_predict, columns=[f"feature_{i+1}" for i in range(X_predict.shape[1])])
+
+#     # Generate random latitude and longitude and set as MultiIndex for X_predict
+#     latitudes_predict = np.random.uniform(-90, 90, size=X_predict.shape[0])
+#     longitudes_predict = np.random.uniform(-180, 180, size=X_predict.shape[0])
+#     X_predict.index = pd.MultiIndex.from_tuples(zip(latitudes_predict, longitudes_predict), names=['Latitude', 'Longitude'])
+
+#     return(X_predict)
+
 
 
 def abbreviate_species(species_name):
@@ -345,148 +436,3 @@ def inverse_weighting(values):
     total_inverse_weight = sum(inverse_weights)
     normalized_weights = [weight / total_inverse_weight for weight in inverse_weights]
     return normalized_weights
-
-
-def cross_fold_stats(m, X_train, y, cv, n_repeats=100, n_jobs=-1):
-    print("using cross folds for error estimation")
-    y_pred_matrix = np.column_stack(
-        [
-            cross_val_predict(
-                m, 
-                X=X_train.iloc[perm := np.random.RandomState(seed=i).permutation(len(X_train))],
-                y=y.iloc[perm],
-                cv=cv,
-                n_jobs=n_jobs
-            )
-            for i in range(n_repeats)
-        ]
-    )
-    # Calculate summary statistics
-    mean_preds = np.mean(y_pred_matrix, axis=1)
-    std_preds = np.std(y_pred_matrix, axis=1)
-    # Calculate the 2.5th and 97.5th percentiles for the confidence intervals
-    lower_bound = np.quantile(y_pred_matrix, 0.025, axis=1)
-    upper_bound = np.quantile(y_pred_matrix, 0.975, axis=1)
-    y_pred_matrix=None
-    summary_stats = pd.DataFrame({
-        'mean': mean_preds,
-        'sd': std_preds,
-        'ci95_LL': lower_bound,
-        'ci95_UL': upper_bound
-    })
-    # Include indices in the summary statistics
-    summary_stats.index = X_train.index
-    # Print the head of the summary stats matrix
-    print("\nSummary Statistics (first 5 rows):\n", summary_stats.head())
-    return summary_stats #, y_pred_matrix
-# Example usage
-if __name__ == "__main__":
-    import numpy as np
-    import pandas as pd
-    from sklearn.datasets import make_regression
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.model_selection import KFold
-    from joblib import parallel_backend
-    # Generate sample data
-    X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
-    X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
-    # Generate random latitude and longitude
-    latitudes = np.random.uniform(-90, 90, size=X_train.shape[0])  # Random latitude values
-    longitudes = np.random.uniform(-180, 180, size=X_train.shape[0])  # Random longitude values
-    # Set latitude and longitude as MultiIndex
-    X_train.index = pd.MultiIndex.from_tuples(zip(latitudes, longitudes), names=['Latitude', 'Longitude'])
-    
-    y_train = pd.Series(y)
-    n_splits = 5
-    # Define the model and cross-validation strategy
-    model = RandomForestRegressor(n_estimators=100)
-    cv = KFold(n_splits=n_splits)
-    # Call the function
-    with parallel_backend("loky", n_jobs=-1):
-        predictions_matrix = cross_fold_stats(model, X_train, y_train, cv, n_repeats=100)
-    # Check predictions
-    print("Predictions matrix:\n", predictions_matrix)
-
-class OffsetGammaConformityScore(BaseRegressionScore):
-    """
-    Gamma conformity score.
-
-    The signed conformity score = (y - y_pred) / y_pred.
-    The conformity score is not symmetrical.
-
-    This is appropriate when the confidence interval is not symmetrical and
-    its range depends on the predicted values. Like the Gamma distribution,
-    its support is limited to strictly positive reals.
-    """
-
-    def __init__(
-        self,
-        sym: bool = False,
-        offset=0,
-    ) -> None:
-        super().__init__(sym=sym, consistency_check=False, eps=EPSILON)
-        self.offset = offset  # Adding a new instance variable 'new_variable' initialized to None
-
-    def _check_observed_data(
-        self,
-        y: ArrayLike,
-    ) -> None:
-        if not self._all_non_negative(y):
-            raise ValueError(
-                f"At least one of the observed target is negative "
-                f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be non-negative, "
-                "in conformity with the offset Gamma distribution support."
-            )
-
-    def _check_predicted_data(
-        self,
-        y_pred: ArrayLike,
-    ) -> None:
-        if not self._all_non_negative(y_pred):
-            raise ValueError(
-                f"At least one of the predicted target is negative "
-                f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be non-negative, "
-                "in conformity with the offset Gamma distribution support."
-            )
-
-    @staticmethod
-    def _all_non_negative(
-        y: ArrayLike,
-    ) -> bool:
-        return np.all(np.greater_equal(y, 0))
-
-    def get_signed_conformity_scores(
-        self,
-        y: ArrayLike,
-        y_pred: ArrayLike,
-        **kwargs
-    ) -> NDArray:
-        """
-        Compute the signed conformity scores from the observed values
-        and the predicted ones, from the following formula:
-        signed conformity score = (y - y_pred) / y_pred
-        """
-        self._check_observed_data(y)
-        self._check_predicted_data(y_pred)
-        return np.divide(np.subtract(y, y_pred), y_pred+self.offset)
-
-    def get_estimation_distribution(
-        self,
-        y_pred: ArrayLike,
-        conformity_scores: ArrayLike,
-        **kwargs
-    ) -> NDArray:
-        """
-        Compute samples of the estimation distribution from the predicted
-        values and the conformity scores, from the following formula:
-        signed conformity score = (y - y_pred) / y_pred
-        <=> y = y_pred * (1 + signed conformity score)
-
-        ``conformity_scores`` can be either the conformity scores or
-        the quantile of the conformity scores.
-        """
-        self._check_predicted_data(y_pred)
-        return np.multiply(y_pred, np.add(1, conformity_scores))
-

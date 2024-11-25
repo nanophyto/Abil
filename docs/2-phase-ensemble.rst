@@ -23,47 +23,31 @@ set your directory:
             from abil.tune import tune
             from abil.predict import predict
             from abil.post import post
-            from abil.functions import example_data, upsample
+            from abil.functions import example_data 
             import os, sys
 
             #define root directory:
-            os.chdir('/home/phyto/Abil/')  
+            os.chdir('/home/phyto-2/Abil/')  
 
             #load configuration yaml:
-            with open('./examples/configuration/2-phase.yml', 'r') as f:
+            with open('./tests/2-phase.yml', 'r') as f:
                 model_config = load(f, Loader=Loader)
 
-            #load the training data:
-            d = pd.read_csv(model_config['local_root'] + model_config['training'])
+            #create some example training data:
+            target_name =  "Emiliania huxleyi"
 
-            #define your environmental predictors 
-            #(note that these should be found in your training.csv!):
-            predictors = ["temperature", "din", "irradiance"]
-
-            #define your target value (in this case the species *E. huxleyi*)
-            target =  "Emiliania huxleyi"
-
-            #upsample data needed
-
-
-            #drop any missing values:
-            d = d.dropna(subset=[target])
-            d = d.dropna(subset=predictors)
-
-            #define your X and y:
-            X_train = d[predictors]
-            y = d[target]
+            X_train, X_predict, y = example_data(target_name, n_samples=1000, n_features=3, 
+                                                noise=0.1, train_to_predict_ratio=0.7, 
+                                                random_state=59)
 
             #train your model:
-            m = tune(X, y, model_config)
+            m = tune(X_train, y, model_config)
             m.train(model="rf", classifier=True)
 
             #predict your model:
-            X_predict = pd.read_csv("./examples/data/prediction.csv")
-            X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
             m = predict(X_train=X_train, y=y, X_predict=X_predict, 
                 model_config=model_config, n_jobs=2)
-            m.make_prediction(prediction_inference=True)
+            m.make_prediction()
 
             #post:
             m = post(model_config)

@@ -4,13 +4,14 @@ import glob, os
 import xarray as xr
 import pickle
 import gc
-#from skbio.diversity.alpha import shannon
+from yaml import dump, Dumper
+from skbio.diversity.alpha import shannon
 
 class post:
     """
     Post processing of SDM
     """
-    def __init__(self, model_config, summary_statistic="mean"):
+    def __init__(self, model_config, pi="50"):
 
         def merge_netcdf(path_in):
             print("merging...")
@@ -19,15 +20,16 @@ class post:
             return(ds)
         
         if model_config['hpc']==False:
-            self.path_out = model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
-            self.ds = merge_netcdf(model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + summary_statistic + "/")
-            self.traits = pd.read_csv(model_config['local_root'] + model_config['targets'])
+            self.path_out = os.path.join(model_config['local_root'], model_config['path_out'], model_config['run_name'], "posts/")
+            self.ds = merge_netcdf(os.path.join(model_config['local_root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
+            self.traits = pd.read_csv(os.path.join(model_config['local_root'], model_config['targets']))
             self.root  =  model_config['local_root'] 
 
         elif model_config['hpc']==True:
-            self.path_out = model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
-            self.ds = merge_netcdf(model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + summary_statistic + "/")
-            self.traits = pd.read_csv(model_config['hpc_root'] + model_config['targets'])
+            self.path_out = os.path.join(model_config['hpc_root'], model_config['path_out'], model_config['run_name'], "posts/")
+            self.ds = merge_netcdf(os.path.join(model_config['hpc_root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
+            self.traits = pd.read_csv(os.path.join(model_config['hpc_root'], model_config['targets']))
+
             self.root  =  model_config['hpc_root'] 
 
         else:
@@ -36,23 +38,35 @@ class post:
         self.d = self.d.dropna()
         self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.model_config = model_config
-        self.summary_statistic = summary_statistic
+        self.pi = pi
 
-        # if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-        #     self.extension = "_clf.sav"
-        # elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
-        #     self.extension = ".sav"
-        # else:
-        #     self.extension = "_reg.sav"
-
+        # Export model_config to a YAML file
+        self.export_model_config()
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-            self.model_type = "clf"
+            raise ValueError("classifiers are not supported")
         elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
             self.model_type = "zir"
         if self.model_config['ensemble_config']['regressor'] and not self.model_config['ensemble_config']['classifier']:
             self.model_type = "reg"
 
         self.extension = "_" + self.model_type + ".sav"
+        
+        
+    def export_model_config(self):
+        """
+        Export the model_config dictionary to a YAML file in self.path_out.
+        """
+        try:
+            os.makedirs(self.path_out, exist_ok=True)  # Ensure the output directory exists
+            yml_file_path = os.path.join(self.path_out, "model_config.yml")
+            
+            # Write the model_config dictionary to a YAML file
+            with open(yml_file_path, 'w') as yml_file:
+                dump(self.model_config, yml_file, Dumper=Dumper, default_flow_style=False)
+            
+            print(f"Model configuration exported to: {yml_file_path}")
+        except Exception as e:
+            print(f"Error exporting model_config to YAML: {e}")   
 
        
     def merge_performance(self, model):
@@ -62,13 +76,12 @@ class post:
         for i in range(len(self.d.columns)):
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
-            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/scoring/" + model + "/" + target_no_space + self.extension, 'rb') as file:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "scoring", model, target_no_space) + self.extension, 'rb') as file:
+
                 m = pickle.load(file)
             
             if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-                #estimate performance of classifier
-                performance = pd.DataFrame({'target':[target]})
-                all_performance.append(performance)
+                raise ValueError("classifiers are not supported")
             else:
                 mean = np.mean(self.d[self.d.columns[i]])
                 R2 = np.mean(m['test_R2'])
@@ -83,16 +96,11 @@ class post:
 
         all_performance = pd.concat(all_performance)
         try: #make new dir if needed
-            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/")
+            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance"))
         except:
             None
-        all_performance.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/" + model + "_performance.csv", index=False)
+        all_performance.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance", model) + "_performance.csv", index=False)
 
-        # if configuration==None:
-        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
-        # else:
-        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_" + configuration + "_performance.csv", index=False)
-        
         print("finished merging performance")
 
     def merge_parameters(self, model):
@@ -104,7 +112,8 @@ class post:
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
 
-            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/model/" + model + "/" + target_no_space + self.extension, 'rb') as file:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
+
                 m = pickle.load(file)
 
             if self.model_type == "reg":
@@ -144,9 +153,7 @@ class post:
                     all_parameters.append(parameters) 
 
             elif self.model_type == "clf":
-                #still to implement!
-                parameters = pd.DataFrame({'target':[target]})
-                all_parameters.append(parameters) 
+                raise ValueError("classifiers are not supported")
 
             elif self.model_type == "zir":
                 #still to implement!
@@ -155,10 +162,11 @@ class post:
 
         all_parameters= pd.concat(all_parameters)
         try: #make new dir if needed
-            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/")
+            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters"))
         except:
             None
-        all_parameters.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/" + model + "_parameters.csv", index=False)
+        all_parameters.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters", model) + "_parameters.csv", index=False)
+
         
         print("finished merging parameters")
 
@@ -454,10 +462,11 @@ class post:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 month_str = "_monthly_int" if monthly else ""
                 try: #make new dir if needed
-                    os.makedirs(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/")
+                    os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"))
                 except:
                     None
-                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/" + model + '_integrated_totals_' + self.parent.summary_statistic + depth_str + month_str + ".csv", index=False)
+                totals.to_csv(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals", model) + '_integrated_totals_PI' + self.parent.pi + depth_str + month_str + ".csv", index=False)
+
                 print(f"Exported totals")
 
 
@@ -467,9 +476,6 @@ class post:
         """
 
         X_predict = X_predict.to_xarray()
-        print("converting ds to xarray")
-        print("head:")
-        print(self.d.head(5))
         ds = self.d.to_xarray()
         aligned_datasets = xr.align(ds,X_predict, join="inner")
         ds = xr.merge(aligned_datasets)
@@ -526,8 +532,9 @@ class post:
         #to add loop defining units of variables
 
         print(self.d.head())
-        ds.to_netcdf(self.path_out + file_name + "_" + self.summary_statistic + ".nc")
-        print("exported ds to: " + self.path_out + file_name + "_" + self.summary_statistic + ".nc")
+        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_PI" + self.pi + ".nc")
+
+        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + ".nc")
         #add nice metadata
 
 
@@ -551,8 +558,9 @@ class post:
             None
     
         print(self.d.head())
-        self.d.to_csv(self.path_out + file_name + "_" + self.summary_statistic + ".csv")
-        print("exported d to: " + self.path_out + file_name + "_" + self.summary_statistic + ".csv")
+        self.d.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + ".csv")
+
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
         #add nice metadata
 
     def merge_obs(self, file_name, targets=None):
@@ -571,7 +579,8 @@ class post:
 
         # Read the training targets from the training.csv file defined in model_config
         try:
-            df2_path = self.root + self.model_config['training']
+            df2_path = os.path.join(self.root, self.model_config['training'])
+
             df2 = pd.read_csv(df2_path)
         except:
             raise FileNotFoundError(f"Dataset not found at {df2_path}")
@@ -593,7 +602,8 @@ class post:
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
         print(out.head())
-        out.to_csv(self.path_out + file_name + "_" + self.summary_statistic + ".csv")
-        print("exported d to: " + self.path_out + file_name + "_summary_statistic" + self.summary_statistic + ".csv")
+        out.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + ".csv")
+
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
 
         print('training merged with predictions')

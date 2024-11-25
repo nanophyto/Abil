@@ -7,5 +7,4 @@ xarray
 xgboost
 scikit-learn
 scipy
-mapie
 scikit-bio

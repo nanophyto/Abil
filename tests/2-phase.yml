@@ -2,16 +2,18 @@
   hpc: False
 
   run_name: 2-phase #update for specific run name
-  path_out:  /tests/ModelOutput/ #root + folder 
-  path_in:  /predictions/cross_validation/ #root + folder
+  path_out:  tests/ModelOutput/ #root + folder 
+  path_in:  predictions/ens/ #root + folder
 
-  prediction:  /examples/data/prediction.csv #root + folder
-  targets:  /examples/data/targets.csv #root + folder
-  training:  /examples/data/training.csv
+  prediction:  examples/data/prediction.csv #root + folder
+  targets:  examples/data/targets.csv #root + folder
+  training:  examples/data/training.csv
 
-  predictors: ["temperature", "din", 
-     "irradiance"]
-    
+  local_root: ./
+
+  #predictors: ["temperature", "din", 
+  #   "irradiance"]
+  predictors: ["feature_1", "feature_2", "feature_3"]
   verbose: 1
   seed : 1 # random seed
   n_threads : 1 # how many cpu threads to use
@@ -33,7 +35,6 @@
    R2: r2
    MAE: neg_mean_absolute_error
    RMSE: neg_root_mean_squared_error
-   tau: kendall_tau
 
   clf_scoring:
    accuracy: balanced_accuracy
@@ -83,12 +84,12 @@
         regressor__estimator__max_samples: [0.2]
         regressor__estimator__max_features: [0.2]
         regressor__estimator__estimator__leaf_size: [25]
-        regressor__estimator__estimator__n_neighbors: [5]
+        regressor__estimator__estimator__n_neighbors: [3]
       clf_param_grid:  
         estimator__max_samples: [0.2]
         estimator__max_features: [0.2]
         estimator__estimator__leaf_size: [25]
-        estimator__estimator__n_neighbors: [5]
+        estimator__estimator__n_neighbors: [3]
 
   knn_bagging_estimators: 3
 

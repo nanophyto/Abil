@@ -10,11 +10,11 @@
 
 i=${SLURM_ARRAY_TASK_ID}
 
-module  load apptainer/1.1.9 openmpi/4.1.2 
+module  load apptainer/1.3.1
 
-srun singularity exec \
+singularity exec \
 -B/user/work/$(whoami):/user/work/$(whoami) \
-/user/work/$(whoami)/Abil/singularity/abil.sif \
+/user/work/$(whoami)/Abil/studies/wiseman2024/singularity/abil.sif \
 python /user/work/$(whoami)/Abil/studies/wiseman2024/hpc_tune.py ${SLURM_CPUS_PER_TASK} ${i} "xgb"
 
 export SINGULARITY_CACHEDIR=/user/work/$(whoami)/.singularity

@@ -1,0 +1,6 @@
+### Logging my daily edits to Abil ###
+
+# 25/10/2024 # 
+- Cloned Abil from Python and wiseman2024. Renamed wiseman2024 -> lim2024.
+- Tested commits, pushing commits to Github via Windows Terminal. Works. 
+

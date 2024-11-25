@@ -1,4 +1,3 @@
-#%%
 import pandas as pd
 import numpy as np
 import xarray as xr
@@ -29,7 +28,6 @@ d_filtered = d_raw[~d_raw['Method'].isin(['Diff','Ca45'])]
 mask = d_filtered["Emiliania huxleyi cell counts [cells mL-1]"].notna() & (
     d_filtered["Calcification"] / d_filtered["Emiliania huxleyi cell counts [cells mL-1]"] > 3.5)
 d_filtered = d_filtered[~mask]
-d_filtered = d_filtered[d_filtered["Calcification"] <= 1000]
 d = d_filtered
 
 # Drop data unnecessary for Abil.py
@@ -72,7 +70,7 @@ d.rename({'Latitude':'lat','Longitude':'lon','Depth':'depth','Month':'time'},inp
 
 # Skip lines 70-94 if you do not want to add pseudo zeros below 0.01% Par
 # Load the 0.01% PAR mask from the NetCDF file
-mask_ds = xr.open_dataset('/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/PAR_01prct_mask.nc')
+mask_ds = xr.open_dataset('/home/mv23682/Documents/Abil/studies/wiseman2024/data/preprocessing_data/PAR_01prct_mask.nc')
 
 # Assuming the mask is binary (0s and 1s)
 mask = mask_ds['mask']
@@ -116,4 +114,3 @@ out = out.drop(['dummy'], axis = 1)
 out.to_csv("/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_env.csv", index=True)
 
 print("fin")
-# %%

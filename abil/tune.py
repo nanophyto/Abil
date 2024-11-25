@@ -22,9 +22,9 @@ from sklearn.gaussian_process import GaussianProcessClassifier, GaussianProcessR
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold, check_tau
+    from abil.functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 else:
-    from functions import  ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold, check_tau
+    from functions import  ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 
 class tune:
     """
@@ -91,9 +91,10 @@ class tune:
         self.regions = regions
 
         if model_config['hpc']==False:
-            self.path_out = model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + "/"
+            self.path_out = os.path.join(model_config['local_root'], model_config['path_out'], model_config['run_name'])
         elif model_config['hpc']==True:
-            self.path_out = model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + "/"
+            self.path_out = os.path.join(model_config['hpc_root'], model_config['path_out'], model_config['run_name'])
+
         else:
             raise ValueError("hpc True or False not defined in yml")
 
@@ -222,13 +223,81 @@ class tune:
         #if (classifier ==True) and (regressor ==True):
         #    raise ValueError("2-phase model not supported, choose classifier OR regressor")
 
-        if classifier ==True:
+        if (classifier ==True) and (regressor !=True):        
+            raise ValueError("classifiers are not supported")
+
+        if regressor ==True:
+            if classifier==True:
+                y = self.y[self.y > 0]
+                X_train = self.X_train[self.y > 0].reset_index(drop=True)
+                cv = ZeroStratifiedKFold(n_splits=self.model_config['cv'])
+            else:
+                y = self.y
+                X_train = self.X_train
+                cv = self.cv
+
+            print("training regressor")
+
+            reg_scoring = self.model_config['reg_scoring']
+
+            reg_param_grid = self.model_config['param_grid'][model + '_param_grid']['reg_param_grid']
+
+            print(reg_param_grid)
+
+            reg_sav_out_scores = os.path.join(self.path_out, "scoring/", model)
+            reg_sav_out_model = os.path.join(self.path_out, "model/", model)
+
+
+            try: #make new dir if needed
+                os.makedirs(reg_sav_out_scores)
+            except:
+                None
+
+            try: #make new dir if needed
+                os.makedirs(reg_sav_out_model)
+            except:
+                None            
+                
+            reg_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
+                        ('estimator', reg_estimator)])
+            
+            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+                reg = LogGridSearch(reg_pipe, verbose = self.verbose, cv=cv, 
+                                    param_grid=reg_param_grid, scoring='r2', regions=self.regions)
+                reg_grid_search = reg.transformed_fit(X_train, y, log, self.model_config['predictors'].copy())
+
+            m2 = reg_grid_search.best_estimator_
+
+
+            with open(os.path.join(reg_sav_out_model, self.target_no_space) + '_reg.sav', 'wb') as f:
+                pickle.dump(m2, f)
+
+            print("exported model to: " + reg_sav_out_model + "/"  + self.target_no_space + '_reg.sav')
+
+            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+                reg_scores = cross_validate(m2, X_train, y, cv = cv, verbose = self.verbose, scoring=reg_scoring)
+
+            with open(os.path.join(reg_sav_out_scores, self.target_no_space) + '_reg.sav', 'wb') as f:
+                pickle.dump(reg_scores, f)
+
+            print("exported scoring to: " + reg_sav_out_scores + "/" + self.target_no_space + '_reg.sav')
+
+            if "RMSE" in reg_scoring:
+                print("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
+            if "MAE" in reg_scoring:
+                print("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
+            if "R2" in reg_scoring:
+                print("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
+
+
+        if (classifier ==True) and (regressor ==True):      
+            
             print("training classifier")
             clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
             clf_scoring = self.model_config['clf_scoring']
 
-            clf_sav_out_scores = self.path_out + "scoring/" + model + "/"
-            clf_sav_out_model = self.path_out + "model/" + model + "/"
+            clf_sav_out_scores = os.path.join(self.path_out, "scoring/", model)
+            clf_sav_out_model = os.path.join(self.path_out, "model/", model)
 
 
             try: #make new dir if needed
@@ -263,89 +332,21 @@ class tune:
 
             m1 = clf.best_estimator_
             
-            with open(clf_sav_out_model  + self.target_no_space + '_clf.sav', 'wb') as f:
+            with open(os.path.join(clf_sav_out_model, self.target_no_space) + '_clf.sav', 'wb') as f:
                 pickle.dump(m1, f)
             
-            print("exported model to:" + clf_sav_out_model + self.target_no_space + '_clf.sav')
+            print("exported model to:" + clf_sav_out_model + "/" + self.target_no_space + '_clf.sav')
 
             clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
             
-            with open(clf_sav_out_scores  + self.target_no_space + '_clf.sav', 'wb') as f:
+            with open(os.path.join(clf_sav_out_scores, self.target_no_space) + '_clf.sav', 'wb') as f:
                 pickle.dump(clf_scores, f)
             
-            print("exported scoring to: " + clf_sav_out_scores + self.target_no_space + '_clf.sav')
+            print("exported scoring to: " + clf_sav_out_scores + "/" + self.target_no_space + '_clf.sav')
 
             print(clf_scores['test_accuracy'])
             print("clf balanced accuracy " + str((round(np.mean(clf_scores['test_accuracy']), 2))))
 
-
-        if regressor ==True:
-            if classifier==True:
-                y = self.y[self.y > 0]
-                X_train = self.X_train[self.y > 0].reset_index(drop=True)
-                cv = ZeroStratifiedKFold(n_splits=self.model_config['cv'])
-            else:
-                y = self.y
-                X_train = self.X_train
-                cv = self.cv
-
-            print("training regressor")
-
-            reg_scoring = check_tau(self.model_config['reg_scoring']) 
-
-            reg_param_grid = self.model_config['param_grid'][model + '_param_grid']['reg_param_grid']
-
-            print(reg_param_grid)
-            reg_sav_out_scores = self.path_out + "scoring/" + model + "/"
-            reg_sav_out_model = self.path_out + "model/" + model + "/"
-
-            try: #make new dir if needed
-                os.makedirs(reg_sav_out_scores)
-            except:
-                None
-
-            try: #make new dir if needed
-                os.makedirs(reg_sav_out_model)
-            except:
-                None            
-                
-            reg_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
-                        ('estimator', reg_estimator)])
-            
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
-                reg = LogGridSearch(reg_pipe, verbose = self.verbose, cv=cv, 
-                                    param_grid=reg_param_grid, scoring='r2', regions=self.regions)
-                reg_grid_search = reg.transformed_fit(X_train, y, log, self.model_config['predictors'].copy())
-
-            m2 = reg_grid_search.best_estimator_
-
-
-            with open(reg_sav_out_model  + self.target_no_space + '_reg.sav', 'wb') as f:
-                pickle.dump(m2, f)
-
-            print("exported model to: " + reg_sav_out_model  + self.target_no_space + '_reg.sav')
-
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
-                reg_scores = cross_validate(m2, X_train, y, cv = cv, verbose = self.verbose, scoring=reg_scoring)
-
-            with open(reg_sav_out_scores + self.target_no_space + '_reg.sav', 'wb') as f:
-                pickle.dump(reg_scores, f)
-
-            print("exported scoring to: " + reg_sav_out_scores + self.target_no_space + '_reg.sav')
-
-            if "RMSE" in reg_scoring:
-                print("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
-            if "MAE" in reg_scoring:
-                print("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
-            if "R2" in reg_scoring:
-                print("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
-            if "tau" in reg_scoring:
-                print("reg tau: " + str(round(np.mean(reg_scores['test_tau']), 2)))
-
-
-        if (classifier ==True) and (regressor ==True):
-            #raise ValueError("2-phase model not supported, choose classifier OR regressor")
-        
             print("training zero-inflated regressor")
 
             zir = ZeroInflatedRegressor(
@@ -353,8 +354,9 @@ class tune:
                 regressor=m2,
             )
 
-            zir_sav_out_scores = self.path_out + "scoring/" + model + "/"
-            zir_sav_out_model = self.path_out + "model/" + model + "/"
+            zir_sav_out_scores = os.path.join(self.path_out, "scoring/", model)
+            zir_sav_out_model = os.path.join(self.path_out, "model/", model)
+
 
             try: #make new dir if needed
                 os.makedirs(zir_sav_out_scores)
@@ -368,18 +370,18 @@ class tune:
 
             zir.fit(self.X_train, self.y)
 
-            with open(zir_sav_out_model + self.target_no_space + '_zir.sav', 'wb') as f:
+            with open(os.path.join(zir_sav_out_model, self.target_no_space) + '_zir.sav', 'wb') as f:
                 pickle.dump(zir, f)
                 
-            print("exported model to: " + zir_sav_out_model + self.target_no_space + '_zir.sav')
+            print("exported model to: " + zir_sav_out_model + "/" + self.target_no_space + '_zir.sav')
 
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 zir_scores = cross_validate(zir, self.X_train, self.y, cv=self.cv, verbose =self.verbose, scoring=reg_scoring)
 
-            with open(zir_sav_out_scores + self.target_no_space + '_zir.sav', 'wb') as f:
+            with open(os.path.join(zir_sav_out_scores, self.target_no_space) + '_zir.sav', 'wb') as f:
                 pickle.dump(zir_scores, f)
 
-            print("exported scoring to: " + zir_sav_out_scores + self.target_no_space + '_zir.sav')
+            print("exported scoring to: " + zir_sav_out_scores + "/" + self.target_no_space + '_zir.sav')
 
             print("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
             print("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
