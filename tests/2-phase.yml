@@ -48,11 +48,9 @@
         regressor__estimator__min_samples_leaf: [0.5]
         regressor__estimator__max_samples: [0.5]     
       clf_param_grid:
-        estimator__n_estimators: [100]
-        estimator__max_features: [3, 4]
-        estimator__max_depth: [50, 100]
-        estimator__min_samples_leaf: [0.5]
-        estimator__max_samples: [0.5]   
+        estimator__n_estimators: [100]  
+        estimator__max_depth: [50] 
+        estimator__max_samples: [0.8]
 
 
     xgb_param_grid:
