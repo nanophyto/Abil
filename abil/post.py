@@ -41,6 +41,9 @@ class post:
             self.model_type = "reg"
 
         self.extension = "_" + self.model_type + ".sav"
+
+        self.merge_parameters()
+        self.merge_performance()
         
         
     def export_model_config(self):
@@ -59,8 +62,17 @@ class post:
         except Exception as e:
             print(f"Error exporting model_config to YAML: {e}")   
 
+    def merge_performance(self):
+
+        models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
+        print("models included in merge performance!")
+        print(models)
+        models.append("ens")
+        for model in models:
+            self.merge_performance_single_model(model)
+
        
-    def merge_performance(self, model):
+    def merge_performance_single_model(self, model):
         
         all_performance = []
 
@@ -94,7 +106,13 @@ class post:
 
         print("finished merging performance")
 
-    def merge_parameters(self, model):
+    def merge_parameters(self):
+
+        models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
+        for model in models:
+            self.merge_parameters_single_model(model)
+
+    def merge_parameters_single_model(self, model):
         
         all_parameters = []
 

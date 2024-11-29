@@ -50,15 +50,6 @@ class TestRegressors(unittest.TestCase):
         targets = np.array([self.target_name])
         def do_post(pi):
             m = post(self.model_config, pi=pi)
-            m.merge_performance(model="ens") 
-            m.merge_performance(model="xgb")
-            m.merge_performance(model="rf")
-            m.merge_performance(model="knn")
-
-
-            m.merge_parameters(model="rf")
-            m.merge_parameters(model="xgb")
-            m.merge_parameters(model="knn")
             m.estimate_carbon("pg poc")
 
             m.total()
@@ -107,30 +98,16 @@ class Test2Phase(unittest.TestCase):
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction()
 
-        # targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
-        # targets = targets.iloc[:1]
-        # targets = targets['Target'].values
         targets = np.array([self.target_name])
 
         def do_post(pi):
             m = post(self.model_config, pi=pi)
-            m.merge_performance(model="ens") 
-            m.merge_performance(model="xgb")
-            m.merge_performance(model="rf")
-            m.merge_performance(model="knn")
-
-            m.merge_parameters(model="rf")
-            m.merge_parameters(model="xgb")
-            m.merge_parameters(model="knn")
             m.estimate_carbon("pg poc")
             m.diversity()
 
-
             m.total()
-
             m.merge_env(self.X_predict)
             m.merge_obs("test",targets)
-
 
             m.export_ds("test")
             m.export_csv("test")
