@@ -1,5 +1,5 @@
 ---
-  hpc: False
+  root: ./
 
   run_name: 2-phase #update for specific run name
   path_out:  tests/ModelOutput/ #root + folder 
@@ -8,8 +8,6 @@
   prediction:  examples/data/prediction.csv #root + folder
   targets:  examples/data/targets.csv #root + folder
   training:  examples/data/training.csv
-
-  local_root: ./
 
   predictors: ["feature_1", "feature_2", "feature_3"]
   verbose: 1

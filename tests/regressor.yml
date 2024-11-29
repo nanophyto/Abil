@@ -1,5 +1,5 @@
 ---
-  hpc: False
+  root: ./
 
   run_name: regressor #update for specific run name
   path_out:  tests/ModelOutput/ #root + folder
