@@ -18,22 +18,13 @@ class post:
             ds = xr.open_mfdataset(os.path.join(path_in, "*.nc"))
             print("finished loading netcdf files")
             return(ds)
-        
-        if model_config['hpc']==False:
-            self.path_out = os.path.join(model_config['local_root'], model_config['path_out'], model_config['run_name'], "posts/")
-            self.ds = merge_netcdf(os.path.join(model_config['local_root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
-            self.traits = pd.read_csv(os.path.join(model_config['local_root'], model_config['targets']))
-            self.root  =  model_config['local_root'] 
 
-        elif model_config['hpc']==True:
-            self.path_out = os.path.join(model_config['hpc_root'], model_config['path_out'], model_config['run_name'], "posts/")
-            self.ds = merge_netcdf(os.path.join(model_config['hpc_root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
-            self.traits = pd.read_csv(os.path.join(model_config['hpc_root'], model_config['targets']))
+        self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
+        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
+        self.traits = pd.read_csv(os.path.join(model_config['root'], model_config['targets']))
 
-            self.root  =  model_config['hpc_root'] 
+        self.root  =  model_config['root'] 
 
-        else:
-            raise ValueError("hpc True or False not defined in yml")
         self.d = self.ds.to_dataframe()
         self.d = self.d.dropna()
         self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]

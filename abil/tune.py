@@ -90,13 +90,7 @@ class tune:
         self.verbose = model_config['verbose'] 
         self.regions = regions
 
-        if model_config['hpc']==False:
-            self.path_out = os.path.join(model_config['local_root'], model_config['path_out'], model_config['run_name'])
-        elif model_config['hpc']==True:
-            self.path_out = os.path.join(model_config['hpc_root'], model_config['path_out'], model_config['run_name'])
-
-        else:
-            raise ValueError("hpc True or False not defined in yml")
+        self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'])
 
         if regions is not None:
             if regions not in X_train.columns:
