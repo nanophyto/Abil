@@ -6,7 +6,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from xgboost import XGBRegressor, DMatrix
 
 
-def process_data_with_model(X_train, y_train, X_predict, model, cv, cv_splits=5, method="rf"):
+def process_data_with_model(X_train, y_train, X_predict, m, cv, cv_splits=5, zir=False, method="rf"):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
     and predict on X_predict with summary stats.
@@ -22,8 +22,7 @@ def process_data_with_model(X_train, y_train, X_predict, model, cv, cv_splits=5,
     X_predict : DataFrame
         Feature set to predict on, with MultiIndex for coordinates.
 
-    model : sklearn model
-        Model to use for training and predictions.
+    m : sklearn pipeline
 
     cv_splits : int, default=5
         Number of cross-validation splits.
@@ -40,6 +39,17 @@ def process_data_with_model(X_train, y_train, X_predict, model, cv, cv_splits=5,
         Dictionary containing summary statistics for both training and prediction datasets.
         Keys: "train_stats", "predict_stats".
     """
+    pipeline = m.regressor_
+
+    preprocessor = pipeline.named_steps['preprocessor']
+    X_train = preprocessor.transform(X_train)
+    X_predict = preprocessor.transform(X_predict)
+
+    if zir==False:
+        estimator = pipeline.named_steps['estimator']
+    else:
+        clf_estimator = m.classifier_.named_steps['estimator']
+        reg_estimator = m.regressor_.named_steps['estimator']
 
     def train_model(model, X, y, train_idx):
         X_train_fold, y_train_fold = X.iloc[train_idx], y.iloc[train_idx]
@@ -60,14 +70,17 @@ def process_data_with_model(X_train, y_train, X_predict, model, cv, cv_splits=5,
                 booster.predict(X_test_dmatrix, iteration_range=(i, i + 1))
                 for i in range(model.n_estimators)
             ]
+            predictions = m.inverse_transform(predictions)  
             return np.array(predictions).T  # (n_samples, n_trees)
 
         elif method == "rf":
             predictions = [tree.predict(X_test) for tree in model.estimators_]
+            predictions = m.inverse_transform(predictions)  
             return np.array(predictions).T  # (n_samples, n_trees)
 
         elif method == "bagging":
             predictions = [bag.predict(X_test) for bag in model.estimators_]
+            predictions = m.inverse_transform(predictions)  
             return np.array(predictions).T  # (n_samples, n_bags)
 
         else:
