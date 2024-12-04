@@ -22,6 +22,7 @@ d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calci
 
 # Drop rows where method is Diff or Ca45 due to quality control concerns
 d_filtered = d_raw[~d_raw['Method'].isin(['Diff','Ca45'])]
+print(d_filtered["Calcification"].notna().sum())
 
 # Drop rows where the condition "Calcification / Emiliania_huxleyi_cell_counts > 3.5" is met
 # Only apply condition where "Emiliania huxleyi cell counts [cells mL-1]" is not NaN
@@ -29,8 +30,10 @@ d_filtered = d_raw[~d_raw['Method'].isin(['Diff','Ca45'])]
 mask = d_filtered["Emiliania huxleyi cell counts [cells mL-1]"].notna() & (
     d_filtered["Calcification"] / d_filtered["Emiliania huxleyi cell counts [cells mL-1]"] > 3.5)
 d_filtered = d_filtered[~mask]
+print(d_filtered["Calcification"].notna().sum())
 d_filtered = d_filtered[d_filtered["Calcification"] <= 1000]
 d = d_filtered
+print(d["Calcification"].notna().sum())
 
 # Drop data unnecessary for Abil.py
 d = d.convert_dtypes()
@@ -68,7 +71,7 @@ d['Year'] = pd.DatetimeIndex(d['DateTime']).year
 d = d.drop(["Date","DateTime","Year"],axis = 1)
 d = d.groupby(['Latitude', 'Longitude', 'Depth', 'Month']).mean().reset_index()
 d.rename({'Latitude':'lat','Longitude':'lon','Depth':'depth','Month':'time'},inplace=True,axis=1)
-
+print(d["Calcification"].notna().sum())
 
 # Skip lines 70-94 if you do not want to add pseudo zeros below 0.01% Par
 # Load the 0.01% PAR mask from the NetCDF file
@@ -113,6 +116,9 @@ df.set_index(['lat','lon','depth','time'],inplace=True)
 out = pd.concat([d,df], axis=1)
 out = out[out["dummy"] == 1]
 out = out.drop(['dummy'], axis = 1)
+out = out.dropna()
+##non_zero_count = out["Calcification"].notna() &
+print((out["Calcification"].notna() & (out["Calcification"] != 0)).sum())
 out.to_csv("/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_env.csv", index=True)
 
 print("fin")
