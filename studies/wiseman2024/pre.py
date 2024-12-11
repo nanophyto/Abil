@@ -20,11 +20,11 @@ d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calci
                         "Carbonate (CO3) [μmol/kg-seawater]","pH","Temperature (degrees C)","Salinity (ppt)"
                         ])
 
-# Drop rows where method is Diff or Ca45 due to quality control concerns
+# Drop rows where method is Diff or Ca45 due to quality control concerns (only applicable for CP Data)
 d_filtered = d_raw[~d_raw['Method'].isin(['Diff','Ca45'])]
 print(d_filtered["Calcification"].notna().sum())
 
-# Drop rows where the condition "Calcification / Emiliania_huxleyi_cell_counts > 3.5" is met
+# Drop rows where the condition "Calcification / Emiliania_huxleyi_cell_counts > 3.5" is met (only applicable for CP Data)
 # Only apply condition where "Emiliania huxleyi cell counts [cells mL-1]" is not NaN
 # This removes extraneously high data values that may have quality control concerns
 mask = d_filtered["Emiliania huxleyi cell counts [cells mL-1]"].notna() & (
@@ -51,7 +51,7 @@ d = d.drop(["PI","Expedition","OS Region","Reference_Author_Published_year","Ref
                         "Carbonate (CO3) [μmol/kg-seawater]","pH","Temperature (degrees C)","Salinity (ppt)"
                         ],axis = 1)
 
-# Grid data to 180x360x41x12
+# Grid data to 180x360x41x12 (required for all datasets)
 depth_bins = np.linspace(0, 205, 42)
 depth_labels = np.linspace(0, 200, 41)
 d['Depth'] = pd.cut(d['Depth'], bins=depth_bins, labels=depth_labels).astype(np.float64) 
@@ -73,7 +73,7 @@ d = d.groupby(['Latitude', 'Longitude', 'Depth', 'Month']).mean().reset_index()
 d.rename({'Latitude':'lat','Longitude':'lon','Depth':'depth','Month':'time'},inplace=True,axis=1)
 print(d["Calcification"].notna().sum())
 
-# Skip lines 70-94 if you do not want to add pseudo zeros below 0.01% Par
+# Skip lines 79-100 if you do not want to add pseudo zeros below 0.01% Par (only applicable for CP data)
 # Load the 0.01% PAR mask from the NetCDF file
 mask_ds = xr.open_dataset('/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/PAR_01prct_mask.nc')
 
@@ -99,11 +99,10 @@ zeros_df_subset['Primary_Production'] = 0
 # Append zeros data to d
 d = pd.concat([d, zeros_df_subset[['lat', 'lon', 'depth', 'time', 'Calcification', 'Primary_Production']]], ignore_index=True)
 
+## Concat with env data (required for all data)
 # Set index for joining to env_data
 d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
 d['dummy'] = 1
-
-# Concat with env data
 print("loading env")
 
 ds = xr.open_dataset('/home/mv23682/Documents/Abil/studies/wiseman2024/data/env_data.nc')
