@@ -255,12 +255,20 @@ class tune:
             print("exported scoring to: " + reg_sav_out_scores + "/" + self.target_no_space + '_reg.sav')
 
             if "RMSE" in reg_scoring:
-                print("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
+                try:
+                    print("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
+                except:
+                    print("reg rRMSE is NA (!)")
             if "MAE" in reg_scoring:
-                print("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
+                try:
+                    print("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
+                except:
+                    print("reg rMAE is NA (!)")
             if "R2" in reg_scoring:
-                print("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
-
+                try:
+                    print("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
+                except:
+                    print("reg R2 is NA (!)")
 
         if (self.ensemble_config['classifier'] == True) and (self.ensemble_config['regressor'] == True):      
             
@@ -355,10 +363,18 @@ class tune:
 
             print("exported scoring to: " + zir_sav_out_scores + "/" + self.target_no_space + '_zir.sav')
 
-            print("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
-            print("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
-            print("zir R2: " + str(round(np.mean(zir_scores['test_R2']), 2)))
-
+            try:
+                print("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
+            except:
+                print("zir rRMSE is NA (!)")
+            try:
+                print("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
+            except:
+                print("zir rMAE is NA (!)")
+            try:
+                print("zir R2: " + str(round(np.mean(zir_scores['test_R2']), 2)))
+            except:
+                print("zir R2 is NA (!)")
         st = time.time()
         et = time.time()
         elapsed_time = et-st
