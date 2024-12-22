@@ -139,7 +139,10 @@ def export_prediction(m, target, target_no_space, X_predict, model_out, n_thread
     except:
         None
 
-    d[target].to_netcdf(model_out + target_no_space + ".nc") 
+    export_path = os.path.join(model_out, target_no_space + ".nc")
+
+
+    d[target].to_netcdf(export_path) 
 
 
 class predict:
