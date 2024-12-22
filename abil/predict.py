@@ -252,7 +252,7 @@ class predict:
         Notes
         -----
         If more than one model is provided, predictions are made for both 
-        invidiual models and an ensemble of the models. 
+        individual models and an ensemble of the models. 
 
         """
 
