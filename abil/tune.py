@@ -279,7 +279,15 @@ class tune:
         if (self.ensemble_config['classifier'] == True) and (self.ensemble_config['regressor'] == True):      
             
             print("training classifier")
-            clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
+
+            user_clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
+
+            # Add the prefix 'regressor__estimator__' to each key
+            clf_param_grid = {
+                f"estimator__{key}": value
+                for key, value in user_clf_param_grid.items()
+            }
+            
             clf_scoring = self.model_config['clf_scoring']
 
             clf_sav_out_scores = os.path.join(self.path_out, "scoring/", model)

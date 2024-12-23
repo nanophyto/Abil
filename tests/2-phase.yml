@@ -42,9 +42,9 @@
         min_samples_leaf: [0.5]
         max_samples: [0.5]     
       clf_param_grid:
-        estimator__n_estimators: [100]  
-        estimator__max_depth: [50] 
-        estimator__max_samples: [0.8]
+        n_estimators: [100]  
+        max_depth: [50] 
+        max_samples: [0.8]
 
     xgb_param_grid:
       reg_param_grid:  
@@ -56,13 +56,13 @@
         gamma: [1] 
         reg_alpha: [0.1]   
       clf_param_grid:  
-        estimator__learning_rate: [0.01]
-        estimator__n_estimators: [100]
-        estimator__max_depth: [4]
-        estimator__subsample: [0.6]  
-        estimator__colsample_bytree: [0.6]
-        estimator__gamma: [1] 
-        estimator__reg_alpha: [1]   
+        learning_rate: [0.01]
+        n_estimators: [100]
+        max_depth: [4]
+        subsample: [0.6]  
+        colsample_bytree: [0.6]
+        gamma: [1] 
+        reg_alpha: [1]   
 
     knn_param_grid:
       reg_param_grid:  
@@ -71,10 +71,10 @@
         estimator__leaf_size: [25]
         estimator__n_neighbors: [3]
       clf_param_grid:  
-        estimator__max_samples: [0.2]
-        estimator__max_features: [0.2]
-        estimator__estimator__leaf_size: [25]
-        estimator__estimator__n_neighbors: [3]
+        max_samples: [0.2]
+        max_features: [0.2]
+        estimator__leaf_size: [25]
+        estimator__n_neighbors: [3]
 
   knn_bagging_estimators: 3
 
