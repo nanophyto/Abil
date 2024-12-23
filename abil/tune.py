@@ -212,7 +212,13 @@ class tune:
 
             reg_scoring = self.model_config['reg_scoring']
 
-            reg_param_grid = self.model_config['param_grid'][model + '_param_grid']['reg_param_grid']
+            user_reg_param_grid = self.model_config['param_grid'][model + '_param_grid']['reg_param_grid']
+
+            # Add the prefix 'regressor__estimator__' to each key
+            reg_param_grid = {
+                f"regressor__estimator__{key}": value
+                for key, value in user_reg_param_grid.items()
+            }
 
             print(reg_param_grid)
 
