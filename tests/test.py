@@ -101,7 +101,7 @@ class Test2Phase(unittest.TestCase):
         targets = np.array([self.target_name])
 
         def do_post(pi):
-            m = post(self.model_config, pi=pi)
+            m = post(self.model_config, pi=pi, datatype="poc")
             m.estimate_carbon("pg poc")
             m.diversity()
 

@@ -11,7 +11,7 @@ class post:
     """
     Post processing of SDM
     """
-    def __init__(self, model_config, pi="50"):
+    def __init__(self, model_config, pi="50", datatype=None):
         """
         A class for initializing and setting up a model with configuration, input data, and parameters.
 
@@ -37,6 +37,8 @@ class post:
             The type of model being used, determined from the ensemble configuration (either "zir" or "reg").
         extension : str
             The file extension used for saving the model, based on the model type (e.g., "_zir.sav").
+        datatype: str
+            The datatype of the data being processed (e.g. "pg poc") which is appended to the data exports (optional)
 
         Methods
         -------
@@ -91,6 +93,11 @@ class post:
 
         self.merge_parameters()
         self.merge_performance()
+
+        if datatype:
+            self.datatype = "_" + datatype
+        else:
+            self.datatype = ""
         
         
     def export_model_config(self):
@@ -688,7 +695,19 @@ class post:
                     os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"))
                 except:
                     None
-                totals.to_csv(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals", model) + '_integrated_totals_PI' + self.parent.pi + depth_str + month_str + ".csv", index=False)
+
+                path_out = self.parent.model_config['path_out']
+                run_name = self.parent.model_config['run_name']
+                pi = self.parent.pi
+                datatype = self.parent.datatype
+
+                # Build the full file path
+                output_dir = os.path.join(self.parent.root, path_out, run_name, "posts/integrated_totals")
+                filename = f"{model}_integrated_totals_PI{pi}{depth_str}{month_str}{datatype}.csv"
+                file_path = os.path.join(output_dir, filename)
+
+                # Write to CSV
+                totals.to_csv(file_path, index=False)
 
                 print(f"Exported totals")
 
@@ -774,9 +793,9 @@ class post:
         #to add loop defining units of variables
 
         print(self.d.head())
-        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_PI" + self.pi + ".nc")
+        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".nc")
 
-        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + ".nc")
+        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype +  ".nc")
         #add nice metadata
 
 
@@ -805,9 +824,9 @@ class post:
             None
     
         print(self.d.head())
-        self.d.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + ".csv")
+        self.d.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".csv")
 
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
         #add nice metadata
 
     def merge_obs(self, file_name, targets=None):
@@ -876,8 +895,8 @@ class post:
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
         print(out.head())
-        out.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + ".csv")
+        out.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype +  ".csv")
 
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
 
         print('training merged with predictions')
