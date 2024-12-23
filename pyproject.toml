@@ -21,8 +21,6 @@ classifiers = [
 [tool.hatch.build]
 exclude = [
   "/.git",
-  "/configuration",
-  "/singularity",
   "/studies",
   "/dist",
 ]
