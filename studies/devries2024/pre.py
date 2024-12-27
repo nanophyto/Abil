@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import xarray as xr
+import pickle
+import sys
+
 
 ds = xr.open_dataset('/home/phyto-2/Abil_SDM_data/env_data.nc')
 ds.to_netcdf('/home/phyto-2/Abil/studies/devries2024/data/env_data.nc')
@@ -29,6 +32,7 @@ def merge_cascade_env(
         List of environmental variables to include in the merge.
     out_path : str, default="../data/obs_env.csv"
         Path to save the merged dataset.
+
     pseudo_absences : int, default=1000
         Number of random pseudo-absences (rows from env data not in obs data) to add to the dataset.
 
@@ -46,6 +50,7 @@ def merge_cascade_env(
     d = d.convert_dtypes()
 
     # Convert to wide format
+
     d = d.pivot(index=["Latitude", "Longitude", "Depth", "Month", "Year"],
                 columns="Species",
                 values="cells L-1").reset_index()
@@ -53,6 +58,7 @@ def merge_cascade_env(
     d = d.groupby(['Latitude', 'Longitude', 'Depth', 'Month']).mean().reset_index()
     d.rename({'Latitude': 'lat', 'Longitude': 'lon', 'Depth': 'depth', 'Month': 'time'}, inplace=True, axis=1)
     d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
+
 
     print("Loading environmental data")
     ds = xr.open_dataset(env_path)
@@ -62,6 +68,7 @@ def merge_cascade_env(
     df.reset_index(inplace=True)
     df = df[env_vars]
     df.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
+
 
     print("Identifying rows in environmental data not present in observational data")
     missing_rows = df.loc[~df.index.isin(d.index)]
