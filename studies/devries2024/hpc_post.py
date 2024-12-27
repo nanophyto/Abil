@@ -22,7 +22,7 @@ X_predict.set_index(['time','depth','lat','lon'],inplace=True)
 X_predict = X_predict[model_config['predictors']]
 
 def do_post(pi, datatype, diversity=False):
-    m = post(model_config, pi=pi)
+    m = post(model_config, pi=pi, datatype=datatype)
     m.estimate_carbon(datatype)
     if diversity:
         m.diversity()
