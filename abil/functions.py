@@ -48,10 +48,11 @@ def do_exp(self, x):
     y = np.exp(x) - 1
     return y
 
+
 def upsample(d, target, ratio=10):
     """
     Upsample zero and non-zero observations in the dataset to balance classes.
-
+    
     Parameters
     ----------
     d : pd.DataFrame
@@ -66,16 +67,22 @@ def upsample(d, target, ratio=10):
     ix : pd.DataFrame
         Upsampled dataframe.
     """
-    y_binary = np.where(d[target] != 0, 1, 0)
+    # Separate presence (non-zero) and absence (zero) indices
+    presence_indices = d[d[target] != 0].index
+    absence_indices = d[d[target] == 0].index
 
-    nix = np.where(y_binary == 0)[0]  # Absence index
-    pix = np.where(y_binary == 1)[0]  # Presence index
+    # Calculate the number of zero samples to match the ratio
+    num_presence = len(presence_indices)
+    num_absence_to_sample = num_presence * ratio
 
-    pixu = d.iloc[pix].sample(pix.shape[0], replace=True)
-    nixu = d.iloc[nix].sample(pix.shape[0] * ratio, replace=True)
+    # Sample zeros with replacement if needed
+    sampled_absence_indices = np.random.choice(absence_indices, size=num_absence_to_sample, replace=True)
 
-    ix = pd.concat([pixu, nixu], ignore_index=True)
-    return ix
+    # Create the upsampled dataframe by combining presences and sampled absences
+    upsampled_df = pd.concat([d.loc[presence_indices], d.loc[sampled_absence_indices]], ignore_index=True)
+
+    return upsampled_df
+
 
 def merge_obs_env(obs_path="../data/gridded_abundances.csv",
                   env_path="../data/env_data.nc",
