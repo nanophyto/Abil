@@ -120,7 +120,7 @@ def area_of_applicability(
         cutpoint = numpy.percentile(di_train, threshold)
     cutpoint = numpy.maximum(cutpoint, di_train.max())
 
-    if return_local_density:
+    if return_all:
         test_to_train_d = metrics.pairwise_distances(
             X_test * feature_weights[None, :],
             X_train * feature_weights[None, :],
