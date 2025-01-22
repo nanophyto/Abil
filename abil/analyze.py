@@ -13,7 +13,7 @@ def area_of_applicability(
     feature_weights="permutation",
     feature_weight_kwargs=None,
     threshold="tukey",
-    return_local_density=False,
+    return_all=False,
 ):
     """
     Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
@@ -54,10 +54,9 @@ def area_of_applicability(
         the median absolute deviation above the median train data dissimilarity index
         - float: if a value between zero and one is provided, then the cutoff is set at the
         percentile provided for the train data dissimilarity index.
-    return_local_density: bool (Default: False)
-        whether to return the density of train points near the test point. Specifically, this
-        is the count of training datapoints whose feature distance is closer than the threshold
-        value.
+    return_all: bool (Default: False)
+        whether to return the dissimilarity index and density of train points near the test 
+        point. Specifically, the dissimilarity index is the distance from test to train points in feature space, divided by the average distance between training points. The local density is the count of training datapoints whose feature distance is closer than the threshold value.
 
     Returns
     -------
@@ -65,7 +64,8 @@ def area_of_applicability(
         might be considered "applicable" among the test samples.
 
         If return_local_density=True, then the output is a tuple of numpy arrays.
-        The first element is the applicability mentioned above, and the second
+        The first element is the applicability mentioned above, the second is the 
+        dissimilarity index for the test points, and the thord
         is the local density of training points near each test point.
     """
     if feature_weight_kwargs is None:
@@ -143,7 +143,7 @@ def area_of_applicability(
         lpd_test = numpy.empty_like(di_test) * numpy.nan
 
     aoa = di_test <= cutpoint
-    if return_local_density:
-        return aoa, lpd_test
+    if return_all:
+        return aoa, di_test, lpd_test
 
     return aoa
