@@ -7,6 +7,8 @@ import gc
 from yaml import dump, Dumper
 from skbio.diversity.alpha import shannon
 
+from . import analyze
+
 class post:
     """
     Post-process results of ensemble.
@@ -478,7 +480,6 @@ class post:
         
         print("finished merging parameters")
 
-
     def estimate_carbon(self, variable):
         """
         Estimate the carbon content for each target using a specified trait variable.
@@ -833,6 +834,44 @@ class post:
 
                 print(f"Exported totals")
 
+    def estimate_applicability(self,
+                                X_train, 
+                                X_predict
+                                ):
+        # TODO: so can I assume that self.d.iloc[:,i] is 
+        # species i, and so is y_train?
+        for i in range(len(self.d.columns)):
+            
+            target = self.d.columns[i]
+            target_no_space = target.replace(' ', '_')
+
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
+
+                m = pickle.load(file)
+            
+            applicability, dissimilarity, density = analyze.area_of_applicability(
+                X_test=X_predict,
+                X_train=X_train,
+                y_train=..., 
+                model=m, 
+                metric='euclidean',
+                feature_weights='permutation',
+                feature_weight_kwargs=dict(n_repeats=10),
+                return_all=True
+            )
+            out = pd.DataFrame(
+                np.column_stack(
+                    applicability,
+                    dissimilarity,
+                    density
+                    ),
+                columns=['-'.join(species, [c]) for c in ("aoa", 'di', 'lpd')],
+                index=X_predict.index
+            ).to_xarray()
+            ds = xr.merge(xr.align(self.d.to_xarray(), out, join='inner'))
+            if 'FID' in ds:
+                ds['FID'] = ds['FID'].where(ds['FID'] != '', np.nan)
+            self.d = ds.to_dataframe().dropna()
 
     def merge_env(self, X_predict):
         """
