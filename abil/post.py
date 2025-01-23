@@ -11,116 +11,58 @@ from . import analyze
 
 class post:
     """
-    Post-process results of ensemble.
-
-    This class handles tasks such as merging NetCDF files, loading target data, 
-    and organizing model results for further analysis.
-
-    Attributes
-    ----------
-    path_out : str
-        The output directory path where the model results are saved.
-    ds : xarray.Dataset
-        The dataset containing the merged data from NetCDF files.
-    targets : pd.DataFrame
-        A DataFrame containing target trait information loaded from a CSV file.
-    root : str
-        The root directory specified in the model configuration.
-    d : pd.DataFrame
-        A DataFrame representation of the dataset after conversion and cleaning.
-    targets : pd.Series
-        The target values extracted from the trait data that are present in the dataset columns.
-    model_config : dict
-        The model configuration dictionary containing paths, parameters, and ensemble configuration.
-    pi : str
-        Input parameter identifier.
-    model_type : str
-        The type of model being used, determined from the ensemble configuration ("zir" or "reg").
-    extension : str
-        File extension used for saving the model (e.g., "_zir.sav").
-    datatype : str, optional
-        The datatype being processed, appended to data exports (if provided).
-
-    Methods
-    -------
-    merge_netcdf(path_in)
-        Merges multiple NetCDF files from a specified directory into a single xarray.Dataset.
-
-    export_model_config()
-        Exports the model configuration details stored in `self.model_config` to a file for documentation or replication.
-
-    merge_performance()
-        Merges performance metrics (e.g., RMSE, R²) from multiple models into a single performance summary.
-
-    merge_performance_single_model(model)
-        Merges performance metrics for a specific model into the dataset.
-
-    merge_parameter()
-        Aggregates and merges parameter values across all models into a single dataset.
-
-    merge_parameters_single_model(model)
-        Merges parameter values for a specific model into the dataset.
-
-    estimate_carbon(variable)
-        Estimates carbon-based metrics using the specified variable. Calculates derived metrics from carbon estimates.
-
-    def_groups(dict)
-        Defines functional or taxonomic groups for grouping analyses, based on the provided dictionary.
-
-    cwm(variable)
-        Calculates the community-weighted mean (CWM) for the specified variable.
-
-    diversity()
-        Calculates the Shannon diversity index for the dataset.
-
-    total()
-        Computes the total value of a specified variable over a specific region, depth, or time period.
-    
-    integration(*args, **kwargs)
-        Initializes an `integration` object to perform data volume calculation and global integrations.
-
-    integration.calculate_volume()
-        Calculates the volume of each grid cell in the dataset and adds it as a new field.
-
-    integration.integrate_total(variable='total', monthly=False, subset_depth=None)
-        Estimates global integrated values for a single target variable.
-        Supports depth integration, monthly averages, and annual totals.
-
-    integration.integrated_totals(targets=None, monthly=False, subset_depth=None, export=True, model="ens")
-        Calculates global integrated values for all specified target variables.
-        Optionally exports the results as a CSV file.
-
-    merge_obs(file_name, targets=None)
-        Merges model output with observational data and calculates residuals.
-        Saves the merged dataset as a CSV file.
-
-    export_csv(file_name)
-        Exports the processed dataset (`self.d`) to a CSV file in the location defined by `self.path_out`.
-
-    export_ds(file_name, author=None, description=None)
-        Exports the processed dataset (`self.d`) to a NetCDF file.
-        Includes optional metadata like author and description.
-
-    merge_env(X_predict)
-        Aligns and merges the predicted values (`X_predict`) with the existing environmental dataset (`self.d`).
-        Replaces `self.d` with the merged dataset.
+    Post processing of SDM
     """
-    def __init__(self, model_config, pi="50", datatype=None):
+    def __init__(self, X_train, y_train, X_predict, model_config, pi="50", datatype=None):
         """
-        Initialize the `post` class with model configuration, input parameters, and optional datatype.
+        A class for initializing and setting up a model with configuration, input data, and parameters.
 
         Parameters
         ----------
+        X_train : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training features used for model fitting.
+        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
+            Target values used for model fitting.
+        X_predict : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Features to predict on (e.g., environmental data).
         model_config : dict
-            A dictionary containing configuration settings for the model, including paths, parameters, and ensemble configuration.
-        pi : str, optional, default="50"
-            Prediction interval from crossfolds used for model naming. Default is 50 for median prediction.
+            Dictionary containing model configuration parameters such as:
+            - seed: int, random seed for reproducibility
+            - path_out: str, output path for saving results
+            - path_in: str, input path to models
+            - verbose: int, verbosity level (0-3)
+            - cv: int, number of cross-validation folds
+            - ensemble_config: dict, configuration for ensemble models
+        pi : str
+            The prediction interval identifier, defaulting to "50".
         datatype : str, optional
-            The datatype being processed (e.g., "pg poc"), which is appended to exported data files.
-        
-        Returns
-        -------
-        None
+            The datatype of the predictions. This is used to access conversion factors (e.g. pic or poc) 
+            and is appended to the file names during export            
+
+        Attributes
+        ----------
+        path_out : str
+            The output directory path where the model results will be saved.
+        ds : xarray.Dataset
+            The dataset containing the merged data from NetCDF files.
+        traits : pd.DataFrame
+            DataFrame containing the target trait information loaded from a CSV file.
+        root : str
+            Root directory as specified in the model configuration.
+        d : pd.DataFrame
+            DataFrame representation of the dataset after conversion and cleaning.
+        targets : pd.Series
+            The target values from the trait data that are present in the dataset columns.
+        model_config : dict
+            The model configuration dictionary containing paths, parameters, and other settings.
+        pi : str
+            The input parameter identifier, defaulting to "50".
+        model_type : str
+            The type of model being used, determined from the ensemble configuration (either "zir" or "reg").
+        extension : str
+            The file extension used for saving the model, based on the model type (e.g., "_zir.sav").
+        datatype: str
+            The datatype of the data being processed (e.g. "pg poc") which is appended to the data exports (optional)
 
         Methods
         -------
@@ -129,27 +71,21 @@ class post:
         """
         def merge_netcdf(path_in):
             """
-            Merge multiple NetCDF files from a specified directory into a single dataset.
+            Merges multiple NetCDF files from the specified directory into a single dataset.
 
-            This method combines all NetCDF files in the given directory (matching the pattern "*.nc") 
-            into one xarray.Dataset using `xarray.open_mfdataset`. It outputs status messages 
-            to indicate the start and completion of the process.
+            This function uses `xarray.open_mfdataset` to load all NetCDF files in the given directory 
+            (matching the pattern "*.nc") and combines them into one xarray.Dataset. The function 
+            prints status messages indicating the start and completion of the merging process.
 
             Parameters
             ----------
             path_in : str
-                The directory path containing the NetCDF files to be merged.
+                The path to the directory containing the NetCDF files to be merged.
 
             Returns
             -------
             xarray.Dataset
-                A dataset containing the combined data from all NetCDF files in the directory.
-
-            Notes
-            -----
-            - The merging process is performed in memory, which might require sufficient RAM depending 
-            on the size of the NetCDF files.
-            - This method assumes that all NetCDF files in the directory are compatible for merging.
+                The merged dataset containing the combined data from all the NetCDF files in the directory.
             """
             print("merging...")
             ds = xr.open_mfdataset(os.path.join(path_in, "*.nc"))
@@ -168,6 +104,10 @@ class post:
         self.model_config = model_config
         self.pi = pi
 
+        self.y_train = y_train
+        self.X_train = X_train
+        self.X_predict = X_predict
+   
         # Export model_config to a YAML file
         self.export_model_config()
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
@@ -190,11 +130,8 @@ class post:
         
     def export_model_config(self):
         """
-        Export the model configuration dictionary to a YAML file.
-
-        This method saves the `model_config` dictionary as a YAML file named "model_config.yml" 
-        in the directory specified by `self.path_out`. If the directory does not exist, it is created.
-
+        Export the model_config dictionary to a YAML file in self.path_out.
+        
         Raises
         ------
         Exception
@@ -203,8 +140,7 @@ class post:
 
         Notes
         -----
-        - The YAML file is saved as "model_config.yml" in the `self.path_out` directory.
-        - The function ensures the output directory exists before writing the file.
+        The YAML file is saved as "model_config.yml" in the `self.path_out` directory.
         """
         try:
             os.makedirs(self.path_out, exist_ok=True)  # Ensure the output directory exists
@@ -220,17 +156,14 @@ class post:
 
     def merge_performance(self):
         """
-        Merge performance data for all models specified in the ensemble configuration.
-
-        This method iterates over all models listed in the `ensemble_config` dictionary, as well as the ensemble model, 
-        and merges their performance metrics. The merging process for each model is handled by the 
-        `merge_performance_single_model` method.
+        Merges the performance data of multiple models as specified in the model configuration.
 
         Notes
         -----
-        - The method gathers all models defined in the ensemble configuration, along with the ensemble model ("ens").
-        - For each model, the performance metrics are processed and saved using the `merge_performance_single_model` method.
-        """
+        The function relies on the `merge_performance_single_model` method to merge individual model 
+        performance data, and this is done for each model in the list, including the ensemble model.
+        """    
+
         models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
         print("models included in merge performance!")
         print(models)
@@ -241,14 +174,14 @@ class post:
        
     def merge_performance_single_model(self, model):
         """
-        Merge performance metrics for a single model and save the results to a CSV file.
+        Merges performance metrics for a single model and saves the results to a CSV file.
 
         Parameters
         ----------
         model : str
-            The name of the model for which performance metrics are being merged. Performance data 
-            is expected to be stored in a pickle file in the "scoring" directory under the model name 
-            and target name.
+            The name of the model for which performance metrics are being calculated and merged. 
+            The model's performance data is expected to be stored in a `pickle` file in the "scoring" 
+            directory under the model name and target name.
 
         Returns
         -------
@@ -257,21 +190,22 @@ class post:
         Raises
         ------
         ValueError
-            If the model configuration specifies a classifier but not a regressor, an error is raised 
+            If the model configuration includes a classifier but not a regressor, an error is raised 
             since classifiers are not supported for performance merging.
 
         Notes
         -----
-        - This method calculates several performance metrics for each target column in the dataset:
+        The method calculates several performance metrics for each target column in the dataset:
             - R2: Coefficient of determination.
             - RMSE: Root Mean Squared Error.
             - MAE: Mean Absolute Error.
-            - rRMSE: Relative Root Mean Squared Error (normalized by mean).
-            - rMAE: Relative Mean Absolute Error (normalized by mean).
-        - Performance metrics are aggregated into a DataFrame and saved as a CSV file in the 
-        "posts/performance" directory under the specified model name.
-        - If the directory does not exist, it is created.
+            - rRMSE: Relative Root Mean Squared Error.
+            - rMAE: Relative Mean Absolute Error.
+
+        The performance metrics for each target are aggregated into a DataFrame, which is then saved 
+        as a CSV file in the "posts/performance" directory for the specified model.
         """
+        
         all_performance = []
 
         for i in range(len(self.d.columns)):
@@ -306,13 +240,13 @@ class post:
 
     def merge_parameters(self):
         """
-        Merges model parameters for multiple models as specified in the ensemble configuration.
+        Merges model parameters for multiple models as specified in the model configuration.
 
         Notes
         -----
-        - The method iterates over each model specified in the `ensemble_config` of the `model_config`.
-        - For each model, it calls `merge_parameters_single_model` to extract and merge hyperparameters.
-        - The merged parameters are saved as CSV files in the "posts/parameters" directory for each model.
+        The method operates by iterating over each model in the ensemble configuration, collecting 
+        model parameters using `merge_parameters_single_model`, and saving the results to a CSV file 
+        in the "posts/parameters" directory.
         """
 
         models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
@@ -321,26 +255,34 @@ class post:
 
     def merge_parameters_single_model(self, model):
         """
-        Merges and saves hyperparameters for a single model.
+        Merges and saves model parameters for a single model.
+
+        This method extracts the hyperparameters of a specified model (e.g., "rf", "xgb", "knn") from 
+        serialized files stored as pickle objects. The method supports different model types, including 
+        regression ("reg"), classification ("clf"), and ensemble ("zir") models. The extracted parameters 
+        are stored in a DataFrame and then saved to a CSV file.
+
+        The function also handles the creation of the necessary directories to save the resulting CSV file 
+        if they do not already exist.
 
         Parameters
         ----------
         model : str
-            The name of the model for which parameters are being merged. Examples include "rf" (Random Forest),
-            "xgb" (XGBoost), or "knn" (K-Nearest Neighbors). Model must be one off.
+            The name of the model for which parameters are being merged. Expected models include 
+            "rf" (Random Forest), "xgb" (XGBoost), and "knn" (K-Nearest Neighbors).
 
         Raises
         ------
         ValueError
-            If the model type is set to "clf" (classifier), as classifiers are not supported for this operation.
+            If the model configuration includes classifiers but not regressors, an error is raised 
+            since classifiers are not supported for parameter merging.
 
         Notes
         -----
-        - The function extracts hyperparameters such as `n_estimators`, `max_depth`, and others, based on the model type.
-        - It supports regression ("reg"), ensemble ("zir"), and classifier ("clf") model types, but only regression
-          and ensemble models are processed.
-        - For ensemble models ("zir"), both regression and classification hyperparameters are extracted.
-        - The aggregated parameters for all target columns are saved as a CSV file in the "posts/parameters" directory.
+        The method processes the parameters of each model for regression and ensemble models, 
+        extracting hyperparameters such as `n_estimators`, `max_depth`, `learning_rate`, and others.
+        The parameters for each target are aggregated into a DataFrame and saved as a CSV file in the 
+        "posts/parameters" directory.
         """
         
         all_parameters = []
@@ -481,21 +423,21 @@ class post:
         print("finished merging parameters")
 
     def estimate_carbon(self, variable):
+
         """
-        Estimate the carbon content for each target using a specified trait variable.
+        Estimate carbon content for each target based on a specified variable.
+
+        This method calculates the carbon content for each target by scaling the data in `self.d` 
+        with the values of the specified variable from the `traits` DataFrame. The results are 
+        stored back in `self.d`.
 
         Parameters
         ----------
         variable : str
-            The column name in the `traits` DataFrame containing the scaling values to estimate
-            carbon content for the targets.
-
-        Notes
-        -----
-        - The method multiplies the values in the target columns of `self.d` by the corresponding values
-          of the specified variable from the `traits` DataFrame.
-        - The scaled values are saved back to `self.d`.
+            The name of the column in the `traits` DataFrame containing the carbon content values 
+            to be used for scaling the target data.
         """
+
         w = self.traits.query('Target in @self.targets')
         var = w[variable].to_numpy()
         print(var)
@@ -504,20 +446,20 @@ class post:
 
     def def_groups(self, dict):
         """
-        Define groups of species or targets based on a provided mapping.
+        Define groups of species based on a provided dictionary.
 
         Parameters
         ----------
         dict : dict
-            A dictionary where keys are group names and values are lists of column names (species or targets)
-            to be grouped under each key.
-
+            A dictionary where keys represent group names, and values are lists of species or 
+            column names to be grouped under each key.
+            
         Notes
         -----
-        - The method renames the columns of `self.d` based on the provided dictionary.
-        - It sums the grouped columns to create new columns for each group.
-        - The new grouped data is concatenated with the original `self.d`.
-        """    
+        - The method renames columns in `self.d` based on the provided dictionary and then sums 
+        their values to create grouped columns.
+        - The resulting grouped data is concatenated to the original `self.d`.
+        """     
 
         df = self.d[self.targets]
         df = (df.rename(columns=dict)
@@ -527,18 +469,14 @@ class post:
 
     def cwm(self, variable):
         """
-        Calculate the community weighted mean (CWM) for a specified trait variable.
+        Calculate community weighted mean values for a given parameter. 
 
         Parameters
         ----------
-        variable : str
-            The name of the column in the `traits` DataFrame used to compute the CWM.
 
-        Notes
-        -----
-        - The CWM is calculated as the weighted mean of the trait variable, with weights derived from
-          the values in the target columns of `self.d`.
-        - The calculated CWM is added as a new column in `self.d` with the name "cwm <variable>".
+        variable : string
+            variable that is used to estimate cwm.
+
         """
 
         w = self.traits.query('Target in @self.targets')
@@ -548,26 +486,18 @@ class post:
         print("finished calculating CWM " + variable)
 
     def diversity(self):
-        """
-        Calculate Shannon diversity for the targets.
-
-        Notes
-        -----
-        - Shannon diversity is calculated using the `shannon` function, which operates on the target columns of `self.d`.
-        - The resulting values are stored in a new column "shannon" in `self.d`.
-        """
         self.d['shannon'] = self.d.apply(shannon, axis=1)
         print("finished calculating shannon diversity")
 
     def total(self):
         """
-        Calculate the total and logarithmic total of target values.
+        Sum target rows to estimate total.
 
         Notes
-        -----
-        - The total is computed by summing the values across all target columns defined in the `self.targets` list.
-        - The logarithm of the total is also calculated and saved as a separate column "total_log".
-        - This is useful for estimating total species abundance or other continuous target sums.
+        ----------
+        Useful for estimating total species abundances or varable sum if targets are continuous.
+        Total is estimated based on the target list defined in model_config. 
+
         """
 
         self.d['total'] = self.d[self.targets].sum( axis='columns')
@@ -582,34 +512,31 @@ class post:
                      resolution_lat=1.0, resolution_lon=1.0, depth_w=5, 
                      vol_conversion=1, magnitude_conversion=1, molar_mass=1, rate=False):
             """
-            Initialize the `integration` class with parameters for spatial and volumetric calculations.
-
             Parameters
             ----------
-            parent : object
-                The parent class instance containing the dataset and configuration.
+            resolution_lat : float
+                Latitude resolution in degrees, default is 1.0 degree.
+            
+            resolution_lon : float
+                Longitude resolution in degrees, default is 1.0 degree.
+            
+            depth_w : float
+                Bin depth in meters, default is 5m.
 
-            resolution_lat : float, optional
-                Latitude resolution in degrees. Default is 1.0.
-
-            resolution_lon : float, optional
-                Longitude resolution in degrees. Default is 1.0.
-
-            depth_w : float, optional
-                Bin depth in meters. Default is 5.
-
-            vol_conversion : float, optional
-                Conversion factor for volume, e.g., from liters to cubic meters (1e3). Default is 1 (no conversion).
-
-            magnitude_conversion : float, optional
-                Conversion factor for magnitude, e.g., from micromoles to petamoles (1e-21). Default is 1 (no conversion).
-
-            molar_mass : float, optional
-                Conversion from moles to grams. Default is 1 (no conversion). Example: 12.01 for carbon.
-
-            rate : bool, optional
-                Whether to integrate over each month to provide an annual rate (yr^-1) for rate-based data. Default is False.
+            vol_conversion : float
+                Conversion to m^3, e.g., l to m^3 would be 1e3, default is 1 (no conversion).
+            
+            magnitude_conversion : float
+                Prefix conversion, e.g., umol to Pmol would be 1e-21, default is 1 (no conversion).
+            
+            molar_mass : float
+                Conversion from mol to grams, default is 1 (no conversion). Optional: 12.01 (carbon).
+            
+            rate : bool
+                If input data is in rate per day, integrates over each month to provide an annual rate (yr^-1).            
             """
+
+
             self.parent = parent
             self.resolution_lat = resolution_lat
             self.resolution_lon = resolution_lon
@@ -622,20 +549,15 @@ class post:
 
         def calculate_volume(self):
             """
-            Calculate the volume for each spatial cell based on latitude, longitude, and depth resolution.
-
-            Notes
-            -----
-            - Calculates the area for each latitude and longitude cell using Earth's radius and trigonometric formulas.
-            - Multiplies the area by the depth to compute the volume for each cell.
-            - Adds the computed volume as a new field in the dataset.
+            Calculate the volume for each cell and add it as a new field to the dataset.
 
             Examples
             --------
             >>> m = post(model_config)
-            >>> integration = m.integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5)
-            >>> print("Volume calculated:", integration.parent.d['volume'].values)
-            """     
+            >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
+            >>> print("Volume calculated:", int.ds['volume'].values)
+
+            """            
             ds = self.parent.d.to_xarray()
             resolution_lat = self.resolution_lat
             resolution_lon = self.resolution_lon
@@ -678,28 +600,23 @@ class post:
         
         def integrate_total(self, variable='total', monthly=False, subset_depth=None):
             """
-            Integrate global values for a single target variable over depth and time.
-
+            Estimates global integrated values for a single target. Returns the depth integrated annual total.
+            
             Parameters
             ----------
-            variable : str, optional
-                The field to be integrated. Default is 'total'.
+            variable : str
+                The field to be integrated. Default is 'total' from PIC or POC Abil output.
 
-            monthly : bool, optional
-                Whether to calculate a monthly average instead of an annual total. Default is False.
-
-            subset_depth : float, optional
-                Maximum depth in meters for integration. Default is None (integrate over all depths).
-
-            Returns
-            -------
-            xarray.DataArray
-                Integrated total values, either as an annual or monthly series.
+            monthly : bool
+                Whether or not to calculate a monthly average value instead of an annual total. Default is False.
+ 
+            subset_depth : float
+                Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.
 
             Examples
             --------
             >>> m = post(model_config)
-            >>> integration = m.integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, rate=True)
+            >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> result = integration.integrate_total(variable='Calcification')
             >>> print("Final integrated total:", result.values)
             """
@@ -758,40 +675,27 @@ class post:
         def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
                              export=True, model="ens"):
             """
-            Estimate global integrated values for all target variables.
-
+            Estimates global integrated values for all targets.
+    
+            Considers latitude and depth bin size.
+    
             Parameters
             ----------
-            targets : list of str, optional
-                The list of target variables to integrate. Default includes all targets in the dataset.
+            targets : str
+                The fields to be integrated. Default is 'total' from PIC or POC Abil output.
 
-            monthly : bool, optional
-                Whether to calculate monthly averages instead of annual totals. Default is False.
+            monthly : bool
+                Whether or not to calculate a monthly average value instead of an annual total. Default is False.
+ 
+            subset_depth : float
+                Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.
 
-            subset_depth : float, optional
-                Maximum depth in meters for integration. Default is None (integrate over all depths).
+            export : bool
+                Whether of not to export integrated totals as .csv. Default is True.
 
-            export : bool, optional
-                Whether to export the integrated totals to a CSV file. Default is True.
-
-            model : str, optional
-                The model version to integrate. Default is "ens". Other options include {"rf", "xgb", "knn"}.
-
-            Returns
-            -------
-            pandas.DataFrame
-                A DataFrame containing the integrated totals for each target variable.
-
-            Notes
-            -----
-            - The method iterates through each target and calculates the integrated total.
-            - If `export` is True, the results are saved as a CSV file in the appropriate output directory.
-
-            Examples
-            --------
-            >>> m = post(model_config)
-            >>> integ = m.integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5)
-            >>> integ.integrated_totals(targets, subset_depth=100)
+            model : str
+                The model version to be integrated. Default is "ens". Other options include {"rf", "xgb", "knn"}.
+    
             """
             ds = self.parent.d.to_xarray()
             if targets.all == None:
@@ -873,33 +777,19 @@ class post:
                 ds['FID'] = ds['FID'].where(ds['FID'] != '', np.nan)
             self.d = ds.to_dataframe().dropna()
 
-    def merge_env(self, X_predict):
+    def merge_env(self):
         """
         Merge model output with environmental data.
 
-        This method aligns and merges the predicted values (`X_predict`) with the existing 
-        environmental dataset (`self.d`). The merged dataset replaces `self.d`.
+        This method aligns and merges the predicted values (model output) with the existing 
+        environmental dataset stored in `self.d`. The merged data replaces `self.d`.
 
-        Parameters
-        ----------
-        X_predict : pd.DataFrame
-            A DataFrame containing the model's predicted values to be merged with the 
-            environmental dataset.
-
-        Notes
-        -----
-        - Uses `xarray.align` with `join="inner"` to align the datasets based on their shared dimensions.
-        - Adds the merged dataset to `self.d` after dropping any rows with missing values.
-        - Ensures the 'FID' field does not contain empty strings.
-
-        Examples
-        --------
-        >>> m = post(model_config)
-        >>> X_predict = pd.DataFrame(...)  # Model predictions
-        >>> m.merge_env(X_predict)
+        Returns
+        -------
+        None
         """
 
-        X_predict = X_predict.to_xarray()
+        X_predict = self.X_predict.to_xarray()
         ds = self.d.to_xarray()
         aligned_datasets = xr.align(ds,X_predict, join="inner")
         ds = xr.merge(aligned_datasets)
@@ -918,26 +808,20 @@ class post:
 
         Parameters
         ----------
-        file_name : str
-            The name of the NetCDF file (without extension).
-
+        file_name : str 
+            The name of the NetCDF file (without extension). 
         author : str, optional
-            The name of the author to include in the NetCDF metadata. Default is None.
-
+            The name of the author to include in NetCDF metadata (default is None).
         description : str, optional
-            A description or title to include in the NetCDF metadata. Default is None.
+            A description or title to include in the NetCDF metadata (default is None).
 
         Notes
         -----
-        - The export path is defined in `self.path_out`, and directories are created if necessary.
-        - Adds metadata attributes such as `Conventions`, `creator_name`, and units for latitude, longitude, and depth.
-        - Appends a suffix `_PI<pi>.nc` to the output file name, where `<pi>` is the `self.pi` value.
-
-        Examples
-        --------
-        >>> file_name = model_config['run_name']
-        >>> m = post(model_config)
-        >>> m.export_ds(file_name, author="Author Name", description="Processed dataset.")
+        - The export location is defined in the `model_config.yml` file and is stored in `self.path_out`.
+        - The method sets metadata attributes such as conventions, creator name, and units for 
+        latitude, longitude, and depth.
+        - Missing directories in the export path are created if necessary.
+        - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
         try: #make new dir if needed
@@ -971,32 +855,26 @@ class post:
         ds.to_netcdf(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".nc")
 
         print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype +  ".nc")
-        
         #add nice metadata
 
 
     def export_csv(self, file_name):
         """
-        Export the processed dataset to a CSV file.
+        Export the processed dataset to a csv file.
 
-        This method saves the processed dataset (`self.d`) to a CSV file in the location 
-        defined by `self.path_out`.
+        This method saves the processed dataset (`self.d`) to a csv file in the location 
+        defined by `self.path_out`, with optional metadata such as author and description.
 
         Parameters
         ----------
-        file_name : str
-            The name of the CSV file (without extension).
-
+        file_name : str 
+            The name of the csv file (without extension). 
+        
         Notes
         -----
-        - The export path is defined in `self.path_out`, and directories are created if necessary.
-        - Appends a suffix `_PI<pi>.csv` to the output file name, where `<pi>` is the `self.pi` value.
-
-        Examples
-        --------
-        >>> file_name = model_config['run_name']
-        >>> m = post(model_config)
-        >>> m.export_csv(file_name)
+        - The export location is defined in the `model_config.yml` file and is stored in `self.path_out`.
+        - Missing directories in the export path are created if necessary.
+        - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
         try: #make new dir if needed
@@ -1014,38 +892,32 @@ class post:
         """
         Merge model output with observational data and calculate residuals.
 
-        This method integrates model predictions with observational data based on 
+        This function integrates model predictions with observational data based on 
         spatial and temporal indices, calculates residuals, and exports the merged dataset.
 
         Parameters
         ----------
         file_name : str
             The base name of the output file to save the merged dataset.
-
         targets : list of str, optional
             A list of target variable names to include in the merge. If None, the default 
-            targets from `self.targets` are used. Default is None.
+            targets from `self.targets` are used (default is None).
 
         Notes
         -----
-        - Matches observational data with model predictions based on indices: `['lat', 'lon', 'depth', 'time']`.
+        - The function matches the observational data with model predictions based on the 
+        indices `['lat', 'lon', 'depth', 'time']`.
         - Residuals are calculated as `observed - predicted` for each target variable.
-        - Columns in the output include the original targets, their modeled values (suffixed with `_mod`), and residuals (suffixed with `_resid`).
-        - Saves the merged dataset as a CSV file with a suffix `_obs_PI<pi>.csv`.
+        - Columns included in the output are the original targets, their modeled values 
+        (suffixed with `_mod`), and their residuals (suffixed with `_resid`).
+        - The merged dataset is saved as a CSV file with a suffix `_PI` followed by the 
+        `pi` value, appended to the output file name.
         - Observational data is loaded from the path defined in `self.model_config['training']`.
 
         Raises
         ------
         FileNotFoundError
             If the observational dataset file cannot be found at the specified location.
-
-        Examples
-        --------
-        >>> file_name = model_config['run_name']
-        >>> targets = pd.read_csv(root + model_config['targets'])
-        >>> targets =  targets['Target'].values
-        >>> m = post(model_config)
-        >>> m.merge_obs(file_name, targets)
         """
         # Select and rename the target columns for d
         if targets.all == None:
