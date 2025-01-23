@@ -49,12 +49,12 @@ class TestRegressors(unittest.TestCase):
 
         targets = np.array([self.target_name])
         def do_post(pi):
-            m = post(self.model_config, pi=pi)
+            m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi)
             m.estimate_carbon("pg poc")
 
             m.total()
 
-            m.merge_env(self.X_predict)
+            m.merge_env()
             m.merge_obs("test",targets)
 
             m.export_ds("test")
@@ -101,12 +101,12 @@ class Test2Phase(unittest.TestCase):
         targets = np.array([self.target_name])
 
         def do_post(pi):
-            m = post(self.model_config, pi=pi, datatype="poc")
+            m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi, datatype="poc")
             m.estimate_carbon("pg poc")
             m.diversity()
 
             m.total()
-            m.merge_env(self.X_predict)
+            m.merge_env()
             m.merge_obs("test",targets)
 
             m.export_ds("test")
