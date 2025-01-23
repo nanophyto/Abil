@@ -11,9 +11,31 @@ class post:
     """
     Post processing of SDM
     """
-    def __init__(self, model_config, pi="50", datatype=None):
+    def __init__(self, X_train, y_train, X_predict, model_config, pi="50", datatype=None):
         """
         A class for initializing and setting up a model with configuration, input data, and parameters.
+
+        Parameters
+        ----------
+        X_train : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training features used for model fitting.
+        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
+            Target values used for model fitting.
+        X_predict : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Features to predict on (e.g., environmental data).
+        model_config : dict
+            Dictionary containing model configuration parameters such as:
+            - seed: int, random seed for reproducibility
+            - path_out: str, output path for saving results
+            - path_in: str, input path to models
+            - verbose: int, verbosity level (0-3)
+            - cv: int, number of cross-validation folds
+            - ensemble_config: dict, configuration for ensemble models
+        pi : str
+            The prediction interval identifier, defaulting to "50".
+        datatype : str, optional
+            The datatype of the predictions. This is used to access conversion factors (e.g. pic or poc) 
+            and is appended to the file names during export            
 
         Attributes
         ----------
@@ -80,6 +102,10 @@ class post:
         self.model_config = model_config
         self.pi = pi
 
+        self.y_train = y_train
+        self.X_train = X_train
+        self.X_predict = X_predict
+   
         # Export model_config to a YAML file
         self.export_model_config()
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
@@ -712,25 +738,19 @@ class post:
                 print(f"Exported totals")
 
 
-    def merge_env(self, X_predict):
+    def merge_env(self):
         """
         Merge model output with environmental data.
 
         This method aligns and merges the predicted values (model output) with the existing 
         environmental dataset stored in `self.d`. The merged data replaces `self.d`.
 
-        Parameters
-        ----------
-        X_predict : pd.DataFrame
-            A DataFrame containing the model's predicted values to be merged with the 
-            environmental dataset.
-
         Returns
         -------
         None
         """
 
-        X_predict = X_predict.to_xarray()
+        X_predict = self.X_predict.to_xarray()
         ds = self.d.to_xarray()
         aligned_datasets = xr.align(ds,X_predict, join="inner")
         ds = xr.merge(aligned_datasets)
