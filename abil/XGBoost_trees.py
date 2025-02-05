@@ -3,6 +3,11 @@ import pandas as pd
 from sklearn.datasets import make_regression
 from sklearn.model_selection import KFold
 from xgboost import XGBRegressor, DMatrix
+from joblib import Parallel, delayed
+
+@delayed
+def _get_one_tree_pred(i, booster, X_test_dm):
+    return booster.predict(X_test_dm, iteration_range=(i,i+1))
 
 
 def XGBtree_stats(booster_list, X, y, cv):
@@ -21,6 +26,8 @@ def XGBtree_stats(booster_list, X, y, cv):
                      computed across all folds and trees for each sample.
     """
     all_fold_predictions = {}  # Store predictions across all folds for each sample
+
+    engine = Parallel()
     
     for fold_idx, (_, test_idx) in enumerate(cv.split(X)):
         X_test = X.iloc[test_idx]
@@ -31,11 +38,15 @@ def XGBtree_stats(booster_list, X, y, cv):
         
         # Collect predictions for each tree
         fold_tree_predictions = []
-        for i in range(booster.num_boosted_rounds()):
-            tree_preds = booster.predict(X_test_dmatrix, iteration_range=(i, i + 1))
-            fold_tree_predictions.append(tree_preds)
         
-        fold_tree_predictions = np.array(fold_tree_predictions).T  # shape: (n_samples, n_trees)
+        fold_tree_predictions = np.column_stack(
+            engine(
+                _get_one_tree_pred(
+                    i, booster=booster, X_test_dm=X_test_dmatrix, 
+                )
+                for i in range(booster.num_boosted_rounds())
+            )
+        )
         
         # Store predictions for the test set
         for idx, test_sample_idx in enumerate(test_idx):
@@ -84,19 +95,24 @@ def predict_with_trees_cv(booster_list, X_predict):
     - summary_stats: A DataFrame with mean, std, and confidence intervals for each sample in X_predict.
     """
     all_fold_predictions = []  # Collect predictions across all folds and trees
+    engine = Parallel()
+    X_predict_dmatrix = DMatrix(X_predict)
 
     for booster in booster_list:
         # Convert X_predict to DMatrix
-        X_predict_dmatrix = DMatrix(X_predict)
         
         # Collect predictions for each tree
-        fold_tree_predictions = []
-        for i in range(booster.num_boosted_rounds()):
-            tree_preds = booster.predict(X_predict_dmatrix, iteration_range=(i, i + 1))
-            fold_tree_predictions.append(tree_preds)
+        fold_tree_predictions = np.column_stack(
+            engine(
+                _get_one_tree_pred(
+                    i, booster=booster, X_test_dm=X_predict_dmatrix, 
+                )
+                for i in range(booster.num_boosted_rounds())
+            )
+        )
         
         # Store predictions for this fold across all trees
-        all_fold_predictions.append(np.array(fold_tree_predictions).T)  # shape: (n_samples, n_trees)
+        all_fold_predictions.append(fold_tree_predictions)  # shape: (n_samples, n_trees)
     
     # Concatenate predictions across all folds
     all_fold_predictions = np.concatenate(all_fold_predictions, axis=1)  # shape: (n_samples, (n_folds * n_trees))
