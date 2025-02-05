@@ -120,6 +120,9 @@ def _summarize_predictions(
         chunks = [X_predict]
 
     stats = []
+    inverse_transform = getattr(
+        model, "inverse_transform", FunctionTransformer().inverse_transform
+    )
     for chunk in chunks:
         try:
             booster = model.get_booster()
@@ -135,7 +138,7 @@ def _summarize_predictions(
                 for member in getattr(model, "estimators_", [model])
             )
         chunk_preds = pd.DataFrame(
-            np.column_stack(engine(pred_jobs)),
+            inverse_transform(np.column_stack(engine(pred_jobs))),
             index = getattr(chunk, 'index', None)
             )
         chunk_stats = pd.DataFrame.from_dict(
