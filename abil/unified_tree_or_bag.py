@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import FunctionTransformer
-from sklearn.ensemble import RandomForestRegressor, BaggingRegressor
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, BaggingRegressor, BaggingClassifier, VotingRegressor
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from xgboost import XGBRegressor, DMatrix
 from sklearn.pipeline import Pipeline
 from sklearn import base
@@ -134,7 +134,7 @@ def _summarize_predictions(
         except AttributeError:
             pred_jobs = (
                 delayed(member.predict)(chunk)
-                for member in getattr(model, "estimators_", [model])
+                for member in _flatten_metaensemble(model)
             )
         chunk_preds = pd.DataFrame(
             inverse_transform(np.column_stack(engine(pred_jobs))),
@@ -157,13 +157,27 @@ def _summarize_predictions(
         stats, axis=0, ignore_index = False
     )
     return output
-        
+
+def _flatten_metaensemble(me):
+    """
+    Recurse through a meta ensemble and extract all of the basic ensemble estimators
+    """
+    if not hasattr(me, "estimators_"):
+        return [me]
+    output = []
+    for sub_estimator in me.estimators_:
+        output.extend(
+            _flatten_metaensemble(sub_estimator)
+        )
+    return output
         
 # Example Usage
 if __name__ == "__main__":
     # Generate sample data
     from sklearn.datasets import make_regression
     from joblib import parallel_backend  # this is user-facing
+    from abil.functions import ZeroInflatedRegressor
+
 
     X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
     X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
@@ -188,12 +202,52 @@ if __name__ == "__main__":
     # Define cross-validation strategy
     cv = KFold(n_splits=cv_splits)
 
+ 
+
     # Define model and method
     model = RandomForestRegressor(n_estimators=100, max_depth=4, random_state=42).fit(X_train, y_train)
+
+    vmodel = VotingRegressor(
+        estimators=[
+            ('rf', RandomForestRegressor(
+                n_estimators=100, max_depth=4, random_state=42
+            )),
+            ('knn', BaggingRegressor(
+            KNeighborsRegressor(n_neighbors=10, weights='distance'), n_estimators=50
+        ).fit(X_train, y_train))
+            ]
+    ).fit(X_train, y_train)  
+
+
+    mask = (y_train > 0).values
+    zirmodel = ZeroInflatedRegressor(
+        RandomForestClassifier(n_estimators=100, max_depth=4, random_state=2245).fit(X_train, mask),
+        BaggingRegressor(
+            KNeighborsRegressor(n_neighbors=10, weights='distance'), n_estimators=50
+        ).fit(X_train.iloc[mask,:], y_train.iloc[mask])
+    )
+
+    vzirmodel = VotingRegressor(
+        estimators=[
+            ("rf-then-knn", zirmodel), 
+            ("knn-then-rf", ZeroInflatedRegressor(
+                BaggingClassifier(
+            KNeighborsClassifier(n_neighbors=10, weights='distance'), n_estimators=50
+        ).fit(X_train, mask),
+                RandomForestRegressor(n_estimators=100, max_depth=4, random_state=2245).fit(X_train.iloc[mask,:], y_train.iloc[mask]),
+            ))
+            ]
+    ).fit(X_train, y_train)  
+
+
     # this sets the backend type and number of jobs to use in the internal
     # Parallel() call.
     with parallel_backend("loky", n_jobs=16):
         results = process_data_with_model(
+            model, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+        )
+    with parallel_backend("loky", n_jobs=16):
+        vresults = process_data_with_model(
             model, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
 
