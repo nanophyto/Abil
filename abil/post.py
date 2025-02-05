@@ -7,7 +7,13 @@ import gc
 from yaml import dump, Dumper
 from skbio.diversity.alpha import shannon
 
-from . import analyze
+# from . import analyze #it seems this does not work on my machine?
+
+if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
+    from abil.analyze import area_of_applicability
+else:
+    from analyze import area_of_applicability
+
 
 class post:
     """
@@ -738,44 +744,47 @@ class post:
 
                 print(f"Exported totals")
 
-    def estimate_applicability(self,
-                                X_train, 
-                                X_predict
-                                ):
-        # TODO: so can I assume that self.d.iloc[:,i] is 
-        # species i, and so is y_train?
-        for i in range(len(self.d.columns)):
+    def estimate_applicability(self):
+
+        # create empty dataframe with the same index as X_predict
+        aoa_dataset = pd.DataFrame(index=self.X_predict.index)
+
+        # estimate the aoa for each target:
+        for i in range(len(self.targets)):
             
-            target = self.d.columns[i]
+            target = self.targets[i]
             target_no_space = target.replace(' ', '_')
 
-            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
-
+            # load the voting regressor model object for each target:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
                 m = pickle.load(file)
             
-            applicability, dissimilarity, density = analyze.area_of_applicability(
-                X_test=X_predict,
-                X_train=X_train,
-                y_train=..., 
-                model=m, 
-                metric='euclidean',
-                feature_weights='permutation',
-                feature_weight_kwargs=dict(n_repeats=10),
-                return_all=True
+            aoa = area_of_applicability(
+                X_test=self.X_predict,
+                X_train=self.X_train,
+                y_train= self.y_train,
+                model=m
             )
-            out = pd.DataFrame(
-                np.column_stack(
-                    applicability,
-                    dissimilarity,
-                    density
-                    ),
-                columns=['-'.join(species, [c]) for c in ("aoa", 'di', 'lpd')],
-                index=X_predict.index
-            ).to_xarray()
-            ds = xr.merge(xr.align(self.d.to_xarray(), out, join='inner'))
-            if 'FID' in ds:
-                ds['FID'] = ds['FID'].where(ds['FID'] != '', np.nan)
-            self.d = ds.to_dataframe().dropna()
+
+            # update the dataframe, where each column name is the target analyzed
+            aoa_dataset[target] = aoa
+
+        # convert df to xarray ds:
+        aoa_dataset = aoa_dataset.to_xarray()
+        
+        # add metadata:
+        aoa_dataset['lat'].attrs['units'] = 'degrees_north'
+        aoa_dataset['lat'].attrs['long_name'] = 'latitude'
+
+        aoa_dataset['lon'].attrs['units'] = 'degrees_east'
+        aoa_dataset['lon'].attrs['long_name'] = 'longitude'
+
+        aoa_dataset['depth'].attrs['units'] = 'm'
+        aoa_dataset['depth'].attrs['positive'] = 'down'
+        
+        # export aoa to netcdf:
+        aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"))
+
 
     def merge_env(self):
         """

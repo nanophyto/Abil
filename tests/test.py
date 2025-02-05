@@ -50,6 +50,9 @@ class TestRegressors(unittest.TestCase):
         targets = np.array([self.target_name])
         def do_post(pi):
             m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi)
+            #estimate aoa for each target and export to aoa.nc:
+            m.estimate_applicability()
+
             m.estimate_carbon("pg poc")
 
             m.total()
@@ -102,6 +105,8 @@ class Test2Phase(unittest.TestCase):
 
         def do_post(pi):
             m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi, datatype="poc")
+            #estimate aoa for each target and export to aoa.nc:
+            m.estimate_applicability()
             m.estimate_carbon("pg poc")
             m.diversity()
 
