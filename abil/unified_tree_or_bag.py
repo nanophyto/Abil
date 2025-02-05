@@ -13,7 +13,7 @@ from joblib import delayed, Parallel
 
 
 def process_data_with_model(
-    m, X_predict, X_train, y_train, cv=None, chunksize=None
+    model, X_predict, X_train, y_train, cv=None, chunksize=None
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
@@ -47,11 +47,11 @@ def process_data_with_model(
         Dictionary containing summary statistics for both training and prediction datasets.
         Keys: "train_stats", "predict_stats".
     """
-    if isinstance(m, Pipeline):
-        pipeline = m
-        m = pipeline.named_steps["estimator"]
+    if isinstance(model, Pipeline):
+        pipeline = model
+        model = pipeline.named_steps["estimator"]
     else:
-        pipeline = Pipeline([("preprocessor", FunctionTransformer()), ("estimator", m)])
+        pipeline = Pipeline([("preprocessor", FunctionTransformer()), ("estimator", model)])
     preprocessor = pipeline.named_steps["preprocessor"]
 
     X_train = preprocessor.transform(X_train)
@@ -59,6 +59,18 @@ def process_data_with_model(
 
     # for internal, create models for each fold to mimic the
     # effect of leaving a fold out. Do this in parallel.
+
+    if isinstance(model, ZeroInflatedRegressor):
+        classifier_stats = process_data_with_model(
+        model.classifier_, X_predict, X_train, y_train>0, cv=cv, chunksize=chunksize
+    )
+        regressor_stats = process_data_with_model(
+    model.regressor_, X_predict, X_train, y_train, cv=cv, chunksize=chunksize
+    )
+        return {
+            **{f"classifier_{k}":v for k,v in classifier_stats.items()}, 
+            **{f"regressor_{k}":v for k,v in regressor_stats.items()},     
+                }
 
     if cv is not None:
         train_summary_stats = [
@@ -221,11 +233,11 @@ if __name__ == "__main__":
 
     mask = (y_train > 0).values
     zirmodel = ZeroInflatedRegressor(
-        RandomForestClassifier(n_estimators=100, max_depth=4, random_state=2245).fit(X_train, mask),
+        RandomForestClassifier(n_estimators=100, max_depth=4, random_state=2245),
         BaggingRegressor(
             KNeighborsRegressor(n_neighbors=10, weights='distance'), n_estimators=50
-        ).fit(X_train.iloc[mask,:], y_train.iloc[mask])
-    )
+        )
+    ).fit(X_train, y_train)
 
     vzirmodel = VotingRegressor(
         estimators=[
@@ -248,8 +260,11 @@ if __name__ == "__main__":
         )
     with parallel_backend("loky", n_jobs=16):
         vresults = process_data_with_model(
-            model, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            vmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
-
+    with parallel_backend("loky", n_jobs=16):
+        zirresults = process_data_with_model(
+            zirmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+        )
     print("\n=== Training Summary Stats ===\n", results["train_stats"].head())
     print("\n=== Prediction Summary Stats ===\n", results["predict_stats"].head())
