@@ -9,6 +9,7 @@ def area_of_applicability(
     X_train,
     y_train=None,
     model=None,
+    cv=None,
     metric="euclidean",
     feature_weights="permutation",
     feature_weight_kwargs=None,
@@ -34,6 +35,9 @@ def area_of_applicability(
     model   :   sklearn.BaseEstimator
         the model for which the feature importance will be calculated. Must be provided
         if the permutation feature importance is calculated.
+    cv      : sklearn.BaseCrossValidator
+        the crossvalidator to use on the input training data, in order to calculate the 
+        within-sample extrapolation threshold
     metric  :   str (Default: 'euclidean')
         the name of the metric used to calculate feature-based distances.
     feature_weights : str or numpy.ndarray (Default: 'permutation')
@@ -92,7 +96,7 @@ def area_of_applicability(
         feature_weights = inspection.permutation_importance(
             model, X_train, y_train, **feature_weight_kwargs
         ).importances_mean
-        feature_weight_kwargs /= feature_weight_kwargs.sum()
+        feature_weights /= feature_weights.sum()
     else:
         assert len(feature_weights) == n_features, (
             "weights must be provided for all features"
@@ -103,9 +107,20 @@ def area_of_applicability(
         X_train * feature_weights[None, :], metric=metric
     )
     numpy.fill_diagonal(train_distance, train_distance.max())
-    d_mins = train_distance.min(axis=1)
-    numpy.fill_diagonal(train_distance, 0)
-    d_mean = train_distance[train_distance > 0].mean()
+    if cv is not None:
+        d_mins = numpy.empty((X_train.shape[0],))
+        mean_acc_num = 0
+        mean_acc_den = 0
+        for test_ix, train_ix in cv.split(X_train):
+            hold_to_seen_d = train_distance[test_ix.reshape(-1,1), train_ix]
+            d_mins[test_ix] = hold_to_seen_d.min(axis=1)
+            mean_acc_num += hold_to_seen_d.sum()
+            mean_acc_den += hold_to_seen_d.size
+        d_mean = mean_acc_num/mean_acc_den    
+    else:
+        d_mins = train_distance.min(axis=1)
+        numpy.fill_diagonal(train_distance, 0)
+        d_mean = d_mean = train_distance[train_distance > 0].mean()
     di_train = d_mins / d_mean
 
     if threshold == "tukey":
@@ -130,7 +145,7 @@ def area_of_applicability(
         test_to_train_i = test_to_train_d.argmin(axis=1)
 
         di_test = test_to_train_d_min / d_mean
-        lpd_test = (di_test < cutpoint).sum(axis=1)
+        lpd_test = ((test_to_train_d / test_to_train_d.mean()) < cutpoint).sum(axis=1)
 
     else:
         # if we don't need local point density, this can be used
@@ -142,8 +157,61 @@ def area_of_applicability(
         di_test = test_to_train_d_min / d_mean
         lpd_test = numpy.empty_like(di_test) * numpy.nan
 
-    aoa = di_test <= cutpoint
+    aoa = di_test >= cutpoint
     if return_all:
-        return aoa, di_test, lpd_test
+        return aoa, di_test, lpd_test, cutpoint, test_to_train_d
 
     return aoa
+
+if __name__ == "__main__":
+    import pandas as pd
+    import numpy as np
+    from sklearn.datasets import make_regression
+    from sklearn.model_selection import KFold
+    from sklearn.neighbors import KNeighborsRegressor
+    from sklearn.model_selection import GridSearchCV
+
+    # Generate X and y
+    X, y = make_regression(n_samples=200, n_features=10, noise=0.1, random_state=42)
+    X = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+
+    # Add random latitude and longitude and set as MultiIndex
+    latitudes = np.random.uniform(-90, 90, size=X.shape[0])
+    longitudes = np.random.uniform(-180, 180, size=X.shape[0])
+    X.index = pd.MultiIndex.from_tuples(zip(latitudes, longitudes), names=['Latitude', 'Longitude'])
+
+    # The full X is the same as X_predict
+    X_predict = X.copy()
+
+    # Take a random subset and call this X_train and y_train
+    sample_indices = np.random.choice(range(len(X)), size=100, replace=False) 
+    X_train = X.iloc[sample_indices] 
+    y_train = y[sample_indices]  
+
+    # Initialize and fit the model
+    reg = GridSearchCV(
+        estimator = KNeighborsRegressor(),
+        param_grid={"n_neighbors": [5, 8]},
+        cv = KFold(n_splits=5))
+
+    reg.fit(X_train, y_train)
+    model = reg.best_estimator_   #this is what is currently loaded into post
+
+    # Convert y_train to a pandas Series
+    # in the pipeline y_train = df['species_name'], where df is a multi-index pandas dataframe
+    y_train = pd.Series(y_train, index=X_train.index)
+
+    aoa = area_of_applicability(
+        X_test=X_predict,
+        X_train=X_train,
+        y_train=y_train,
+        model=model
+    )
+    aoa2 = area_of_applicability(
+        X_test=X_predict + 3,
+        X_train=X_train,
+        y_train=y_train,
+        model=model,
+        cv=reg.cv
+    )
+    
