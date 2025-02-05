@@ -6,12 +6,14 @@ from sklearn.ensemble import RandomForestRegressor, BaggingRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from xgboost import XGBRegressor, DMatrix
 from sklearn.pipeline import Pipeline
-from sklearn.base import BaseEstimator
+from sklearn import base
+
 # these are designed for internal use
 from joblib import delayed, Parallel
 
+
 def process_data_with_model(
-    X_train, y_train, X_predict, m, cv, cv_splits=5, zir=False, method="rf"
+    m, X_train, y_train, X_predict, cv=None, chunksize=None
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
@@ -47,115 +49,119 @@ def process_data_with_model(
     """
     if isinstance(m, Pipeline):
         pipeline = m
-        m = pipeline.named_steps['estimator']
+        m = pipeline.named_steps["estimator"]
     else:
-        pipeline = Pipeline([
-            ('preprocessor', FunctionTransformer()),
-            ('estimator', m)
-        ])
+        pipeline = Pipeline([("preprocessor", FunctionTransformer()), ("estimator", m)])
     preprocessor = pipeline.named_steps["preprocessor"]
-        
-        
+
     X_train = preprocessor.transform(X_train)
     X_predict = preprocessor.transform(X_predict)
 
-    def train_model(model, X, y, train_idx):
-        X_train_fold, y_train_fold = X.iloc[train_idx], y.iloc[train_idx]
-        if isinstance(model, BaggingRegressor):
-            model = BaggingRegressor(
-                estimator=KNeighborsRegressor(),
-                n_estimators=model.n_estimators,
-                random_state=model.random_state,
-            )
-        model.fit(X_train_fold, y_train_fold)
-        return model
+    # for internal, create models for each fold to mimic the
+    # effect of leaving a fold out. Do this in parallel.
 
-    def collect_predictions(model, X_test, method, m=m):
-        engine = Parallel()
-        if method == "xgb":
+    if cv is not None:
+        train_summary_stats = [
+            _summarize_predictions(
+                model,
+                X_predict=X_train.iloc[test_idx],
+                X_train=X_train.iloc[train_idx],
+                y_train=y_train.iloc[train_idx],
+                chunksize=chunksize,
+            )
+            for train_idx, test_idx in cv.split(X_train)
+        ]
+    # concat and rearrange to match input data order
+        train_summary_stats  = pd.concat(
+            train_summary_stats, axis=0, ignore_index=False
+        ).loc[X_train.index]
+    else:
+        train_summary_stats = _summarize_predictions(
+            model,
+            X_train=X_train,
+            y_train=y_train,
+            X_predict=X_train,
+            chunksize=chunksize
+        )
+
+    predict_summary_stats = _summarize_predictions(
+        model, 
+        X_predict=X_predict,
+        X_train=X_train,
+        y_train=y_train,
+        chunksize=chunksize
+    )
+    
+    return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
+
+
+def _summarize_predictions(
+    model, X_predict, X_train=None, y_train=None, chunksize=2e4
+):
+    # need to extract the ensemble predictions for each X
+    # over all learners, then summarize those
+    # and do that in parallel.
+    if (X_train is not None) & (y_train is not None):
+        model = base.clone(model).fit(X_train, y_train)
+    elif not all([(X_train is None), (y_train is None)]):
+        if not base.check_is_fitted(model):
+            raise ValueError("model provided is not fit, and no data is provided to fit the model on. Fit the model on the data first.")
+        raise ValueError(
+            "Both X_train and y_train must be provided, or neither must be."
+        )
+        
+    engine = Parallel()
+    n_samples, n_features = X_predict.shape
+
+    if chunksize is not None:
+        n_chunks = int(np.ceil(n_samples / chunksize))
+        chunks = np.array_split(X_predict, n_chunks)
+    else:
+        chunks = [X_predict]
+
+    stats = []
+    for chunk in chunks:
+        try:
             booster = model.get_booster()
-            X_test_dmatrix = DMatrix(X_test)
-            jobs = [
-                delayed(booster.predict)(X_test_dmatrix, iteration_range=(i, i + 1))
+            pred_jobs = (
+                delayed(booster.predict)(DMatrix(chunk), iteration_range=(i, i + 1))
                 for i in range(model.n_estimators)
-            ]
-        elif method == "rf":
-            jobs = [delayed(tree.predict)(X_test) for tree in model.estimators_]
-        elif method == "bagging":
-            jobs = [delayed(bag.predict)(X_test) for bag in model.estimators_]
-        else:
-            raise ValueError(
-                "Unsupported method. Choose from 'xgb', 'rf', or 'bagging'."
+
             )
-        raw_predictions = engine(jobs)
-        predictions = getattr(
-            m, "inverse_transform", lambda x: x # no operation if no inverse
-        )(raw_predictions)
-        return np.array(predictions).T  # (n_samples, n_bags)
 
-    def compute_summary_stats(predictions, indices):
-        mean_preds = np.mean(predictions, axis=1)
-        std_preds = np.std(predictions, axis=1)
-        median_preds = np.median(predictions, axis=1)
-        lower_bound = np.quantile(predictions, 0.025, axis=1)
-        upper_bound = np.quantile(predictions, 0.975, axis=1)
-        stats_df = pd.DataFrame(
-            {
-                "mean": mean_preds,
-                "sd": std_preds,
-                "median": median_preds,
-                "ci95_LL": lower_bound,
-                "ci95_UL": upper_bound,
-            },
-            index=indices,
+        except AttributeError:
+            pred_jobs = (
+                delayed(member.predict)(chunk)
+                for member in getattr(model, "estimators_", [model])
+            )
+        chunk_preds = pd.DataFrame(
+            np.column_stack(engine(pred_jobs)),
+            index = getattr(chunk, 'index', None)
+            )
+        chunk_stats = pd.DataFrame.from_dict(
+            dict(
+                mean = chunk_preds.mean(axis=1),
+                sd = chunk_preds.std(axis=1),
+                median = chunk_preds.std(axis=1),
+                **dict(
+                    zip(['ci95_LL', 'ci95_UL'], 
+                        chunk_preds.quantile(q=(.025, .975), axis=1).values
+                    )
+                )
+            )
         )
-        return stats_df
-
-    def cross_val_predictions(model, X, y, cv, method):
-        all_predictions = {}
-        for train_idx, test_idx in cv.split(X, y):
-            trained_model = train_model(model, X, y, train_idx)
-            X_test = X.iloc[test_idx]
-            fold_preds = collect_predictions(trained_model, X_test, method)
-            for idx, sample_idx in enumerate(test_idx):
-                if sample_idx not in all_predictions:
-                    all_predictions[sample_idx] = []
-                all_predictions[sample_idx].append(fold_preds[idx, :])
-        combined_predictions = {
-            idx: np.concatenate(pred_list, axis=0)
-            for idx, pred_list in all_predictions.items()
-        }
-        indices = [X.index[i] for i in combined_predictions.keys()]
-        return compute_summary_stats(
-            np.array(list(combined_predictions.values())), indices
-        )
-
-    def predict_new_data(model, model_list, X_predict, method):
-        all_predictions = []
-        for trained_model in model_list:
-            fold_preds = collect_predictions(trained_model, X_predict, method)
-            all_predictions.append(fold_preds)
-        all_predictions = np.concatenate(all_predictions, axis=1)  # Combine folds
-        return compute_summary_stats(all_predictions, X_predict.index)
-
-    # Cross-validate on training data
-    oos_summary_stats = cross_val_predictions(model, X_train, y_train, cv, method)
-
-    # Train models for predictions on new data
-    model_list = [
-        train_model(model, X_train, y_train, train_idx)
-        for train_idx, _ in cv.split(X_train)
-    ]
-    predict_summary_stats = predict_new_data(model, model_list, X_predict, method)
-
-    return {"train_stats": oos_summary_stats, "predict_stats": predict_summary_stats}
-
-
+        stats.append(chunk_stats)
+    output = pd.concat(
+        stats, axis=0, ignore_index = False
+    )
+    return output
+        
+        
 # Example Usage
 if __name__ == "__main__":
     # Generate sample data
     from sklearn.datasets import make_regression
-    from joblib import parallel_backend # this is user-facing
+    from joblib import parallel_backend  # this is user-facing
 
     X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
     X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
@@ -181,10 +187,12 @@ if __name__ == "__main__":
     cv = KFold(n_splits=cv_splits)
 
     # Define model and method
-    model = RandomForestRegressor(n_estimators=100, max_depth=4, random_state=42)
+    model = RandomForestRegressor(n_estimators=100, max_depth=4, random_state=42).fit(X_train, y_train)
+    # this sets the backend type and number of jobs to use in the internal
+    # Parallel() call.
     with parallel_backend("loky", n_jobs=16):
         results = process_data_with_model(
-            X_train, y_train, X_predict, model, cv, cv_splits=cv_splits, method="rf"
+            model, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
 
     print("\n=== Training Summary Stats ===\n", results["train_stats"].head())
