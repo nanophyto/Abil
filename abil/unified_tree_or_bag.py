@@ -13,7 +13,7 @@ from joblib import delayed, Parallel
 
 
 def process_data_with_model(
-    m, X_train, y_train, X_predict, cv=None, chunksize=None
+    m, X_predict, X_train, y_train, cv=None, chunksize=None
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
@@ -87,8 +87,6 @@ def process_data_with_model(
     predict_summary_stats = _summarize_predictions(
         model, 
         X_predict=X_predict,
-        X_train=X_train,
-        y_train=y_train,
         chunksize=chunksize
     )
     
@@ -106,6 +104,7 @@ def _summarize_predictions(
     elif not all([(X_train is None), (y_train is None)]):
         if not base.check_is_fitted(model):
             raise ValueError("model provided is not fit, and no data is provided to fit the model on. Fit the model on the data first.")
+
         raise ValueError(
             "Both X_train and y_train must be provided, or neither must be."
         )
