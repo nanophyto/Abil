@@ -14,7 +14,7 @@
   training: studies/wiseman2024/data/calcif_env.csv
 
   predictors: ["temperature", 
-    "si", "phosphate", "din", 
+    "sio4", "po4", "no3", 
     "o2", "mld", "DIC", "TA",
     "PAR","chlor_a","CI_2"]
  
