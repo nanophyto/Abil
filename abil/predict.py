@@ -3,21 +3,42 @@ import numpy as np
 import pickle
 import os
 import time
-from sklearn.ensemble import VotingRegressor
-from sklearn.model_selection import KFold
 
-from sklearn.model_selection import cross_validate
+from sklearn.ensemble import VotingRegressor, VotingClassifier
+from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
-    from abil.unified_tree_or_bag import process_data_with_model
+    from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 else:
-    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
-    from unified_tree_or_bag import process_data_with_model
+    from functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 
-def def_prediction(path_out, ensemble_config, n, species):
+def def_prediction(path_out, ensemble_config, n, target):
+    """
+    Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
+
+    Parameters
+    ----------
+    path_out : str
+        Path to the output folder containing model and scoring information.
+    ensemble_config : dict
+        Dictionary containing configuration details for the ensemble models, including model names, regressor or classifier status.
+    n : int
+        Index of the model to load in the ensemble.
+    target : str
+        The target for which predictions are made (used to load target-specific files).
+
+    Returns
+    -------
+    tuple
+        A tuple containing the model and the mean absolute error (MAE) score.
+
+    Raises
+    ------
+    ValueError
+        If both regressor and classifier are set to False, or if a classifier is used when only regressors are supported.
+    """
 
     path_to_scores  = os.path.join(path_out, "scoring", ensemble_config["m"+str(n+1)])
     path_to_param  = os.path.join(path_out, "model", ensemble_config["m"+str(n+1)])
@@ -242,10 +263,82 @@ class predict:
 
             # w = inverse_weighting(mae_values) 
 
-            # if self.ensemble_config["regressor"] ==True:
-            #     m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
-            # else:
-            #     raise ValueError("classifiers are not supported")
+            if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
+                m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
+                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
+                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)      
+
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
+                print("exporting to ens: ", file_path)
+            elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
+                # weights will be the same
+                # need to load reg
+                # need to load clf
+                # need to define voting regressor
+                # need to define voting classifier
+                clf_models = []
+                reg_models = []
+
+                for i in range(number_of_models):
+                    path_to_param  = os.path.join(self.path_out, "model", self.ensemble_config["m"+str(i+1)])
+                    print("loading clf")
+
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_clf.sav', 'rb') as file:
+                        m_clf = pickle.load(file)       
+                    clf_models.append(('clf'+str(i+1), m_clf))  
+
+                    print("loading reg")
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_reg.sav', 'rb') as file:
+                        m_reg = pickle.load(file)
+
+                    reg_models.append(('reg'+str(i+1), m_reg))  
+                
+                print("defining voting regressor")
+                y = self.y.values.ravel()
+
+                voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(self.X_train, y)
+                y_clf = y.copy()
+                y_clf[y_clf > 0] = 1
+
+                voting_clf = VotingClassifier(estimators=clf_models, weights=w).fit(self.X_train, y_clf)
+
+                print("defining ZIR")
+                m = ZeroInflatedRegressor(
+                    classifier=voting_clf,
+                    regressor=voting_reg,
+                )
+                print("predicting ZIR")
+                m.fit(self.X_train, y)
+                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)  
+                
+                print("exporting ZIR object")
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
+                print("exporting to ens: ", file_path)
+
+            else:
+                raise ValueError("classifiers are not supported")
 
             # print(np.min(self.y))
 
