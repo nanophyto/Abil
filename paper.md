@@ -37,6 +37,22 @@ The package is optimized for parallel processing, making it particularly suited 
 
 By combining a user-friendly interface, parallel processing capabilities, and a specific focus on regression problems, `Abil` facilitates novel scientific explorations of sparse oceanic datasets. Its versatility and computational efficiency enable researchers to address complex challenges in ocean biogeochemistry and ecology with greater ease and accuracy.
 
+# Usage Example
+
+There are three steps to running `Abil`, outlined below. Additional documentation for `Abil` is available on the github (LINK). 
+
+## Tune
+
+To initialize the model, the training dataset `d` (`pandas.DataFrame`) is subset to `X_train` and `y`, where `y` is the target data, and `X_train` is the associated environmental predictors. These are then passed in to the tuning class using m = tune(X_train, y, model_config). The training is then performed by calling m.train(model=model, regressor=True), where model is one of four supported models ("xgb", "knn", "rf", "gp"). The output will print "execution time: XXX seconds" upon completion.
+
+## Predict
+
+To run the model prediction, the training dataset `d` is again subset to `X_train` and `y`. Additionally, the fully resolved environmental data "X_predict" is read in as a `pandas.DataFrame`. These are passed to the prediction class using m = predict(X_train, y, model_config) and then called by m.make_prediction(). The output will print "execution time: XXX seconds" upon completion.
+
+## Post
+
+To post-process the model, initialize the class with m = post(model_config). Additional postprocessing includes: m.merge_performance(model=model), which summarizes the performance statistics for each target (i.e. MAE, rMSE, R2) and exports them as a .csv; m.merge_parameters(model=model), which summarizes the optimized hyperparameters and exports them as a .csv; m.merge_env(X_predict), which merges the model prediction with the fully resolved environmental data and exports them as a NetCDF file; m.export_ds(file_name)/m.export_csv(file_name), which exports the processed dataset at a NetCDF file or .csv respectively; as well as other post-processing functions such as those needed for calculating global integrals of the processed dataset. 
+
 # Acknowledgements
 
 This work was supported by funding from the Natural Environment Research Council (NERC).
