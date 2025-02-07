@@ -2,7 +2,14 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import FunctionTransformer
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, BaggingRegressor, BaggingClassifier, VotingRegressor
+from sklearn.ensemble import (
+    RandomForestRegressor,
+    RandomForestClassifier,
+    BaggingRegressor,
+    BaggingClassifier,
+    VotingRegressor,
+    VotingClassifier,
+)
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from xgboost import XGBRegressor, DMatrix
 from sklearn.pipeline import Pipeline
@@ -51,7 +58,9 @@ def process_data_with_model(
         pipeline = model
         model = pipeline.named_steps["estimator"]
     else:
-        pipeline = Pipeline([("preprocessor", FunctionTransformer()), ("estimator", model)])
+        pipeline = Pipeline(
+            [("preprocessor", FunctionTransformer()), ("estimator", model)]
+        )
     preprocessor = pipeline.named_steps["preprocessor"]
 
     X_train = preprocessor.transform(X_train)
@@ -62,15 +71,20 @@ def process_data_with_model(
 
     if isinstance(model, ZeroInflatedRegressor):
         classifier_stats = process_data_with_model(
-        model.classifier_, X_predict, X_train, y_train>0, cv=cv, chunksize=chunksize
-    )
+            model.classifier_,
+            X_predict,
+            X_train,
+            y_train > 0,
+            cv=cv,
+            chunksize=chunksize,
+        )
         regressor_stats = process_data_with_model(
-    model.regressor_, X_predict, X_train, y_train, cv=cv, chunksize=chunksize
-    )
+            model.regressor_, X_predict, X_train, y_train, cv=cv, chunksize=chunksize
+        )
         return {
-            **{f"classifier_{k}":v for k,v in classifier_stats.items()}, 
-            **{f"regressor_{k}":v for k,v in regressor_stats.items()},     
-                }
+            **{f"classifier_{k}": v for k, v in classifier_stats.items()},
+            **{f"regressor_{k}": v for k, v in regressor_stats.items()},
+        }
 
     if cv is not None:
         train_summary_stats = [
@@ -83,8 +97,8 @@ def process_data_with_model(
             )
             for train_idx, test_idx in cv.split(X_train)
         ]
-    # concat and rearrange to match input data order
-        train_summary_stats  = pd.concat(
+        # concat and rearrange to match input data order
+        train_summary_stats = pd.concat(
             train_summary_stats, axis=0, ignore_index=False
         ).loc[X_train.index]
     else:
@@ -93,21 +107,17 @@ def process_data_with_model(
             X_train=X_train,
             y_train=y_train,
             X_predict=X_train,
-            chunksize=chunksize
+            chunksize=chunksize,
         )
 
     predict_summary_stats = _summarize_predictions(
-        model, 
-        X_predict=X_predict,
-        chunksize=chunksize
+        model, X_predict=X_predict, chunksize=chunksize
     )
-    
+
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
 
 
-def _summarize_predictions(
-    model, X_predict, X_train=None, y_train=None, chunksize=2e4
-):
+def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksize=2e4):
     # need to extract the ensemble predictions for each X
     # over all learners, then summarize those
     # and do that in parallel.
@@ -115,12 +125,14 @@ def _summarize_predictions(
         model = base.clone(model).fit(X_train, y_train)
     elif not all([(X_train is None), (y_train is None)]):
         if not base.check_is_fitted(model):
-            raise ValueError("model provided is not fit, and no data is provided to fit the model on. Fit the model on the data first.")
+            raise ValueError(
+                "model provided is not fit, and no data is provided to fit the model on. Fit the model on the data first."
+            )
 
         raise ValueError(
             "Both X_train and y_train must be provided, or neither must be."
         )
-        
+
     engine = Parallel()
     n_samples, n_features = X_predict.shape
 
@@ -140,7 +152,6 @@ def _summarize_predictions(
             pred_jobs = (
                 delayed(booster.predict)(DMatrix(chunk), iteration_range=(i, i + 1))
                 for i in range(model.n_estimators)
-
             )
 
         except AttributeError:
@@ -150,25 +161,25 @@ def _summarize_predictions(
             )
         chunk_preds = pd.DataFrame(
             inverse_transform(np.column_stack(engine(pred_jobs))),
-            index = getattr(chunk, 'index', None)
-            )
+            index=getattr(chunk, "index", None),
+        )
         chunk_stats = pd.DataFrame.from_dict(
             dict(
-                mean = chunk_preds.mean(axis=1),
-                sd = chunk_preds.std(axis=1),
-                median = chunk_preds.std(axis=1),
+                mean=chunk_preds.mean(axis=1),
+                sd=chunk_preds.std(axis=1),
+                median=chunk_preds.std(axis=1),
                 **dict(
-                    zip(['ci95_LL', 'ci95_UL'], 
-                        chunk_preds.quantile(q=(.025, .975), axis=1).values
+                    zip(
+                        ["ci95_LL", "ci95_UL"],
+                        chunk_preds.quantile(q=(0.025, 0.975), axis=1).values,
                     )
-                )
+                ),
             )
         )
         stats.append(chunk_stats)
-    output = pd.concat(
-        stats, axis=0, ignore_index = False
-    )
+    output = pd.concat(stats, axis=0, ignore_index=False)
     return output
+
 
 def _flatten_metaensemble(me):
     """
@@ -178,18 +189,16 @@ def _flatten_metaensemble(me):
         return [me]
     output = []
     for sub_estimator in me.estimators_:
-        output.extend(
-            _flatten_metaensemble(sub_estimator)
-        )
+        output.extend(_flatten_metaensemble(sub_estimator))
     return output
-        
+
+
 # Example Usage
 if __name__ == "__main__":
     # Generate sample data
     from sklearn.datasets import make_regression
     from joblib import parallel_backend  # this is user-facing
     from abil.functions import ZeroInflatedRegressor
-
 
     X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
     X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
@@ -214,43 +223,75 @@ if __name__ == "__main__":
     # Define cross-validation strategy
     cv = KFold(n_splits=cv_splits)
 
- 
-
     # Define model and method
-    model = RandomForestRegressor(n_estimators=100, max_depth=4, random_state=42).fit(X_train, y_train)
+    model = RandomForestRegressor(n_estimators=100, max_depth=4, random_state=42).fit(
+        X_train, y_train
+    )
 
     vmodel = VotingRegressor(
         estimators=[
-            ('rf', RandomForestRegressor(
-                n_estimators=100, max_depth=4, random_state=42
-            )),
-            ('knn', BaggingRegressor(
-            KNeighborsRegressor(n_neighbors=10, weights='distance'), n_estimators=50
-        ).fit(X_train, y_train))
-            ]
-    ).fit(X_train, y_train)  
-
+            (
+                "rf",
+                RandomForestRegressor(n_estimators=100, max_depth=4, random_state=42),
+            ),
+            (
+                "knn",
+                BaggingRegressor(
+                    KNeighborsRegressor(n_neighbors=10, weights="distance"),
+                    n_estimators=50,
+                ).fit(X_train, y_train),
+            ),
+        ]
+    ).fit(X_train, y_train)
 
     mask = (y_train > 0).values
     zirmodel = ZeroInflatedRegressor(
         RandomForestClassifier(n_estimators=100, max_depth=4, random_state=2245),
         BaggingRegressor(
-            KNeighborsRegressor(n_neighbors=10, weights='distance'), n_estimators=50
-        )
+            KNeighborsRegressor(n_neighbors=10, weights="distance"), n_estimators=50
+        ),
     ).fit(X_train, y_train)
 
-    vzirmodel = VotingRegressor(
+    v_of_zirmodels = VotingRegressor(
         estimators=[
-            ("rf-then-knn", zirmodel), 
-            ("knn-then-rf", ZeroInflatedRegressor(
-                BaggingClassifier(
-            KNeighborsClassifier(n_neighbors=10, weights='distance'), n_estimators=50
-        ).fit(X_train, mask),
-                RandomForestRegressor(n_estimators=100, max_depth=4, random_state=2245).fit(X_train.iloc[mask,:], y_train.iloc[mask]),
-            ))
-            ]
-    ).fit(X_train, y_train)  
+            ("rf-then-knn", zirmodel),
+            (
+                "knn-then-rf",
+                ZeroInflatedRegressor(
+                    BaggingClassifier(
+                        KNeighborsClassifier(n_neighbors=10, weights="distance"),
+                        n_estimators=50,
+                    ).fit(X_train, mask),
+                    RandomForestRegressor(
+                        n_estimators=100, max_depth=4, random_state=2245
+                    ).fit(X_train.iloc[mask, :], y_train.iloc[mask]),
+                ),
+            ),
+        ]
+    ).fit(X_train, y_train)
 
+    zir_of_vmodels = ZeroInflatedRegressor(
+        classifier=VotingClassifier(
+            estimators=[
+                ("rfc", RandomForestClassifier(
+                    n_estimators=100, max_depth=4, random_state=2245
+                )),
+                ("bagnnc", BaggingClassifier(
+                    KNeighborsClassifier(n_neighbors=10, weights="distance"),
+                    n_estimators=50,
+                )),
+            ]
+        ),
+        regressor=VotingRegressor(
+            estimators=[
+                ("rfr", RandomForestRegressor(n_estimators=100, max_depth=4, random_state=2245)),
+                ("bagnnr", BaggingRegressor(
+                    KNeighborsRegressor(n_neighbors=10, weights="distance"),
+                    n_estimators=50,
+                ))
+            ]
+        ),
+    ).fit(X_train, y_train)
 
     # this sets the backend type and number of jobs to use in the internal
     # Parallel() call.
@@ -264,6 +305,10 @@ if __name__ == "__main__":
         )
     with parallel_backend("loky", n_jobs=16):
         zirresults = process_data_with_model(
+            zirmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+        )
+    with parallel_backend("loky", n_jobs=16):
+        zir_of_vmodels = process_data_with_model(
             zirmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
     print("\n=== Training Summary Stats ===\n", results["train_stats"].head())
