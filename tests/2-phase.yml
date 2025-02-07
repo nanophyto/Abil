@@ -1,5 +1,5 @@
 ---
-  hpc: False
+  root: ./
 
   run_name: 2-phase #update for specific run name
   path_out:  tests/ModelOutput/ #root + folder 
@@ -9,16 +9,11 @@
   targets:  examples/data/targets.csv #root + folder
   training:  examples/data/training.csv
 
-  local_root: ./
-
-  #predictors: ["temperature", "din", 
-  #   "irradiance"]
   predictors: ["feature_1", "feature_2", "feature_3"]
   verbose: 1
   seed : 1 # random seed
   n_threads : 1 # how many cpu threads to use
   cv : 3
-  predict_probability: False 
 
   ensemble_config: 
     classifier: True
@@ -26,7 +21,6 @@
     m1: "rf"
     m2: "knn"
     m3: "xgb"
-
 
   upsample: False
   stratify: True
@@ -42,54 +36,45 @@
   param_grid:
     rf_param_grid:
       reg_param_grid:
-        regressor__estimator__n_estimators: [100]
-        regressor__estimator__max_features: [4]
-        regressor__estimator__max_depth: [50]
-        regressor__estimator__min_samples_leaf: [0.5]
-        regressor__estimator__max_samples: [0.5]     
+        n_estimators: [100]
+        max_features: [4]
+        max_depth: [50]
+        min_samples_leaf: [0.5]
+        max_samples: [0.5]     
       clf_param_grid:
-        estimator__n_estimators: [100]
-        estimator__max_features: [3, 4]
-        estimator__max_depth: [50, 100]
-        estimator__min_samples_leaf: [0.5]
-        estimator__max_samples: [0.5]   
-
+        n_estimators: [100]  
+        max_depth: [50] 
+        max_samples: [0.8]
 
     xgb_param_grid:
       reg_param_grid:  
-        regressor__estimator__learning_rate: [0.05]
-        regressor__estimator__n_estimators: [100]
-        regressor__estimator__max_depth: [7]
-        regressor__estimator__subsample: [0.8]  
-        regressor__estimator__colsample_bytree: [0.5]
-        regressor__estimator__gamma: [1] 
-        regressor__estimator__reg_alpha: [0.1]   
+        learning_rate: [0.05]
+        n_estimators: [100]
+        max_depth: [7]
+        subsample: [0.8]  
+        colsample_bytree: [0.5]
+        gamma: [1] 
+        reg_alpha: [0.1]   
       clf_param_grid:  
-        estimator__learning_rate: [0.01]
-        estimator__n_estimators: [100]
-        estimator__max_depth: [4]
-        estimator__subsample: [0.6]  
-        estimator__colsample_bytree: [0.6]
-        estimator__gamma: [1] 
-        estimator__reg_alpha: [1]   
-
-    gp_param_grid:
-      reg_param_grid:  
-        regressor__estimator__n_restarts_optimizer: [0]  
-      clf_param_grid:  
-        estimator__n_restarts_optimizer: [0]  
+        learning_rate: [0.01]
+        n_estimators: [100]
+        max_depth: [4]
+        subsample: [0.6]  
+        colsample_bytree: [0.6]
+        gamma: [1] 
+        reg_alpha: [1]   
 
     knn_param_grid:
       reg_param_grid:  
-        regressor__estimator__max_samples: [0.2]
-        regressor__estimator__max_features: [0.2]
-        regressor__estimator__estimator__leaf_size: [25]
-        regressor__estimator__estimator__n_neighbors: [3]
+        max_samples: [0.2]
+        max_features: [0.2]
+        estimator__leaf_size: [25]
+        estimator__n_neighbors: [3]
       clf_param_grid:  
-        estimator__max_samples: [0.2]
-        estimator__max_features: [0.2]
-        estimator__estimator__leaf_size: [25]
-        estimator__estimator__n_neighbors: [3]
+        max_samples: [0.2]
+        max_features: [0.2]
+        estimator__leaf_size: [25]
+        estimator__n_neighbors: [3]
 
   knn_bagging_estimators: 3
 

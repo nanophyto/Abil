@@ -5,6 +5,6 @@ pandas
 pyyaml
 xarray
 xgboost
-scikit-learn
+scikit-learn<1.6
 scipy
 scikit-bio

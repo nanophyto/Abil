@@ -40,30 +40,24 @@ class TestRegressors(unittest.TestCase):
 
     def test_post_ensemble(self):
         m = tune(self.X_train, self.y, self.model_config)
-        m.train(model="rf", regressor=True)
-        m.train(model="xgb", regressor=True)
-        m.train(model="knn", regressor=True)
+        m.train(model="rf")
+        m.train(model="xgb")
+        m.train(model="knn")
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction()
 
         targets = np.array([self.target_name])
         def do_post(pi):
-            m = post(self.model_config, pi=pi)
-            m.merge_performance(model="ens") 
-            m.merge_performance(model="xgb")
-            m.merge_performance(model="rf")
-            m.merge_performance(model="knn")
+            m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi)
+            #estimate aoa for each target and export to aoa.nc:
+            m.estimate_applicability()
 
-
-            m.merge_parameters(model="rf")
-            m.merge_parameters(model="xgb")
-            m.merge_parameters(model="knn")
             m.estimate_carbon("pg poc")
 
             m.total()
 
-            m.merge_env(self.X_predict)
+            m.merge_env()
             m.merge_obs("test",targets)
 
             m.export_ds("test")
@@ -100,37 +94,25 @@ class Test2Phase(unittest.TestCase):
 
         m = tune(self.X_train, self.y, self.model_config)
 
-        m.train(model="rf", classifier=True, regressor=True)
-        m.train(model="xgb", classifier=True, regressor=True)
-        m.train(model="knn", classifier=True, regressor=True)
+        m.train(model="rf")
+        m.train(model="xgb")
+        m.train(model="knn")
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config)
         m.make_prediction()
 
-        # targets = pd.read_csv(self.model_config['local_root']+ self.model_config['targets'])
-        # targets = targets.iloc[:1]
-        # targets = targets['Target'].values
         targets = np.array([self.target_name])
 
         def do_post(pi):
-            m = post(self.model_config, pi=pi)
-            m.merge_performance(model="ens") 
-            m.merge_performance(model="xgb")
-            m.merge_performance(model="rf")
-            m.merge_performance(model="knn")
-
-            m.merge_parameters(model="rf")
-            m.merge_parameters(model="xgb")
-            m.merge_parameters(model="knn")
+            m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi, datatype="poc")
+            #estimate aoa for each target and export to aoa.nc:
+            m.estimate_applicability()
             m.estimate_carbon("pg poc")
             m.diversity()
 
-
             m.total()
-
-            m.merge_env(self.X_predict)
+            m.merge_env()
             m.merge_obs("test",targets)
-
 
             m.export_ds("test")
             m.export_csv("test")

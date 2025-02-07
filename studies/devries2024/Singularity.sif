@@ -2,7 +2,7 @@ Bootstrap: docker
 From: continuumio/miniconda3
 
 %files
-    ../../dist/abil-0.0.9.tar.gz /root
+    ../../dist/abil-0.0.10.tar.gz /root
     ../../studies/devries2024/environment.yml /root
 
 %post
@@ -14,7 +14,7 @@ From: continuumio/miniconda3
     conda config --add channels conda-forge
     conda env update -n base --file /root/environment.yml
     cd
-    python -m pip install abil-0.0.9.tar.gz
+    python -m pip install abil-0.0.10.tar.gz
 
 %runscript
     . /opt/conda/etc/profile.d/conda.sh
