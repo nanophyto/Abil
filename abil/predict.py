@@ -12,10 +12,12 @@ from joblib import Parallel, delayed
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
     from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from abil.unified_tree_or_bag import process_data_with_model
 else:
     from functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from unified_tree_or_bag import process_data_with_model
 
-def def_prediction(path_out, ensemble_config, n, target):
+def load_model_and_scores(path_out, ensemble_config, n, target):
     """
     Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
 
@@ -305,7 +307,7 @@ class predict:
 
         if number_of_models==1:
 
-            m, mae1 = def_prediction(self.path_out, self.ensemble_config, 0, self.target_no_space)
+            m, mae1 = load_model_and_scores(self.path_out, self.ensemble_config, 0, self.target_no_space)
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = os.path.join(self.path_out, "predictions", model_name)
@@ -321,7 +323,7 @@ class predict:
             w = []
 
             for i in range(number_of_models):
-                m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
+                m, mae = load_model_and_scores(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = os.path.join(self.path_out, "predictions", model_name, "50")
 
