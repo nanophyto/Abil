@@ -10,7 +10,6 @@ from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed
 
-
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
     from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 else:
@@ -109,9 +108,6 @@ def parallel_predict(prediction_function, X_predict, n_threads=1):
 
     return combined_predictions
 
-def parallel_predict(model, X_train, X_predict, y_train, cv, cv_splits, method, n_threads=1):
-    summary_stats = process_data_with_model(X_train, y_train, X_predict, model, cv, cv_splits, method=method)
-
 
 def export_prediction(m, target, target_no_space, X_predict, model_out, n_threads=1):
     """
@@ -136,9 +132,7 @@ def export_prediction(m, target, target_no_space, X_predict, model_out, n_thread
     """
 
     d = X_predict.copy()
-    #d[target] = parallel_predict(m.predict, X_predict, n_threads)
-    d[target] = parallel_predict(m, X_train, X_predict, y_train, cv, cv_splits, method, n_threads=1)
-
+    d[target] = parallel_predict(m.predict, X_predict, n_threads)
     d = d.to_xarray()
     
     try: #make new dir if needed
@@ -267,7 +261,6 @@ class predict:
         self.model_config = model_config
 
         self.n_jobs = n_jobs
-        self.n_splits = n_splits=model_config['cv']
 
         if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == False):
             raise ValueError("classifiers are not supported")
@@ -332,18 +325,15 @@ class predict:
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = os.path.join(self.path_out, "predictions", model_name, "50")
 
-                #export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                #              model_out = model_out, n_threads=self.n_jobs)
-                export_prediction(m, self.target, self.target_no_space, self.X_train, self.X_predict, model_out, 
-                                  self.y, self.cv, self.n_splits, model_name, n_threads=1)
+                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)
 
                 print("exporting " + model_name + " prediction to: " + model_out)
 
                 models.append((model_name, m))
                 mae_values.append(mae)
 
-            # w = inverse_weighting(mae_values) 
-
+            w = inverse_weighting(mae_values) 
             if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
                 model_out = os.path.join(self.path_out, "predictions", "ens", "50")
@@ -363,11 +353,6 @@ class predict:
 
                 print("exporting to ens: ", file_path)
             elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
-                # weights will be the same
-                # need to load reg
-                # need to load clf
-                # need to define voting regressor
-                # need to define voting classifier
                 clf_models = []
                 reg_models = []
 
@@ -384,7 +369,7 @@ class predict:
                         m_reg = pickle.load(file)
 
                     reg_models.append(('reg'+str(i+1), m_reg))  
-                
+
                 print("defining voting regressor")
                 y = self.y.values.ravel()
 
@@ -403,9 +388,10 @@ class predict:
                 m.fit(self.X_train, y)
                 export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
                               model_out = model_out, n_threads=self.n_jobs)  
-                
+
                 print("exporting ZIR object")
                 base_output_path = os.path.join(self.path_out, "model", "ens")
+
                 try: #make new dir if needed
                     os.makedirs(base_output_path)
                 except:
@@ -418,26 +404,22 @@ class predict:
 
                 print("exporting to ens: ", file_path)
 
-
             else:
                 raise ValueError("classifiers are not supported")
 
-            # print(np.min(self.y))
-
-            # scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
-            #                         scoring=self.scoring, n_jobs=self.n_jobs)
-
+            scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
+                                    scoring=self.scoring, n_jobs=self.n_jobs)
 
             model_out_scores = os.path.join(self.path_out, "scoring", "ens")
 
-            # try: #make new dir if needed
-            #     os.makedirs(model_out_scores)
-            # except:
-            #     None
+            try: #make new dir if needed
+                os.makedirs(model_out_scores)
+            except:
+                None
 
-            # with open(os.path.join(model_out_scores, self.target_no_space) + self.extension, 'wb') as f:
-            #     pickle.dump(scores, f)
-            # print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
+            with open(os.path.join(model_out_scores, self.target_no_space) + self.extension, 'wb') as f:
+                pickle.dump(scores, f)
+            print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
