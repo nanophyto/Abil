@@ -5,18 +5,22 @@ import numpy as np
 import pickle
 import os
 import time
+import warnings
 
-from sklearn.ensemble import VotingRegressor
+from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed
+from joblib import parallel_backend  
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from abil.unified_tree_or_bag import process_data_with_model
 else:
-    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from unified_tree_or_bag import process_data_with_model
 
-def def_prediction(path_out, ensemble_config, n, target):
+def load_model_and_scores(path_out, ensemble_config, n, target):
     """
     Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
 
@@ -110,7 +114,7 @@ def parallel_predict(prediction_function, X_predict, n_threads=1):
     return combined_predictions
 
 
-def export_prediction(m, target, target_no_space, X_predict, model_out, n_threads=1):
+def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=1):
     """
     Exports model predictions to a NetCDF file.
 
@@ -122,18 +126,51 @@ def export_prediction(m, target, target_no_space, X_predict, model_out, n_thread
         The name of the target variable.
     target_no_space : str
         The target variable name with spaces replaced by underscores.
-    X_predict : DataFrame
-        The features on which to make predictions.
+    X_predict : pd.DataFrame of shape (n_points, n_features)
+        Features to predict on (e.g., environmental data), where n_points
+        is the total 1-d size of the features to predict on 
+        (ex. 31881600 for full 180x360x41x12 grid).
     model_out : str
         Path where the predictions should be saved.
     n_threads : int, optional, default=1
         The number of threads to use for parallel prediction.
     """
 
-    d = X_predict.copy()
-    d[target] = parallel_predict(m.predict, X_predict, n_threads)
+    #d = X_predict.copy()
+    #d[target] = parallel_predict(m.predict, X_predict, n_threads)
+    #d = d.to_xarray()
+
+    if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
+        with parallel_backend("loky", n_jobs=n_threads):
+            d = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["predict_stats"]
+    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            # Generate classifier and regressor stats
+            d_clf = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["classifier_predict_stats"]
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            d_reg = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["regressor_predict_stats"]
+
+        # List of columns 
+        columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
+        d = pd.DataFrame(d_reg)
+        for col in columns:
+            d[col] = np.where(d_clf[col] < 0.5, 0, d_reg[col])
+
+    else:
+        raise ValueError("classifiers are not supported")
+
+    print(d.head())
     d = d.to_xarray()
-    
+    d['target'] = target
+
     try: #make new dir if needed
         os.makedirs(model_out)
     except:
@@ -142,54 +179,97 @@ def export_prediction(m, target, target_no_space, X_predict, model_out, n_thread
     export_path = os.path.join(model_out, target_no_space + ".nc")
 
 
-    d[target].to_netcdf(export_path) 
+    d.to_netcdf(export_path) 
+
+    print("finished exporting summary stats to: ",  export_path)
+
 
 
 class predict:
     """
-    Predicts outcomes based on an ensemble of regression models and exports the predictions to a NetCDF file.
+    Predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.
 
     Parameters
     ----------
-    X_train : {array-like, sparse matrix} of shape (n_samples, n_features)
+    X_train : pd.DataFrame of shape (n_samples, n_features)
         Training features used for model fitting.
-    y : array-like of shape (n_samples,) or (n_samples, n_outputs)
+    y : pd.Series of shape (n_samples,) or (n_samples, n_outputs)
         Target values used for model fitting.
-    X_predict : {array-like, sparse matrix} of shape (n_samples, n_features)
-        Features to predict on (e.g., environmental data).
+    X_predict : pd.DataFrame of shape (n_points, n_features)
+        Features to predict on, where `n_points` represents the total number of prediction points 
+        (e.g., 31881600 for a full 180x360x41x12 grid).
     model_config : dict
-        Dictionary containing model configuration parameters such as:
-        - seed: int, random seed for reproducibility
-        - path_out: str, output path for saving results
-        - path_in: str, input path to models
-        - verbose: int, verbosity level (0-3)
-        - cv: int, number of cross-validation folds
-        - ensemble_config: dict, configuration for ensemble models
+        Dictionary containing model configuration parameters, including:
+            - seed : int
+                Random seed for reproducibility.
+            - root : str
+                Path to the root folder.
+            - path_out : str
+                Directory where predictions are saved.
+            - path_in : str
+                Directory containing tuned models.
+            - target : str
+                File name of the target list.
+            - verbose : int
+                Verbosity level (0-3).
+            - n_threads : int
+                Number of threads to use for parallel processing.
+            - cv : int
+                Number of cross-validation folds.
+            - ensemble_config : dict
+                Configuration for the ensemble setup, containing:
+                    - classifier : bool
+                        Whether to train a classification model.
+                    - regressor : bool
+                        Whether to train a regression model.
+                    - m{n} : str
+                        Model names (e.g., "m1: 'rf'", "m2: 'xgb'").
+            - clf_scoring : list of str
+                Metrics for classification scoring.
+            - reg_scoring : list of str
+                Metrics for regression scoring (e.g., "r2", "neg_mean_absolute_error").
     n_jobs : int, optional, default=1
-        The number of threads to use for parallel processing.
+        Number of threads to use for parallel processing.
 
     Attributes
     ----------
     path_out : str
-        The path where predictions and model outputs are saved.
+        Path where predictions and model outputs are saved.
     target : str
-        The name of the target variable.
+        Name of the target variable.
     target_no_space : str
-        The target variable name with spaces replaced by underscores.
+        Target variable name with spaces replaced by underscores.
     verbose : int
-        Verbosity level for the model.
+        Verbosity level for logging.
     n_jobs : int
-        The number of parallel threads for prediction and cross-validation.
+        Number of parallel threads used for prediction and cross-validation.
 
     Methods
     -------
     make_prediction()
-        Fits the ensemble model(s) and makes predictions, exporting them to NetCDF.
+        Train the ensemble models and generate predictions, exporting them to NetCDF.
     """
 
     def __init__(self, X_train, y, X_predict, model_config, n_jobs=1):
         """
-        Initializes the prediction process by setting up model configurations, cross-validation, and paths.
+        Initialize the `predict` class with training data, prediction data, and model configurations.
+
+        Parameters
+        ----------
+        X_train : pd.DataFrame of shape (n_samples, n_features)
+            Training features used for model fitting.
+        y : pd.Series of shape (n_samples,) or (n_samples, n_outputs)
+            Target values used for model fitting.
+        X_predict : pd.DataFrame of shape (n_points, n_features)
+            Features for which predictions are to be made.
+        model_config : dict
+            Dictionary containing configuration parameters for the model and ensemble.
+        n_jobs : int, optional, default=1
+            Number of threads for parallel processing.
+
+        Returns
+        -------
+        None
         """
                 
         self.st = time.time()
@@ -242,21 +322,21 @@ class predict:
         print("initialized prediction")
         
     def make_prediction(self):
-
         """
-        Fits the models in the ensemble and makes predictions. Exports the predictions and model performance metrics.
+        Fit models in the ensemble and generate predictions.
 
-        If multiple models are provided, predictions are made for both individual models and an ensemble of models.
-        
+        Predictions are exported to NetCDF files. If the ensemble contains multiple models, 
+        predictions are made for each individual model and the ensemble.
+
         Returns
         -------
         None
 
         Notes
         -----
-        If more than one model is provided, predictions are made for both 
-        individual models and an ensemble of the models. 
-
+        - Individual model predictions and ensemble predictions are saved separately.
+        - Performance metrics (e.g., cross-validation scores) are saved for the ensemble.
+        - Only regression models are supported; classification is not implemented.
         """
 
         number_of_models = len(self.ensemble_config) -2
@@ -264,13 +344,15 @@ class predict:
 
         if number_of_models==1:
 
-            m, mae1 = def_prediction(self.path_out, self.ensemble_config, 0, self.target_no_space)
+            m, mae1 = load_model_and_scores(self.path_out, self.ensemble_config, 0, self.target_no_space)
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = os.path.join(self.path_out, "predictions", model_name)
 
-            export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
+            # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+            #                   model_out = model_out, n_threads=self.n_jobs)
+            export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                              model_out, n_threads=self.n_jobs)
 
         elif number_of_models >=2:
                     
@@ -280,29 +362,112 @@ class predict:
             w = []
 
             for i in range(number_of_models):
-                m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
+                m, mae = load_model_and_scores(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = os.path.join(self.path_out, "predictions", model_name, "50")
+                
+                print("===================")
+                print("DEBUG OF ZIR MODELS")
+                print("===================")
+                print(model_name)
+                print(type(m))
+                print(type(self.X_predict))
+                print(type(self.X_train))
 
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
 
-                print("exporting " + model_name + " prediction to: " + model_out)
+                if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
+                    export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                    model_out, n_threads=self.n_jobs)
+                    print("exporting " + model_name + " prediction to: " + model_out)
+                if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
+                    warnings.warn('prediction of individual ZIR models broken')
+
+                    # export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                    #                 model_out, n_threads=self.n_jobs)
 
                 models.append((model_name, m))
                 mae_values.append(mae)
 
             w = inverse_weighting(mae_values) 
-
-            if self.ensemble_config["regressor"] ==True:
+            if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
                 model_out = os.path.join(self.path_out, "predictions", "ens", "50")
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)                
+                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                #               model_out = model_out, n_threads=self.n_jobs)      
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
+                
+                #export model object:
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
+                print("exporting m ens to: ", file_path)
+            elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
+                clf_models = []
+                reg_models = []
+
+                for i in range(number_of_models):
+                    path_to_param  = os.path.join(self.path_out, "model", self.ensemble_config["m"+str(i+1)])
+                    print("loading clf")
+
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_clf.sav', 'rb') as file:
+                        m_clf = pickle.load(file)       
+                    clf_models.append(('clf'+str(i+1), m_clf))  
+
+                    print("loading reg")
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_reg.sav', 'rb') as file:
+                        m_reg = pickle.load(file)
+
+                    reg_models.append(('reg'+str(i+1), m_reg))  
+
+                print("defining voting regressor")
+                y = self.y.values.ravel().copy()
+
+                voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(self.X_train, y)
+                y_clf = y.copy()
+                y_clf[y_clf > 0] = 1
+
+                voting_clf = VotingClassifier(estimators=clf_models, weights=w).fit(self.X_train, y_clf)
+
+                print("defining ZIR")
+                m = ZeroInflatedRegressor(
+                    classifier=voting_clf,
+                    regressor=voting_reg,
+                )
+                print("predicting ZIR")
+                m.fit(self.X_train, y)
+
+                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
+
+                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                #               model_out = model_out, n_threads=self.n_jobs)  
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
+                print("exporting ZIR object")
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
+                print("exporting to ens: ", file_path)
+
             else:
                 raise ValueError("classifiers are not supported")
-
-            print(np.min(self.y))
 
             scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
                                     scoring=self.scoring, n_jobs=self.n_jobs)
@@ -314,9 +479,12 @@ class predict:
             except:
                 None
 
-            with open(os.path.join(model_out_scores, self.target_no_space) + self.extension, 'wb') as f:
+            scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
+
+
+            with open(scores_file_path, 'wb') as f:
                 pickle.dump(scores, f)
-            print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
+            print("exporting ensemble scores to: " + scores_file_path)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")

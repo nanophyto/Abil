@@ -182,43 +182,29 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
         if not is_regressor(self.regressor):
             raise ValueError(f"`regressor` has to be a regressor. Received instance of {type(self.regressor)} instead.")
 
-        try:
-            check_is_fitted(self.classifier)
-            self.classifier_ = self.classifier
-        except NotFittedError:
-            self.classifier_ = clone(self.classifier)
+        # Ensure classifier_ is assigned
+        self.classifier_ = clone(self.classifier)
+        self.classifier_.fit(X, y != 0)
 
-            self.classifier_.fit(X, y != 0)
-
+        # Ensure regressor_ is assigned
+        self.regressor_ = clone(self.regressor)
+        
         non_zero_indices = np.where(self.classifier_.predict(X) == 1)[0]
 
         if non_zero_indices.size > 0:
-            try:
-                check_is_fitted(self.regressor)
-                self.regressor_ = self.regressor
-            except NotFittedError:
-                self.regressor_ = clone(self.regressor)
-
-                if isinstance(X, pd.DataFrame):
-                    self.regressor_.fit(
-                            X.iloc[non_zero_indices],
-                            y[non_zero_indices],
-                    )
-                else:
-
-                    self.regressor_.fit(
-                            X[non_zero_indices],
-                            y[non_zero_indices],
-                    )
+            if isinstance(X, pd.DataFrame):
+                self.regressor_.fit(
+                    X.iloc[non_zero_indices] if isinstance(X, pd.DataFrame) else X[non_zero_indices],
+                    y.iloc[non_zero_indices].values if isinstance(y, pd.Series) else y[non_zero_indices]
+                )
+            else:
+                self.regressor_.fit(
+                        X[non_zero_indices],
+                        y[non_zero_indices],
+                )
         else:
-            print("all predictions are zero (!)")
-            try:
-                check_is_fitted(self.regressor)
-                self.regressor_ = self.regressor
-            except NotFittedError:
-                print("regressor has also not been fitted (!)")
-                self.regressor_ = clone(self.regressor)
-
+            print("All predictions are zero (!), skipping regressor fitting.")
+        
         return self
 
 

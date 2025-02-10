@@ -51,25 +51,48 @@ class tune:
 
         Parameters
         ----------
-        X_train : pd.DataFrame
-            The training feature matrix.
-        y : pd.Series
-            The target variable.
+        X_train : pd.DataFrame of shape (n_samples, n_features)
+            Training features used for model fitting.
+        y : pd.Series of shape (n_samples,) or (n_samples, n_outputs)
+            Target values used for model fitting.
         model_config : dict
-            Configuration dictionary with the following keys:
-                - seed : int
-                - root : str
-                - path_out : str
-                - path_in : str
-                - traits : str
-                - verbose : int
-                - n_threads : int
-                - cv : int
+            Dictionary containing model configuration parameters such as:
+                - seed: int, random seed for reproducibility
+                - root : str, path to Abil root folder
+                - path_out : str, where predictions are saved
+                - path_in : str, where to find tuned models
+                - target : str, file name of your target list
+                - verbose : int, to set verbosity (0-3)
+                - n_threads : int, number of threads to use
+                - cv : int, number of cross-folds
                 - ensemble_config : dict
+                    Dictionary containing ensemble set up:
+                        - classifier: bool
+                            Whether to train a classification model.
+                        - regressor: bool
+                            Whether to train a regression model.
+                        - m{n}: str, model name (ex. m1: "rf", m2: "xgb" etc.)
                 - clf_scoring : list of str
-                - reg_scoring : list of str
+                - reg_scoring : list of str, (ex. R2: r2, MAE: neg_mean_absolute_error)
         regions : str or None, optional
             Column name for regions to be used in preprocessing and stratification.
+
+        Examples
+        --------
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import make_classification
+        >>> with open('/home/phyto/Abil/configuration/example_model_config.yml', 'r') as f:
+        ...    model_config = load(f, Loader=Loader)
+        >>> X, y = example_data(y_name =  "Coccolithus pelagicus",
+        ...                            n_samples=500, n_features=5, noise=20, 
+        ...                            random_state=model_config['seed'])
+        >>> m = tune(X, y, model_config)
+
+        Returns
+        -------
+        m: object
+            The model used for training.
+        
         """
         self.y = y.sample(frac=1, random_state=model_config['seed']) #shuffle
         print("length of y:")
@@ -126,7 +149,7 @@ class tune:
     def train(self, model, classifier=False, regressor=False, log="no"):
 
         """
-        Train a machine learning model using the specified configuration.
+        Trains a machine learning model using the specified configuration.
 
         Parameters
         ----------
@@ -145,23 +168,14 @@ class tune:
             - 'yes' : Apply log transformation to the target variable.
             - 'no' : No transformation.
             - 'both' : Train both with and without log transformation.
-
-
+        
         Examples
         --------
-        >>> from sklearn.ensemble import RandomForestClassifier
-        >>> from sklearn.datasets import make_classification
-        >>> with open('/home/phyto/Abil/configuration/example_model_config.yml', 'r') as f:
-        ...    model_config = load(f, Loader=Loader)
-        
-        >>> X, y = example_data(y_name =  "Coccolithus pelagicus",
-        ...                            n_samples=500, n_features=5, noise=20, 
-        ...                            random_state=model_config['seed'])
-
-        >>> m = tune(X, y, model_config)
         >>> m.train(model="rf", regressor=True)
 
-        
+        Returns
+        -------
+        None
         """
 
         if model =="xgb":

@@ -7,13 +7,43 @@ import gc
 from yaml import dump, Dumper
 from skbio.diversity.alpha import shannon
 
+# from . import analyze #it seems this does not work on my machine?
+
+if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
+    from abil.analyze import area_of_applicability
+else:
+    from analyze import area_of_applicability
+
+
 class post:
     """
     Post processing of SDM
     """
-    def __init__(self, model_config, pi="50", datatype=None):
+    def __init__(self, X_train, y_train, X_predict, model_config, statistic="mean", datatype=None):
         """
         A class for initializing and setting up a model with configuration, input data, and parameters.
+
+        Parameters
+        ----------
+        X_train : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training features used for model fitting.
+        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
+            Target values used for model fitting.
+        X_predict : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Features to predict on (e.g., environmental data).
+        model_config : dict
+            Dictionary containing model configuration parameters such as:
+            - seed: int, random seed for reproducibility
+            - path_out: str, output path for saving results
+            - path_in: str, input path to models
+            - verbose: int, verbosity level (0-3)
+            - cv: int, number of cross-validation folds
+            - ensemble_config: dict, configuration for ensemble models
+        pi : str
+            The prediction interval identifier, defaulting to "50".
+        datatype : str, optional
+            The datatype of the predictions. This is used to access conversion factors (e.g. pic or poc) 
+            and is appended to the file names during export            
 
         Attributes
         ----------
@@ -45,7 +75,7 @@ class post:
         merge_netcdf(path_in):
             Merges multiple NetCDF files from the specified directory into a single dataset.
         """
-        def merge_netcdf(path_in):
+        def merge_netcdf(path_in, statistic):
             """
             Merges multiple NetCDF files from the specified directory into a single dataset.
 
@@ -64,22 +94,44 @@ class post:
                 The merged dataset containing the combined data from all the NetCDF files in the directory.
             """
             print("merging...")
-            ds = xr.open_mfdataset(os.path.join(path_in, "*.nc"))
+            print(path_in)
+            def preprocess(ds):
+                """Subset the dataset by the specified statistic."""
+                if statistic in ds:
+                    return ds[[statistic, "target"]]
+                else:
+                    raise ValueError(f"The specified statistic '{statistic}' is not found in the dataset.")
+
+            # Open all NetCDF files and apply the preprocessing function
+            ds = xr.open_mfdataset(
+                os.path.join(path_in, "*.nc"),
+                preprocess=preprocess,  # Apply the preprocessing function to each file
+            )
             print("finished loading netcdf files")
             return(ds)
 
         self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
-        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
+        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], "50"), statistic)
         self.traits = pd.read_csv(os.path.join(model_config['root'], model_config['targets']))
+        self.unique_targets = np.unique(self.ds['target'].values).tolist()
 
         self.root  =  model_config['root'] 
+        self.statistic = statistic
 
         self.d = self.ds.to_dataframe()
+        self.d = self.d.reset_index()
+        print(self.d.head())
+        self.d = self.d.pivot(index=['lat', 'lon', 'time', 'depth'], columns='target', values=self.statistic)
         self.d = self.d.dropna()
-        self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
-        self.model_config = model_config
-        self.pi = pi
+        #self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
+        self.targets = self.unique_targets
 
+        self.model_config = model_config
+
+        self.y_train = y_train
+        self.X_train = X_train
+        self.X_predict = X_predict
+   
         # Export model_config to a YAML file
         self.export_model_config()
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
@@ -180,8 +232,9 @@ class post:
         
         all_performance = []
 
-        for i in range(len(self.d.columns)):
-            target = self.d.columns[i]
+        for i in range(len(self.unique_targets)):
+            
+            target = self.unique_targets[i]
             target_no_space = target.replace(' ', '_')
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "scoring", model, target_no_space) + self.extension, 'rb') as file:
 
@@ -259,9 +312,11 @@ class post:
         
         all_parameters = []
 
-        for i in range(len(self.d.columns)):
+        for i in range(len(self.unique_targets)):
             
-            target = self.d.columns[i]
+            target = self.unique_targets[i]
+            print("the target is:")
+            print(target)
             target_no_space = target.replace(' ', '_')
 
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
@@ -393,7 +448,6 @@ class post:
 
         
         print("finished merging parameters")
-
 
     def estimate_carbon(self, variable):
 
@@ -698,12 +752,13 @@ class post:
 
                 path_out = self.parent.model_config['path_out']
                 run_name = self.parent.model_config['run_name']
-                pi = self.parent.pi
+                #pi = self.parent.pi
+                statistic = self.parent.statistic
                 datatype = self.parent.datatype
 
                 # Build the full file path
                 output_dir = os.path.join(self.parent.root, path_out, run_name, "posts/integrated_totals")
-                filename = f"{model}_integrated_totals_PI{pi}{depth_str}{month_str}{datatype}.csv"
+                filename = f"{model}_integrated_totals_{statistic}{depth_str}{month_str}{datatype}.csv"
                 file_path = os.path.join(output_dir, filename)
 
                 # Write to CSV
@@ -711,26 +766,61 @@ class post:
 
                 print(f"Exported totals")
 
+    def estimate_applicability(self):
 
-    def merge_env(self, X_predict):
+        # create empty dataframe with the same index as X_predict
+        aoa_dataset = pd.DataFrame(index=self.X_predict.index)
+
+        # estimate the aoa for each target:
+        for i in range(len(self.targets)):
+            
+            target = self.targets[i]
+            target_no_space = target.replace(' ', '_')
+
+            # load the voting regressor model object for each target:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
+                m = pickle.load(file)
+            
+            aoa = area_of_applicability(
+                X_test=self.X_predict,
+                X_train=self.X_train,
+                y_train= self.y_train,
+                model=m
+            )
+
+            # update the dataframe, where each column name is the target analyzed
+            aoa_dataset[target] = aoa
+
+        # convert df to xarray ds:
+        aoa_dataset = aoa_dataset.to_xarray()
+        
+        # add metadata:
+        aoa_dataset['lat'].attrs['units'] = 'degrees_north'
+        aoa_dataset['lat'].attrs['long_name'] = 'latitude'
+
+        aoa_dataset['lon'].attrs['units'] = 'degrees_east'
+        aoa_dataset['lon'].attrs['long_name'] = 'longitude'
+
+        aoa_dataset['depth'].attrs['units'] = 'm'
+        aoa_dataset['depth'].attrs['positive'] = 'down'
+        
+        # export aoa to netcdf:
+        aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"))
+
+
+    def merge_env(self):
         """
         Merge model output with environmental data.
 
         This method aligns and merges the predicted values (model output) with the existing 
         environmental dataset stored in `self.d`. The merged data replaces `self.d`.
 
-        Parameters
-        ----------
-        X_predict : pd.DataFrame
-            A DataFrame containing the model's predicted values to be merged with the 
-            environmental dataset.
-
         Returns
         -------
         None
         """
 
-        X_predict = X_predict.to_xarray()
+        X_predict = self.X_predict.to_xarray()
         ds = self.d.to_xarray()
         aligned_datasets = xr.align(ds,X_predict, join="inner")
         ds = xr.merge(aligned_datasets)
@@ -793,9 +883,9 @@ class post:
         #to add loop defining units of variables
 
         print(self.d.head())
-        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".nc")
+        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".nc")
 
-        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype +  ".nc")
+        print("exported ds to: " + self.path_out + file_name + "_" + self.statistic + self.datatype +  ".nc")
         #add nice metadata
 
 
@@ -824,9 +914,9 @@ class post:
             None
     
         print(self.d.head())
-        self.d.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".csv")
+        self.d.to_csv(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".csv")
 
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_" + self.statistic + self.datatype + ".csv")
         #add nice metadata
 
     def merge_obs(self, file_name, targets=None):
@@ -895,8 +985,8 @@ class post:
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
         print(out.head())
-        out.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype +  ".csv")
+        out.to_csv(os.path.join(self.path_out, file_name)  + self.datatype +  ".csv")
 
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
+        print("exported d to: " + self.path_out + file_name  + self.datatype + ".csv")
 
         print('training merged with predictions')
