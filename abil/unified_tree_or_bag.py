@@ -18,6 +18,7 @@ from sklearn import base
 # these are designed for internal use
 from joblib import delayed, Parallel
 
+from functions import ZeroInflatedRegressor 
 
 def process_data_with_model(
     model, X_predict, X_train, y_train, cv=None, chunksize=None
@@ -95,7 +96,7 @@ def process_data_with_model(
                 y_train=y_train.iloc[train_idx],
                 chunksize=chunksize,
             )
-            for train_idx, test_idx in cv.split(X_train)
+            for train_idx, test_idx in cv.split(X_train, y_train)
         ]
         # concat and rearrange to match input data order
         train_summary_stats = pd.concat(
@@ -198,7 +199,7 @@ if __name__ == "__main__":
     # Generate sample data
     from sklearn.datasets import make_regression
     from joblib import parallel_backend  # this is user-facing
-    from abil.functions import ZeroInflatedRegressor
+    from abil.functions import ZeroInflatedRegressor, ZeroStratifiedKFold
 
     X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
     X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
@@ -221,6 +222,7 @@ if __name__ == "__main__":
 
     cv_splits = 5
     # Define cross-validation strategy
+    # cv = ZeroStratifiedKFold(n_splits=cv_splits)
     cv = KFold(n_splits=cv_splits)
 
     # Define model and method
@@ -308,8 +310,14 @@ if __name__ == "__main__":
             zirmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
     with parallel_backend("loky", n_jobs=16):
-        zir_of_vmodels = process_data_with_model(
-            zirmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+        vzir_results = process_data_with_model(
+            zir_of_vmodels, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
     print("\n=== Training Summary Stats ===\n", results["train_stats"].head())
     print("\n=== Prediction Summary Stats ===\n", results["predict_stats"].head())
+
+    print("\n=== Training Summary Stats ===\n", vzir_results["classifier_train_stats"].head())
+    print("\n=== Prediction Summary Stats ===\n", vzir_results["classifier_predict_stats"].head())
+    
+    print("\n=== Training Summary Stats ===\n", vzir_results["regressor_train_stats"].head())
+    print("\n=== Prediction Summary Stats ===\n", vzir_results["regressor_predict_stats"].head())

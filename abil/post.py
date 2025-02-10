@@ -19,7 +19,7 @@ class post:
     """
     Post processing of SDM
     """
-    def __init__(self, X_train, y_train, X_predict, model_config, pi="50", datatype=None):
+    def __init__(self, X_train, y_train, X_predict, model_config, statistic="mean", datatype=None):
         """
         A class for initializing and setting up a model with configuration, input data, and parameters.
 
@@ -75,7 +75,7 @@ class post:
         merge_netcdf(path_in):
             Merges multiple NetCDF files from the specified directory into a single dataset.
         """
-        def merge_netcdf(path_in):
+        def merge_netcdf(path_in, statistic):
             """
             Merges multiple NetCDF files from the specified directory into a single dataset.
 
@@ -94,21 +94,39 @@ class post:
                 The merged dataset containing the combined data from all the NetCDF files in the directory.
             """
             print("merging...")
-            ds = xr.open_mfdataset(os.path.join(path_in, "*.nc"))
+            print(path_in)
+            def preprocess(ds):
+                """Subset the dataset by the specified statistic."""
+                if statistic in ds:
+                    return ds[[statistic, "target"]]
+                else:
+                    raise ValueError(f"The specified statistic '{statistic}' is not found in the dataset.")
+
+            # Open all NetCDF files and apply the preprocessing function
+            ds = xr.open_mfdataset(
+                os.path.join(path_in, "*.nc"),
+                preprocess=preprocess,  # Apply the preprocessing function to each file
+            )
             print("finished loading netcdf files")
             return(ds)
 
         self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
-        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
+        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], "50"), statistic)
         self.traits = pd.read_csv(os.path.join(model_config['root'], model_config['targets']))
+        self.unique_targets = np.unique(self.ds['target'].values).tolist()
 
         self.root  =  model_config['root'] 
 
         self.d = self.ds.to_dataframe()
+        self.d = self.d.reset_index()
+        print(self.d.head())
+        self.d = self.d.pivot(index=['lat', 'lon', 'time', 'depth'], columns='target', values='mean')
         self.d = self.d.dropna()
-        self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
+        #self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
+        self.targets = self.unique_targets
+
         self.model_config = model_config
-        self.pi = pi
+        self.statistic = statistic
 
         self.y_train = y_train
         self.X_train = X_train
@@ -214,8 +232,9 @@ class post:
         
         all_performance = []
 
-        for i in range(len(self.d.columns)):
-            target = self.d.columns[i]
+        for i in range(len(self.unique_targets)):
+            
+            target = self.unique_targets[i]
             target_no_space = target.replace(' ', '_')
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "scoring", model, target_no_space) + self.extension, 'rb') as file:
 
@@ -293,9 +312,11 @@ class post:
         
         all_parameters = []
 
-        for i in range(len(self.d.columns)):
+        for i in range(len(self.unique_targets)):
             
-            target = self.d.columns[i]
+            target = self.unique_targets[i]
+            print("the target is:")
+            print(target)
             target_no_space = target.replace(' ', '_')
 
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
@@ -731,12 +752,13 @@ class post:
 
                 path_out = self.parent.model_config['path_out']
                 run_name = self.parent.model_config['run_name']
-                pi = self.parent.pi
+                #pi = self.parent.pi
+                statistic = self.parent.statistic
                 datatype = self.parent.datatype
 
                 # Build the full file path
                 output_dir = os.path.join(self.parent.root, path_out, run_name, "posts/integrated_totals")
-                filename = f"{model}_integrated_totals_PI{pi}{depth_str}{month_str}{datatype}.csv"
+                filename = f"{model}_integrated_totals_{statistic}{depth_str}{month_str}{datatype}.csv"
                 file_path = os.path.join(output_dir, filename)
 
                 # Write to CSV
@@ -861,9 +883,9 @@ class post:
         #to add loop defining units of variables
 
         print(self.d.head())
-        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".nc")
+        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".nc")
 
-        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype +  ".nc")
+        print("exported ds to: " + self.path_out + file_name + "_" + self.statistic + self.datatype +  ".nc")
         #add nice metadata
 
 
@@ -892,9 +914,9 @@ class post:
             None
     
         print(self.d.head())
-        self.d.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".csv")
+        self.d.to_csv(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".csv")
 
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
+        print("exported d to: " + self.path_out + file_name + "_" + self.statistic + self.datatype + ".csv")
         #add nice metadata
 
     def merge_obs(self, file_name, targets=None):
@@ -963,8 +985,8 @@ class post:
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
         print(out.head())
-        out.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype +  ".csv")
+        out.to_csv(os.path.join(self.path_out, file_name)  + self.datatype +  ".csv")
 
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
+        print("exported d to: " + self.path_out + file_name  + self.datatype + ".csv")
 
         print('training merged with predictions')

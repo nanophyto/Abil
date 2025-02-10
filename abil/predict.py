@@ -9,6 +9,8 @@ import time
 from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed
+from joblib import parallel_backend  
+
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
     from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
@@ -111,7 +113,7 @@ def parallel_predict(prediction_function, X_predict, n_threads=1):
     return combined_predictions
 
 
-def export_prediction(m, target, target_no_space, X_predict, model_out, n_threads=1):
+def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=1):
     """
     Exports model predictions to a NetCDF file.
 
@@ -133,10 +135,28 @@ def export_prediction(m, target, target_no_space, X_predict, model_out, n_thread
         The number of threads to use for parallel prediction.
     """
 
-    d = X_predict.copy()
-    d[target] = parallel_predict(m.predict, X_predict, n_threads)
+    #d = X_predict.copy()
+    #d[target] = parallel_predict(m.predict, X_predict, n_threads)
+    #d = d.to_xarray()
+
+    if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
+        with parallel_backend("loky", n_jobs=n_threads):
+            d = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["predict_stats"]
+    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+        with parallel_backend("loky", n_jobs=n_threads):
+            d = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["regressor_predict_stats"]
+        print("to be replaced with 2-phase")
+    else:
+        raise ValueError("classifiers are not supported")
+
+    print(d.head())
     d = d.to_xarray()
-    
+    d['target'] = target
+
     try: #make new dir if needed
         os.makedirs(model_out)
     except:
@@ -145,7 +165,10 @@ def export_prediction(m, target, target_no_space, X_predict, model_out, n_thread
     export_path = os.path.join(model_out, target_no_space + ".nc")
 
 
-    d[target].to_netcdf(export_path) 
+    d.to_netcdf(export_path) 
+
+    print("finished exporting summary stats to: ",  export_path)
+
 
 
 class predict:
@@ -312,8 +335,10 @@ class predict:
             model_name = self.ensemble_config["m" + str(1)]
             model_out = os.path.join(self.path_out, "predictions", model_name)
 
-            export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
+            # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+            #                   model_out = model_out, n_threads=self.n_jobs)
+            export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                              model_out, n_threads=self.n_jobs)
 
         elif number_of_models >=2:
                     
@@ -327,10 +352,13 @@ class predict:
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = os.path.join(self.path_out, "predictions", model_name, "50")
 
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
-
-                print("exporting " + model_name + " prediction to: " + model_out)
+                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                #               model_out = model_out, n_threads=self.n_jobs)
+                if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
+                    # this only works for regressors as ZIR needs to be re-specified before predictions...
+                    export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                    model_out, n_threads=self.n_jobs)
+                    print("exporting " + model_name + " prediction to: " + model_out)
 
                 models.append((model_name, m))
                 mae_values.append(mae)
@@ -339,9 +367,12 @@ class predict:
             if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
                 model_out = os.path.join(self.path_out, "predictions", "ens", "50")
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)      
-
+                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                #               model_out = model_out, n_threads=self.n_jobs)      
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
+                
+                #export model object:
                 base_output_path = os.path.join(self.path_out, "model", "ens")
                 try: #make new dir if needed
                     os.makedirs(base_output_path)
@@ -353,7 +384,7 @@ class predict:
                 with open(file_path, 'wb') as f:
                     pickle.dump(m, f)
 
-                print("exporting to ens: ", file_path)
+                print("exporting m ens to: ", file_path)
             elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
                 clf_models = []
                 reg_models = []
@@ -373,7 +404,7 @@ class predict:
                     reg_models.append(('reg'+str(i+1), m_reg))  
 
                 print("defining voting regressor")
-                y = self.y.values.ravel()
+                y = self.y.values.ravel().copy()
 
                 voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(self.X_train, y)
                 y_clf = y.copy()
@@ -388,9 +419,13 @@ class predict:
                 )
                 print("predicting ZIR")
                 m.fit(self.X_train, y)
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)  
 
+                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
+
+                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                #               model_out = model_out, n_threads=self.n_jobs)  
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
                 print("exporting ZIR object")
                 base_output_path = os.path.join(self.path_out, "model", "ens")
 
@@ -419,9 +454,12 @@ class predict:
             except:
                 None
 
-            with open(os.path.join(model_out_scores, self.target_no_space) + self.extension, 'wb') as f:
+            scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
+
+
+            with open(scores_file_path, 'wb') as f:
                 pickle.dump(scores, f)
-            print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
+            print("exporting ensemble scores to: " + scores_file_path)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
