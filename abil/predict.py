@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 import os
 import time
+import warnings
 
 from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
@@ -145,11 +146,24 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+
         with parallel_backend("loky", n_jobs=n_threads):
-            d = process_data_with_model(
+            # Generate classifier and regressor stats
+            d_clf = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["classifier_predict_stats"]
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            d_reg = process_data_with_model(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["regressor_predict_stats"]
-        print("to be replaced with 2-phase")
+
+        # List of columns 
+        columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
+        d = pd.DataFrame(d_reg)
+        for col in columns:
+            d[col] = np.where(d_clf[col] < 0.5, 0, d_reg[col])
+
     else:
         raise ValueError("classifiers are not supported")
 
@@ -351,14 +365,25 @@ class predict:
                 m, mae = load_model_and_scores(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = os.path.join(self.path_out, "predictions", model_name, "50")
+                
+                print("===================")
+                print("DEBUG OF ZIR MODELS")
+                print("===================")
+                print(model_name)
+                print(type(m))
+                print(type(self.X_predict))
+                print(type(self.X_train))
 
-                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                #               model_out = model_out, n_threads=self.n_jobs)
+
                 if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
-                    # this only works for regressors as ZIR needs to be re-specified before predictions...
                     export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
                                     model_out, n_threads=self.n_jobs)
                     print("exporting " + model_name + " prediction to: " + model_out)
+                if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
+                    warnings.warn('prediction of individual ZIR models broken')
+
+                    # export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                    #                 model_out, n_threads=self.n_jobs)
 
                 models.append((model_name, m))
                 mae_values.append(mae)

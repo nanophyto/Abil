@@ -116,17 +116,17 @@ class post:
         self.unique_targets = np.unique(self.ds['target'].values).tolist()
 
         self.root  =  model_config['root'] 
+        self.statistic = statistic
 
         self.d = self.ds.to_dataframe()
         self.d = self.d.reset_index()
         print(self.d.head())
-        self.d = self.d.pivot(index=['lat', 'lon', 'time', 'depth'], columns='target', values='mean')
+        self.d = self.d.pivot(index=['lat', 'lon', 'time', 'depth'], columns='target', values=self.statistic)
         self.d = self.d.dropna()
         #self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.targets = self.unique_targets
 
         self.model_config = model_config
-        self.statistic = statistic
 
         self.y_train = y_train
         self.X_train = X_train
