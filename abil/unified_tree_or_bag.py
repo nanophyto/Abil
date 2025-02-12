@@ -53,10 +53,21 @@ def process_data_with_model(
     else:
         pipeline = Pipeline([("preprocessor", FunctionTransformer()), ("estimator", model)])
     preprocessor = pipeline.named_steps["preprocessor"]
-
-    X_train = preprocessor.transform(X_train)
-    X_predict = preprocessor.transform(X_predict)
-
+    if X_train is not None:
+        X_train = pandas.DataFrame(
+            preprocessor.transform(X_train),
+            index = getattr(X_train, "index", np.arange(X_train.shape[0]))
+        )
+    if X_predict is not None:
+        X_predict = pandas.DataFrame(
+            preprocessor.transform(X_predict),
+            index = getattr(X_predict, "index", np.arange(X_train.shape[0]))
+        )
+    if y_train is not None:
+        y_train = pandas.Series(
+            y_train,
+            index = getattr(y_train, "index", np.arange(y_train.shape[0]))
+        )
     # for internal, create models for each fold to mimic the
     # effect of leaving a fold out. Do this in parallel.
 
