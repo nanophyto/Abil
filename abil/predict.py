@@ -161,8 +161,11 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         # List of columns 
         columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
         d = pd.DataFrame(d_reg)
+        y_clf = y_train.copy()
+        y_clf[y_clf > 0] = 1
+        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
         for col in columns:
-            d[col] = np.where(d_clf[col] < 0.5, 0, d_reg[col])
+            d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
 
     else:
         raise ValueError("classifiers are not supported")
