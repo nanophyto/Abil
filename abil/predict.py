@@ -435,7 +435,7 @@ class predict:
                 y_clf = y.copy()
                 y_clf[y_clf > 0] = 1
 
-                voting_clf = VotingClassifier(estimators=clf_models, weights=w).fit(self.X_train, y_clf)
+                voting_clf = VotingClassifier(estimators=clf_models, weights=w, voting="soft").fit(self.X_train, y_clf)
 
                 print("defining ZIR")
                 m = ZeroInflatedRegressor(

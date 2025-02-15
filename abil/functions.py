@@ -137,7 +137,7 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
     Combines a classifier to predict non-zero occurrences and a regressor for non-zero targets.
     """
 
-    def __init__(self, classifier, regressor):
+    def __init__(self, classifier, regressor, threshold=0.5):
         """
         Initialize the regressor with a classifier and regressor.
 
@@ -147,9 +147,13 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
             A classifier to predict non-zero values.
         regressor : estimator
             A regressor to predict non-zero targets.
+        threshold : float
+            The probability cutoff for predicting presence 
+
         """
         self.classifier = classifier
         self.regressor = regressor
+        self.threshold = threshold
 
     def fit(self, X, y, sample_weight=None):
         """
@@ -189,7 +193,9 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
         # Ensure regressor_ is assigned
         self.regressor_ = clone(self.regressor)
         
-        non_zero_indices = np.where(self.classifier_.predict(X) == 1)[0]
+        y_pred_proba = self.classifier_.predict_proba(X)[:, 1]
+        y_pred = (y_pred_proba >= self.threshold).astype(int)
+        non_zero_indices = np.where(y_pred == 1)[0]
 
         if non_zero_indices.size > 0:
             if isinstance(X, pd.DataFrame):
