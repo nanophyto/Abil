@@ -14,10 +14,10 @@ from joblib import parallel_backend
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
     from abil.unified_tree_or_bag import process_data_with_model
 else:
-    from functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
     from unified_tree_or_bag import process_data_with_model
 
 def load_model_and_scores(path_out, ensemble_config, n, target):
@@ -437,10 +437,13 @@ class predict:
 
                 voting_clf = VotingClassifier(estimators=clf_models, weights=w, voting="soft").fit(self.X_train, y_clf)
 
+                optimal_threshold = find_optimal_threshold(voting_clf, self.X_train, y_clf)
+                print("optimal clf threshold: ", optimal_threshold)
                 print("defining ZIR")
                 m = ZeroInflatedRegressor(
                     classifier=voting_clf,
                     regressor=voting_reg,
+                    threshold=optimal_threshold
                 )
                 print("predicting ZIR")
                 m.fit(self.X_train, y)
