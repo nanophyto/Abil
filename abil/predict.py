@@ -136,15 +136,24 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         The number of threads to use for parallel prediction.
     """
 
-    #d = X_predict.copy()
-    #d[target] = parallel_predict(m.predict, X_predict, n_threads)
-    #d = d.to_xarray()
+
 
     if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         with parallel_backend("loky", n_jobs=n_threads):
             d = process_data_with_model(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
+        
+        d = d.to_xarray()
+        d['target'] = target
+        export_path = os.path.join(model_out, target_no_space + ".nc")
+        try: #make new dir if needed
+            os.makedirs(model_out)
+        except:
+            None
+        d.to_netcdf(export_path) 
+        print("finished exporting summary stats to: ",  export_path)
+        
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
 
         with parallel_backend("loky", n_jobs=n_threads):
@@ -158,7 +167,6 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["regressor_predict_stats"]
 
-        # List of columns 
         columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
         d = pd.DataFrame(d_reg)
         y_clf = y_train.copy()
@@ -167,25 +175,32 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         for col in columns:
             d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
 
+        d_clf = d_clf.to_xarray()
+        d_reg = d_reg.to_xarray()
+        d = d.to_xarray()
+        d_clf['target'] = target
+        d_reg['target'] = target
+        d['target'] = target
+
+        clf_export_path = os.path.join(model_out, "clf", target_no_space + ".nc")
+        reg_export_path = os.path.join(model_out,"reg", target_no_space + ".nc")
+        zir_export_path = os.path.join(model_out, "zir", target_no_space + ".nc")
+
+        for dir_name in ["clf", "reg", "zir"]:
+            try:
+                os.makedirs(os.path.join(model_out, dir_name))
+            except FileExistsError:
+                pass
+
+        d_clf.to_netcdf(clf_export_path) 
+        print("finished exporting summary stats to: ",  clf_export_path)
+        d_reg.to_netcdf(reg_export_path) 
+        print("finished exporting summary stats to: ",  reg_export_path)
+        d.to_netcdf(zir_export_path) 
+        print("finished exporting summary stats to: ",  zir_export_path)
+
     else:
         raise ValueError("classifiers are not supported")
-
-    print(d.head())
-    d = d.to_xarray()
-    d['target'] = target
-
-    try: #make new dir if needed
-        os.makedirs(model_out)
-    except:
-        None
-
-    export_path = os.path.join(model_out, target_no_space + ".nc")
-
-
-    d.to_netcdf(export_path) 
-
-    print("finished exporting summary stats to: ",  export_path)
-
 
 
 class predict:
