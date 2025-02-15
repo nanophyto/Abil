@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.datasets import make_regression
 from sklearn.metrics import make_scorer
 from sklearn.utils import resample
+from sklearn.metrics import roc_curve, roc_auc_score
 
 
 def do_log(self, x):
@@ -616,3 +617,36 @@ def inverse_weighting(values):
     total_inverse_weight = sum(inverse_weights)
     normalized_weights = [weight / total_inverse_weight for weight in inverse_weights]
     return normalized_weights
+
+
+def find_optimal_threshold(model, X, y_test):
+    """
+    Finds the optimal probability threshold for binary classification using the ROC curve and Youden's Index.
+
+    Parameters:
+    -----------
+    model : sklearn classifier
+        A fitted binary classification model
+    X : array-like of shape (n_samples, n_features)
+        Input features for the test or validation set.
+    y_test : array-like of shape (n_samples,)
+        True binary labels for the test or validation set.
+
+    Returns:
+    --------
+    optimal_threshold : float
+        The optimal probability threshold for classifying a sample as present.
+    """
+    
+    # Get predicted probabilities for the positive class
+    y_pred_proba = model.predict_proba(X)[:, 1]
+
+    # Compute ROC curve
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+
+    # Calculate optimal threshold using Youden's Index
+    youden_index = tpr - fpr
+    optimal_idx = np.argmax(youden_index)
+    optimal_threshold = thresholds[optimal_idx]
+
+    return optimal_threshold
