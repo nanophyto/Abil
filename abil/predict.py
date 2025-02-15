@@ -184,9 +184,9 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
         clf_export_path = os.path.join(model_out, "clf", target_no_space + ".nc")
         reg_export_path = os.path.join(model_out,"reg", target_no_space + ".nc")
-        zir_export_path = os.path.join(model_out, "zir", target_no_space + ".nc")
+        zir_export_path = os.path.join(model_out, target_no_space + ".nc")
 
-        for dir_name in ["clf", "reg", "zir"]:
+        for dir_name in ["", "clf", "reg"]:
             try:
                 os.makedirs(os.path.join(model_out, dir_name))
             except FileExistsError:
@@ -382,7 +382,7 @@ class predict:
             for i in range(number_of_models):
                 m, mae = load_model_and_scores(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
-                model_out = os.path.join(self.path_out, "predictions", model_name, "50")
+                model_out = os.path.join(self.path_out, "predictions", model_name)
                 
                 print("===================")
                 print("DEBUG OF ZIR MODELS")
@@ -409,7 +409,7 @@ class predict:
             w = inverse_weighting(mae_values) 
             if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
-                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
+                model_out = os.path.join(self.path_out, "predictions", "ens")
                 # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
                 #               model_out = model_out, n_threads=self.n_jobs)      
                 export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
@@ -466,7 +466,7 @@ class predict:
                 print("predicting ZIR")
                 m.fit(self.X_train, y)
 
-                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
+                model_out = os.path.join(self.path_out, "predictions", "ens")
 
                 # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
                 #               model_out = model_out, n_threads=self.n_jobs)  
