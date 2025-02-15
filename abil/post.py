@@ -111,7 +111,7 @@ class post:
             return(ds)
 
         self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
-        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], "50"), statistic)
+        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in']), statistic)
         self.traits = pd.read_csv(os.path.join(model_config['root'], model_config['targets']))
         self.unique_targets = np.unique(self.ds['target'].values).tolist()
 
