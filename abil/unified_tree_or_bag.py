@@ -64,8 +64,24 @@ def process_data_with_model(
         )
     preprocessor = pipeline.named_steps["preprocessor"]
 
-    X_train = preprocessor.transform(X_train)
-    X_predict = preprocessor.transform(X_predict)
+    if X_train is not None:
+        X_train = pd.DataFrame(
+            preprocessor.transform(X_train),
+            index = getattr(X_train, "index", np.arange(X_train.shape[0]))
+        )
+    if X_predict is not None:
+        X_predict = pd.DataFrame(
+            preprocessor.transform(X_predict),
+            index = getattr(X_predict, "index", np.arange(X_train.shape[0]))
+        )
+    if y_train is not None:
+        y_train = pd.Series(
+            y_train,
+            index = getattr(y_train, "index", np.arange(y_train.shape[0]))
+        )
+
+    # X_train = preprocessor.transform(X_train)
+    # X_predict = preprocessor.transform(X_predict)
 
     # for internal, create models for each fold to mimic the
     # effect of leaving a fold out. Do this in parallel.
@@ -248,8 +264,9 @@ if __name__ == "__main__":
 
     mask = (y_train > 0).values
     zirmodel = ZeroInflatedRegressor(
-        RandomForestClassifier(n_estimators=100, max_depth=4, random_state=2245),
-        BaggingRegressor(
+        BaggingClassifier(
+            KNeighborsClassifier(n_neighbors=10, weights="distance"), n_estimators=50
+        ),        BaggingRegressor(
             KNeighborsRegressor(n_neighbors=10, weights="distance"), n_estimators=50
         ),
     ).fit(X_train, y_train)
