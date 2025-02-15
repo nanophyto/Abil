@@ -18,7 +18,12 @@ from sklearn import base
 # these are designed for internal use
 from joblib import delayed, Parallel
 
-from functions import ZeroInflatedRegressor 
+import os
+
+if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
+    from abil.functions import ZeroInflatedRegressor 
+else:
+    from functions import ZeroInflatedRegressor 
 
 def process_data_with_model(
     model, X_predict, X_train, y_train, cv=None, chunksize=None
