@@ -1,13 +1,11 @@
 ---
-  hpc: False
-
-  local_root: /home/mv23682/Documents/Abil/
-  hpc_root: /user/work/mv23682/Abil/
+  root: /user/work/mv23682/Abil/
 
 
   run_name: run_name #update for specific run name
+
   path_out:  studies/wiseman2024/ModelOutput/ #root + folder
-  path_in:  /predictions/mapie/ #root + folder
+  path_in:  predictions/mapie/ #root + folder
 
   prediction: studies/wiseman2024/data/env_data.csv #root + folder
   targets: studies/wiseman2024/data/traits_calc.csv #root + folder
@@ -31,7 +29,6 @@
     m1: "rf"
     m2: "xgb"
     m3: "knn"
-    #m4: "mlp"
      
   upsample: False
   stratify: False
@@ -40,7 +37,6 @@
    R2: r2
    MAE: neg_mean_absolute_error
    RMSE: neg_root_mean_squared_error
-   tau: kendall_tau
 
   param_grid:
     rf_param_grid:
