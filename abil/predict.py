@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 import numpy as np
 import pickle
@@ -12,196 +10,12 @@ from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed
 from joblib import parallel_backend  
 
-
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
+    from abil.utils import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
     from abil.unified_tree_or_bag import process_data_with_model
 else:
-    from functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
+    from abil.utils import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
     from unified_tree_or_bag import process_data_with_model
-
-def load_model_and_scores(path_out, ensemble_config, n, target):
-    """
-    Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
-
-    Parameters
-    ----------
-    path_out : str
-        Path to the output folder containing model and scoring information.
-    ensemble_config : dict
-        Dictionary containing configuration details for the ensemble models, including model names, regressor or classifier status.
-    n : int
-        Index of the model to load in the ensemble.
-    target : str
-        The target for which predictions are made (used to load target-specific files).
-
-    Returns
-    -------
-    tuple
-        A tuple containing the model and the mean absolute error (MAE) score.
-
-    Raises
-    ------
-    ValueError
-        If both regressor and classifier are set to False, or if a classifier is used when only regressors are supported.
-    """
-
-    path_to_scores  = os.path.join(path_out, "scoring", ensemble_config["m"+str(n+1)])
-    path_to_param  = os.path.join(path_out, "model", ensemble_config["m"+str(n+1)])
-
-    if (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == False):
-        raise ValueError("classifiers are not supported")
-
-    elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
-        print("predicting regressor")
-        target_no_space = target.replace(' ', '_')
-        with open(os.path.join(path_to_param, target_no_space) + '_reg.sav', 'rb') as file:
-            m = pickle.load(file)
-        with open(os.path.join(path_to_scores, target_no_space) + '_reg.sav', 'rb') as file:
-            scoring = pickle.load(file) 
-        scores = abs(np.mean(scoring['test_MAE']))
-
-
-    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
-        print("predicting zero-inflated regressor")
-        target_no_space = target.replace(' ', '_')
-        with open(os.path.join(path_to_param, target_no_space) + '_zir.sav', 'rb') as file:
-            m = pickle.load(file)
-        with open(os.path.join(path_to_scores, target_no_space) + '_zir.sav', 'rb') as file:
-            scoring = pickle.load(file)
-        scores = abs(np.mean(scoring['test_MAE']))
-
-    elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == False):
-        raise ValueError("Both regressor and classifier are defined as false")
-
-    return(m, scores)
-
-
-def parallel_predict(prediction_function, X_predict, n_threads=1):
-    """
-    Splits the prediction task across multiple threads to predict on large datasets.
-
-    Parameters
-    ----------
-    prediction_function : callable
-        The model's prediction function to be applied to each chunk of data.
-    X_predict : DataFrame
-        The features (input data) on which to make predictions.
-    n_threads : int, optional, default=1
-        The number of threads to use for parallel processing.
-
-    Returns
-    -------
-    np.ndarray
-        The combined predictions from all threads.
-    """    
-
-    # Split the indices of X_predict into chunks
-    chunk_indices = np.array_split(X_predict.index, n_threads)
-
-
-    # Create a list of DataFrame chunks based on the split indices
-    df_sections = [X_predict.loc[chunk_idx] for chunk_idx in chunk_indices]
-
-    # Use joblib to process each chunk in parallel
-    predictions = Parallel(n_jobs=n_threads)(
-        delayed(prediction_function)(df_section) for df_section in df_sections
-    )
-
-    # Combine the predictions from all threads
-    combined_predictions = np.concatenate(predictions)
-
-    return combined_predictions
-
-
-def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=1):
-    """
-    Exports model predictions to a NetCDF file.
-
-    Parameters
-    ----------
-    m : object
-        The trained model used for predictions.
-    target : str
-        The name of the target variable.
-    target_no_space : str
-        The target variable name with spaces replaced by underscores.
-    X_predict : pd.DataFrame of shape (n_points, n_features)
-        Features to predict on (e.g., environmental data), where n_points
-        is the total 1-d size of the features to predict on 
-        (ex. 31881600 for full 180x360x41x12 grid).
-    model_out : str
-        Path where the predictions should be saved.
-    n_threads : int, optional, default=1
-        The number of threads to use for parallel prediction.
-    """
-
-
-
-    if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
-        with parallel_backend("loky", n_jobs=n_threads):
-            d = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["predict_stats"]
-        
-        d = d.to_xarray()
-        d['target'] = target
-        export_path = os.path.join(model_out, target_no_space + ".nc")
-        try: #make new dir if needed
-            os.makedirs(model_out)
-        except:
-            None
-        d.to_netcdf(export_path) 
-        print("finished exporting summary stats to: ",  export_path)
-        
-    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
-
-        with parallel_backend("loky", n_jobs=n_threads):
-            # Generate classifier and regressor stats
-            d_clf = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["classifier_predict_stats"]
-
-        with parallel_backend("loky", n_jobs=n_threads):
-            d_reg = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["regressor_predict_stats"]
-
-        columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
-        d = pd.DataFrame(d_reg)
-        y_clf = y_train.copy()
-        y_clf[y_clf > 0] = 1
-        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
-        for col in columns:
-            d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
-
-        d_clf = d_clf.to_xarray()
-        d_reg = d_reg.to_xarray()
-        d = d.to_xarray()
-        d_clf['target'] = target
-        d_reg['target'] = target
-        d['target'] = target
-
-        clf_export_path = os.path.join(model_out, "clf", target_no_space + ".nc")
-        reg_export_path = os.path.join(model_out,"reg", target_no_space + ".nc")
-        zir_export_path = os.path.join(model_out, target_no_space + ".nc")
-
-        for dir_name in ["", "clf", "reg"]:
-            try:
-                os.makedirs(os.path.join(model_out, dir_name))
-            except FileExistsError:
-                pass
-
-        d_clf.to_netcdf(clf_export_path) 
-        print("finished exporting summary stats to: ",  clf_export_path)
-        d_reg.to_netcdf(reg_export_path) 
-        print("finished exporting summary stats to: ",  reg_export_path)
-        d.to_netcdf(zir_export_path) 
-        print("finished exporting summary stats to: ",  zir_export_path)
-
-    else:
-        raise ValueError("classifiers are not supported")
-
 
 class predict:
     """
@@ -514,3 +328,185 @@ class predict:
         elapsed_time = et-self.st
         print("finished")
         print("execution time:", elapsed_time, "seconds")
+
+
+def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=1):
+    """
+    Exports model predictions to a NetCDF file.
+
+    Parameters
+    ----------
+    m : object
+        The trained model used for predictions.
+    target : str
+        The name of the target variable.
+    target_no_space : str
+        The target variable name with spaces replaced by underscores.
+    X_predict : pd.DataFrame of shape (n_points, n_features)
+        Features to predict on (e.g., environmental data), where n_points
+        is the total 1-d size of the features to predict on 
+        (ex. 31881600 for full 180x360x41x12 grid).
+    model_out : str
+        Path where the predictions should be saved.
+    n_threads : int, optional, default=1
+        The number of threads to use for parallel prediction.
+    """
+
+
+
+    if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
+        with parallel_backend("loky", n_jobs=n_threads):
+            d = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["predict_stats"]
+        
+        d = d.to_xarray()
+        d['target'] = target
+        export_path = os.path.join(model_out, target_no_space + ".nc")
+        try: #make new dir if needed
+            os.makedirs(model_out)
+        except:
+            None
+        d.to_netcdf(export_path) 
+        print("finished exporting summary stats to: ",  export_path)
+        
+    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            # Generate classifier and regressor stats
+            d_clf = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["classifier_predict_stats"]
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            d_reg = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["regressor_predict_stats"]
+
+        columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
+        d = pd.DataFrame(d_reg)
+        y_clf = y_train.copy()
+        y_clf[y_clf > 0] = 1
+        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
+        for col in columns:
+            d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
+
+        d_clf = d_clf.to_xarray()
+        d_reg = d_reg.to_xarray()
+        d = d.to_xarray()
+        d_clf['target'] = target
+        d_reg['target'] = target
+        d['target'] = target
+
+        clf_export_path = os.path.join(model_out, "clf", target_no_space + ".nc")
+        reg_export_path = os.path.join(model_out,"reg", target_no_space + ".nc")
+        zir_export_path = os.path.join(model_out, target_no_space + ".nc")
+
+        for dir_name in ["", "clf", "reg"]:
+            try:
+                os.makedirs(os.path.join(model_out, dir_name))
+            except FileExistsError:
+                pass
+
+        d_clf.to_netcdf(clf_export_path) 
+        print("finished exporting summary stats to: ",  clf_export_path)
+        d_reg.to_netcdf(reg_export_path) 
+        print("finished exporting summary stats to: ",  reg_export_path)
+        d.to_netcdf(zir_export_path) 
+        print("finished exporting summary stats to: ",  zir_export_path)
+
+    else:
+        raise ValueError("classifiers are not supported")
+
+
+def parallel_predict(prediction_function, X_predict, n_threads=1):
+    """
+    Splits the prediction task across multiple threads to predict on large datasets.
+
+    Parameters
+    ----------
+    prediction_function : callable
+        The model's prediction function to be applied to each chunk of data.
+    X_predict : DataFrame
+        The features (input data) on which to make predictions.
+    n_threads : int, optional, default=1
+        The number of threads to use for parallel processing.
+
+    Returns
+    -------
+    np.ndarray
+        The combined predictions from all threads.
+    """    
+
+    # Split the indices of X_predict into chunks
+    chunk_indices = np.array_split(X_predict.index, n_threads)
+
+    # Create a list of DataFrame chunks based on the split indices
+    df_sections = [X_predict.loc[chunk_idx] for chunk_idx in chunk_indices]
+
+    # Use joblib to process each chunk in parallel
+    predictions = Parallel(n_jobs=n_threads)(
+        delayed(prediction_function)(df_section) for df_section in df_sections
+    )
+
+    # Combine the predictions from all threads
+    combined_predictions = np.concatenate(predictions)
+
+    return combined_predictions
+
+
+def load_model_and_scores(path_out, ensemble_config, n, target):
+    """
+    Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
+
+    Parameters
+    ----------
+    path_out : str
+        Path to the output folder containing model and scoring information.
+    ensemble_config : dict
+        Dictionary containing configuration details for the ensemble models, including model names, regressor or classifier status.
+    n : int
+        Index of the model to load in the ensemble.
+    target : str
+        The target for which predictions are made (used to load target-specific files).
+
+    Returns
+    -------
+    tuple
+        A tuple containing the model and the mean absolute error (MAE) score.
+
+    Raises
+    ------
+    ValueError
+        If both regressor and classifier are set to False, or if a classifier is used when only regressors are supported.
+    """
+
+    path_to_scores  = os.path.join(path_out, "scoring", ensemble_config["m"+str(n+1)])
+    path_to_param  = os.path.join(path_out, "model", ensemble_config["m"+str(n+1)])
+
+    if (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == False):
+        raise ValueError("classifiers are not supported")
+
+    elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
+        print("predicting regressor")
+        target_no_space = target.replace(' ', '_')
+        with open(os.path.join(path_to_param, target_no_space) + '_reg.sav', 'rb') as file:
+            m = pickle.load(file)
+        with open(os.path.join(path_to_scores, target_no_space) + '_reg.sav', 'rb') as file:
+            scoring = pickle.load(file) 
+        scores = abs(np.mean(scoring['test_MAE']))
+
+
+    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+        print("predicting zero-inflated regressor")
+        target_no_space = target.replace(' ', '_')
+        with open(os.path.join(path_to_param, target_no_space) + '_zir.sav', 'rb') as file:
+            m = pickle.load(file)
+        with open(os.path.join(path_to_scores, target_no_space) + '_zir.sav', 'rb') as file:
+            scoring = pickle.load(file)
+        scores = abs(np.mean(scoring['test_MAE']))
+
+    elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == False):
+        raise ValueError("Both regressor and classifier are defined as false")
+
+    return(m, scores)
