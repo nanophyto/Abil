@@ -21,9 +21,9 @@ from joblib import delayed, Parallel
 import os
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import ZeroInflatedRegressor 
+    from abil.zir import ZeroInflatedRegressor 
 else:
-    from functions import ZeroInflatedRegressor 
+    from abil.zir import ZeroInflatedRegressor 
 
 
 def process_data_with_model(
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     # Generate sample data
     from sklearn.datasets import make_regression
     from joblib import parallel_backend  # this is user-facing
-    from abil.functions import ZeroInflatedRegressor, ZeroStratifiedKFold
+    from abil.utils import ZeroInflatedRegressor, ZeroStratifiedKFold
 
     X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
     X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
