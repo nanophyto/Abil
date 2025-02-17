@@ -1,5 +1,8 @@
-Installation instructions
-=========================
+.. _manual_install:
+
+================================
+Manual Installation Instructions
+================================
 
 Install the dependencies in a new environment:
 

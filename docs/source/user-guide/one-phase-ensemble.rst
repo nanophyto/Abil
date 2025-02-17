@@ -5,11 +5,11 @@ YAML example
 ~~~~~~~~~~~~
 
 Before running the model, model specifications need to be defined in a YAML file. 
-For a detailed explanation of each parameter see :ref:`yaml explained`.
+For a detailed explanation of each parameter see :ref:`yaml_config`.
 
 An example of YAML file of a 1-phase model is provided below.
 
-.. literalinclude:: ../tests/regressor.yml
+.. literalinclude:: ../../../tests/regressor.yml
    :language: yaml
 
 Running the model
@@ -25,8 +25,8 @@ Loading dependencies
 ^^^^^^^^^^^^^^^^^^^^
 
 Before running the Python script we need to import all relevant Python packages.
-For instructions on how to install these packages, see :ref:`dependencies install`
-and the Abil :ref:`install instructions`.
+For instructions on how to install these packages, see `requirements.txt <../../../../../requirements.txt>`_
+and the Abil :ref:`getting-started`.
 
 .. code-block:: python
 

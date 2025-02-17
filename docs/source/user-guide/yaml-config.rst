@@ -1,23 +1,19 @@
-.. _yaml explained:
+.. _yaml_config:
 
 Model YAML Configuration
 =========================
 
 To define how your model is ran (e.g. where output is saved or which parameters to tune) a configuration YAML is used.
 
-YAML is xyz
-
-
 Paths:
 
->>> hpc: False
->>> local_root: /home/phyto/Abil/
->>> hpc_root: /user/work/ba18321/Abil/
+>>> root: ./
+>>> run_name:
 >>> path_out: examples/ModelOutput/ #root + folder
->>> path_in:  examples/ModelOutput/mapie/ #root + folder
->>> env_data_path:  examples/data/prediction.csv #root + folder
+>>> path_in:  examples/predictions/ens/ #root + folder
+>>> prediction:  examples/data/prediction.csv #root + folder
 >>> targets:  examples/data/targets.csv #root + folder
->>> training:  examples/data/training.csv
+>>> training:  examples/data/training.csv #root + folder
 
 Predictors to be used:
 
@@ -54,6 +50,5 @@ Scoring method to be used:
 >>>  R2: r2
 >>>  MAE: neg_mean_absolute_error
 >>>  RMSE: neg_root_mean_squared_error
->>>  tau: kendall_tau
 
 
