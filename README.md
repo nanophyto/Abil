@@ -8,8 +8,6 @@ Abil.py provides functions to interpolate distributions of biogeochemical observ
 
 ## Installation
 
-To install this package directly from GitHub, follow these steps:
-
 ### Prerequisites
 Ensure you have the following installed on your system:
 - [Python](https://www.python.org/downloads/) (>=3.7 recommended)
