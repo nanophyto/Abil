@@ -4,8 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abil"
-version = "0.0.10"
-
+version = "25.02.17"
+license = "MIT"
+license-files = ['LICENSE']
 description = "Aquatic Biogeochemical Interpolation Library"
 readme = "README.md"
 requires-python = ">=3.7"
