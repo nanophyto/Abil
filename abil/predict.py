@@ -11,11 +11,15 @@ from joblib import Parallel, delayed
 from joblib import parallel_backend  
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.utils import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
-    from abil.unified_tree_or_bag import process_data_with_model
-else:
-    from abil.utils import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
+    from utils import inverse_weighting, find_optimal_threshold
+    from zir import ZeroInflatedRegressor
+    from zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
     from unified_tree_or_bag import process_data_with_model
+else:
+    from abil.utils import inverse_weighting, find_optimal_threshold
+    from abil.zir import ZeroInflatedRegressor
+    from abil.zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+    from abil.unified_tree_or_bag import process_data_with_model
 
 class predict:
     """
