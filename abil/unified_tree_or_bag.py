@@ -21,7 +21,7 @@ from joblib import delayed, Parallel
 import os
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.zir import ZeroInflatedRegressor 
+    from zir import ZeroInflatedRegressor 
 else:
     from abil.zir import ZeroInflatedRegressor 
 
