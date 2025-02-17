@@ -1,5 +1,7 @@
-Model Configuration
-===================
+.. _yaml explained:
+
+Model YAML Configuration
+=========================
 
 To define how your model is ran (e.g. where output is saved or which parameters to tune) a configuration YAML is used.
 

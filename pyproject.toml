@@ -5,9 +5,6 @@ build-backend = "hatchling.build"
 [project]
 name = "abil"
 version = "0.0.10"
-authors = [
-  { name="nanophyto", email="joost.devries@bristol.ac.uk" },
-]
 
 description = "Aquatic Biogeochemical Interpolation Library"
 readme = "README.md"
@@ -24,11 +21,7 @@ classifiers = [
 [tool.hatch.build]
 exclude = [
   "/.git",
-  "/data",
-  "/configuration",
-  "/singularity",
-  "/devries2024",
-  "/hpc_example",
+  "/studies",
   "/dist",
 ]
 

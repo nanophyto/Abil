@@ -8,34 +8,16 @@ from abil.tune import tune
 from abil.functions import upsample
 from sklearn.preprocessing import OneHotEncoder
 
-try:
-    print(sys.argv[1])
-    with open('/user/work/ba18321/Abil/devries2024/2-phase.yml', 'r') as f:
-        model_config = load(f, Loader=Loader)
+with open('/user/work/ba18321/Abil/studies/devries2024/2-phase.yml', 'r') as f:
+    model_config = load(f, Loader=Loader)
 
-    model_config['hpc'] = True
-    n_jobs = pd.to_numeric(sys.argv[1])
-    n_spp = pd.to_numeric(sys.argv[2])
-    root = model_config['hpc_root']
-    model_config['cv'] = 10
-    model = sys.argv[3]
-    predictors = model_config['predictors']
-
-except:
-    with open('/home/phyto/Abil/devries2024/2-phase.yml', 'r') as f:
-        model_config = load(f, Loader=Loader)
-    model_config['hpc'] = False
-    n_jobs = 8
-    n_spp = 1
-    root = model_config['local_root']
-    model_config['cv'] = 3
-    
-    with open('/home/phyto/Abil/devries2024/2-phase.yml', 'r') as f:
-        model_config_local = load(f, Loader=Loader)    
-    
-    model_config['param_grid'] = model_config_local['param_grid'] 
-    model = "rf"
-
+model_config['hpc'] = True
+n_jobs = pd.to_numeric(sys.argv[1])
+n_spp = pd.to_numeric(sys.argv[2])
+root = model_config['root']
+model_config['cv'] = 10
+model = sys.argv[3]
+predictors = model_config['predictors']
 
 #define model config:
 model_config['n_threads'] = n_jobs
@@ -44,7 +26,7 @@ d = pd.read_csv(root + model_config['training'])
 target =  targets['Target'][n_spp]
 d[target] = d[target].fillna(0)
 d = d.dropna(subset=[target])
-d = d.dropna(subset=['FID'])
+d = d.dropna(subset=predictors)
 d = upsample(d, target, ratio=10)
 
 y = d[target]

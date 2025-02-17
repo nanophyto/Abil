@@ -4,49 +4,120 @@ import glob, os
 import xarray as xr
 import pickle
 import gc
-#from skbio.diversity.alpha import shannon
+from yaml import dump, Dumper
+from skbio.diversity.alpha import shannon
+
+# from . import analyze #it seems this does not work on my machine?
+
+if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
+    from abil.analyze import area_of_applicability
+else:
+    from analyze import area_of_applicability
+
 
 class post:
     """
     Post processing of SDM
     """
-    def __init__(self, model_config, pi="50"):
+    def __init__(self, X_train, y_train, X_predict, model_config, pi="50", datatype=None):
+        """
+        A class for initializing and setting up a model with configuration, input data, and parameters.
 
+        Parameters
+        ----------
+        X_train : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training features used for model fitting.
+        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
+            Target values used for model fitting.
+        X_predict : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Features to predict on (e.g., environmental data).
+        model_config : dict
+            Dictionary containing model configuration parameters such as:
+            - seed: int, random seed for reproducibility
+            - path_out: str, output path for saving results
+            - path_in: str, input path to models
+            - verbose: int, verbosity level (0-3)
+            - cv: int, number of cross-validation folds
+            - ensemble_config: dict, configuration for ensemble models
+        pi : str
+            The prediction interval identifier, defaulting to "50".
+        datatype : str, optional
+            The datatype of the predictions. This is used to access conversion factors (e.g. pic or poc) 
+            and is appended to the file names during export            
+
+        Attributes
+        ----------
+        path_out : str
+            The output directory path where the model results will be saved.
+        ds : xarray.Dataset
+            The dataset containing the merged data from NetCDF files.
+        traits : pd.DataFrame
+            DataFrame containing the target trait information loaded from a CSV file.
+        root : str
+            Root directory as specified in the model configuration.
+        d : pd.DataFrame
+            DataFrame representation of the dataset after conversion and cleaning.
+        targets : pd.Series
+            The target values from the trait data that are present in the dataset columns.
+        model_config : dict
+            The model configuration dictionary containing paths, parameters, and other settings.
+        pi : str
+            The input parameter identifier, defaulting to "50".
+        model_type : str
+            The type of model being used, determined from the ensemble configuration (either "zir" or "reg").
+        extension : str
+            The file extension used for saving the model, based on the model type (e.g., "_zir.sav").
+        datatype: str
+            The datatype of the data being processed (e.g. "pg poc") which is appended to the data exports (optional)
+
+        Methods
+        -------
+        merge_netcdf(path_in):
+            Merges multiple NetCDF files from the specified directory into a single dataset.
+        """
         def merge_netcdf(path_in):
+            """
+            Merges multiple NetCDF files from the specified directory into a single dataset.
+
+            This function uses `xarray.open_mfdataset` to load all NetCDF files in the given directory 
+            (matching the pattern "*.nc") and combines them into one xarray.Dataset. The function 
+            prints status messages indicating the start and completion of the merging process.
+
+            Parameters
+            ----------
+            path_in : str
+                The path to the directory containing the NetCDF files to be merged.
+
+            Returns
+            -------
+            xarray.Dataset
+                The merged dataset containing the combined data from all the NetCDF files in the directory.
+            """
             print("merging...")
             ds = xr.open_mfdataset(os.path.join(path_in, "*.nc"))
             print("finished loading netcdf files")
             return(ds)
-        
-        if model_config['hpc']==False:
-            self.path_out = model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
-            self.ds = merge_netcdf(model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + pi + "/")
-            self.traits = pd.read_csv(model_config['local_root'] + model_config['targets'])
-            self.root  =  model_config['local_root'] 
 
-        elif model_config['hpc']==True:
-            self.path_out = model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + "/posts/"
-            self.ds = merge_netcdf(model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + model_config['path_in'] + pi + "/")
-            self.traits = pd.read_csv(model_config['hpc_root'] + model_config['targets'])
-            self.root  =  model_config['hpc_root'] 
+        self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
+        self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in'], pi))
+        self.traits = pd.read_csv(os.path.join(model_config['root'], model_config['targets']))
 
-        else:
-            raise ValueError("hpc True or False not defined in yml")
+        self.root  =  model_config['root'] 
+
         self.d = self.ds.to_dataframe()
         self.d = self.d.dropna()
         self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.model_config = model_config
         self.pi = pi
 
-        # if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-        #     self.extension = "_clf.sav"
-        # elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
-        #     self.extension = ".sav"
-        # else:
-        #     self.extension = "_reg.sav"
-
+        self.y_train = y_train
+        self.X_train = X_train
+        self.X_predict = X_predict
+   
+        # Export model_config to a YAML file
+        self.export_model_config()
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-            self.model_type = "clf"
+            raise ValueError("classifiers are not supported")
         elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
             self.model_type = "zir"
         if self.model_config['ensemble_config']['regressor'] and not self.model_config['ensemble_config']['classifier']:
@@ -54,21 +125,104 @@ class post:
 
         self.extension = "_" + self.model_type + ".sav"
 
+        self.merge_parameters()
+        self.merge_performance()
+
+        if datatype:
+            self.datatype = "_" + datatype
+        else:
+            self.datatype = ""
+        
+        
+    def export_model_config(self):
+        """
+        Export the model_config dictionary to a YAML file in self.path_out.
+        
+        Raises
+        ------
+        Exception
+            If an error occurs during the directory creation or file writing process, an exception
+            is caught and an error message is printed.
+
+        Notes
+        -----
+        The YAML file is saved as "model_config.yml" in the `self.path_out` directory.
+        """
+        try:
+            os.makedirs(self.path_out, exist_ok=True)  # Ensure the output directory exists
+            yml_file_path = os.path.join(self.path_out, "model_config.yml")
+            
+            # Write the model_config dictionary to a YAML file
+            with open(yml_file_path, 'w') as yml_file:
+                dump(self.model_config, yml_file, Dumper=Dumper, default_flow_style=False)
+            
+            print(f"Model configuration exported to: {yml_file_path}")
+        except Exception as e:
+            print(f"Error exporting model_config to YAML: {e}")   
+
+    def merge_performance(self):
+        """
+        Merges the performance data of multiple models as specified in the model configuration.
+
+        Notes
+        -----
+        The function relies on the `merge_performance_single_model` method to merge individual model 
+        performance data, and this is done for each model in the list, including the ensemble model.
+        """    
+
+        models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
+        print("models included in merge performance!")
+        print(models)
+        models.append("ens")
+        for model in models:
+            self.merge_performance_single_model(model)
+
        
-    def merge_performance(self, model):
+    def merge_performance_single_model(self, model):
+        """
+        Merges performance metrics for a single model and saves the results to a CSV file.
+
+        Parameters
+        ----------
+        model : str
+            The name of the model for which performance metrics are being calculated and merged. 
+            The model's performance data is expected to be stored in a `pickle` file in the "scoring" 
+            directory under the model name and target name.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValueError
+            If the model configuration includes a classifier but not a regressor, an error is raised 
+            since classifiers are not supported for performance merging.
+
+        Notes
+        -----
+        The method calculates several performance metrics for each target column in the dataset:
+            - R2: Coefficient of determination.
+            - RMSE: Root Mean Squared Error.
+            - MAE: Mean Absolute Error.
+            - rRMSE: Relative Root Mean Squared Error.
+            - rMAE: Relative Mean Absolute Error.
+
+        The performance metrics for each target are aggregated into a DataFrame, which is then saved 
+        as a CSV file in the "posts/performance" directory for the specified model.
+        """
         
         all_performance = []
 
         for i in range(len(self.d.columns)):
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
-            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/scoring/" + model + "/" + target_no_space + self.extension, 'rb') as file:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "scoring", model, target_no_space) + self.extension, 'rb') as file:
+
                 m = pickle.load(file)
             
             if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-                #estimate performance of classifier
-                performance = pd.DataFrame({'target':[target]})
-                all_performance.append(performance)
+                raise ValueError("classifiers are not supported")
             else:
                 mean = np.mean(self.d[self.d.columns[i]])
                 R2 = np.mean(m['test_R2'])
@@ -83,19 +237,59 @@ class post:
 
         all_performance = pd.concat(all_performance)
         try: #make new dir if needed
-            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/")
+            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance"))
         except:
             None
-        all_performance.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/performance/" + model + "_performance.csv", index=False)
+        all_performance.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance", model) + "_performance.csv", index=False)
 
-        # if configuration==None:
-        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_performance.csv", index=False)
-        # else:
-        #     all_performance.to_csv(self.root + self.model_config['path_out'] + model + "_" + configuration + "_performance.csv", index=False)
-        
         print("finished merging performance")
 
-    def merge_parameters(self, model):
+    def merge_parameters(self):
+        """
+        Merges model parameters for multiple models as specified in the model configuration.
+
+        Notes
+        -----
+        The method operates by iterating over each model in the ensemble configuration, collecting 
+        model parameters using `merge_parameters_single_model`, and saving the results to a CSV file 
+        in the "posts/parameters" directory.
+        """
+
+        models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
+        for model in models:
+            self.merge_parameters_single_model(model)
+
+    def merge_parameters_single_model(self, model):
+        """
+        Merges and saves model parameters for a single model.
+
+        This method extracts the hyperparameters of a specified model (e.g., "rf", "xgb", "knn") from 
+        serialized files stored as pickle objects. The method supports different model types, including 
+        regression ("reg"), classification ("clf"), and ensemble ("zir") models. The extracted parameters 
+        are stored in a DataFrame and then saved to a CSV file.
+
+        The function also handles the creation of the necessary directories to save the resulting CSV file 
+        if they do not already exist.
+
+        Parameters
+        ----------
+        model : str
+            The name of the model for which parameters are being merged. Expected models include 
+            "rf" (Random Forest), "xgb" (XGBoost), and "knn" (K-Nearest Neighbors).
+
+        Raises
+        ------
+        ValueError
+            If the model configuration includes classifiers but not regressors, an error is raised 
+            since classifiers are not supported for parameter merging.
+
+        Notes
+        -----
+        The method processes the parameters of each model for regression and ensemble models, 
+        extracting hyperparameters such as `n_estimators`, `max_depth`, `learning_rate`, and others.
+        The parameters for each target are aggregated into a DataFrame and saved as a CSV file in the 
+        "posts/parameters" directory.
+        """
         
         all_parameters = []
 
@@ -104,7 +298,8 @@ class post:
             target = self.d.columns[i]
             target_no_space = target.replace(' ', '_')
 
-            with open(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/model/" + model + "/" + target_no_space + self.extension, 'rb') as file:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
+
                 m = pickle.load(file)
 
             if self.model_type == "reg":
@@ -114,68 +309,139 @@ class post:
                     max_features = m.regressor_.named_steps.estimator.max_features
                     max_samples = m.regressor_.named_steps.estimator.max_samples
                     min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
-                    parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'max_features':[max_features], 
-                                            'max_samples':[max_samples], 'min_samples_leaf':[min_samples_leaf]})
+                    n_estimators = m.regressor_.named_steps.estimator.n_estimators
+                    parameters = pd.DataFrame({'target':[target], 'n_estimators':[n_estimators], 'max_features':[max_features], 'max_depth':[max_depth], 
+                                            'min_samples_leaf':[min_samples_leaf], 'max_samples':[max_samples]
+                                            })
                     all_parameters.append(parameters)
                 elif model == "xgb":
+                    learning_rate = m.regressor_.named_steps.estimator.learning_rate
+                    n_estimators = m.regressor_.named_steps.estimator.n_estimators
                     max_depth = m.regressor_.named_steps.estimator.max_depth
                     subsample = m.regressor_.named_steps.estimator.subsample
                     colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
-
-                    learning_rate = m.regressor_.named_steps.estimator.learning_rate
+                    gamma = m.regressor_.named_steps.estimator.gamma
                     alpha = m.regressor_.named_steps.estimator.reg_alpha
-
-                    parameters = pd.DataFrame({'target':[target], 'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
-                                            'learning_rate':[learning_rate], 'alpha':[alpha]                                           
+                    parameters = pd.DataFrame({'target':[target], 'learning_rate':[learning_rate], 'n_estimators':[n_estimators], 
+                                            'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
+                                            'learning_rate':[learning_rate], 'gamma':[gamma], 'alpha':[alpha]                                           
                                             })
                     all_parameters.append(parameters)
                 elif model == "knn":
-                    max_features = m.regressor_.named_steps.estimator.max_features
                     max_samples = m.regressor_.named_steps.estimator.max_samples
-
+                    max_features = m.regressor_.named_steps.estimator.max_features
                     leaf_size = m.regressor_.named_steps.estimator.estimator.leaf_size
                     n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
                     p = m.regressor_.named_steps.estimator.estimator.p
                     weights = m.regressor_.named_steps.estimator.estimator.weights
-
-                    parameters = pd.DataFrame({'target':[target], 'max_features':[max_features], 'max_samples':[max_samples],
-                                            'leaf_size':[leaf_size], 'p':[p], 'n_neighbors':[n_neighbors], 'weights':[weights]
+                    parameters = pd.DataFrame({'target':[target], 'max_samples':[max_samples], 'max_features':[max_features],
+                                            'leaf_size':[leaf_size], 'n_neighbors':[n_neighbors], 'p':[p], 'weights':[weights]
                                             })
                     all_parameters.append(parameters) 
 
             elif self.model_type == "clf":
-                #still to implement!
-                parameters = pd.DataFrame({'target':[target]})
-                all_parameters.append(parameters) 
+                raise ValueError("classifiers are not supported")
 
             elif self.model_type == "zir":
-                #still to implement!
-                parameters = pd.DataFrame({'target':[target]})
-                all_parameters.append(parameters) 
+                if model == "rf":
+                    max_depth_reg = m.regressor_.regressor.named_steps.estimator.max_depth
+                    max_features_reg = m.regressor_.regressor.named_steps.estimator.max_features
+                    max_samples_reg = m.regressor_.regressor.named_steps.estimator.max_samples
+                    min_samples_leaf_reg = m.regressor_.regressor.named_steps.estimator.min_samples_leaf
+                    n_estimators_reg = m.regressor_.regressor.named_steps.estimator.n_estimators
+
+                    n_estimators_clf = m.classifier.named_steps.estimator.n_estimators
+                    max_features_clf = m.classifier.named_steps.estimator.max_features
+                    max_depth_clf = m.classifier.named_steps.estimator.max_depth
+                    min_samples_leaf_clf = m.classifier.named_steps.estimator.min_samples_leaf
+                    max_samples_clf = m.classifier.named_steps.estimator.max_samples
+
+                    parameters = pd.DataFrame({'target':[target], 'reg_n_estimators':[n_estimators_reg], 
+                                            'reg_max_features':[max_features_reg], 'reg_max_depth':[max_depth_reg], 
+                                            'reg_min_samples_leaf':[min_samples_leaf_reg], 'reg_max_samples':[max_samples_reg],
+                                            'clf_n_estimators':[n_estimators_clf], 
+                                            'clf_max_features':[max_features_clf], 'clf_max_depth':[max_depth_clf], 
+                                            'clf_min_samples_leaf':[min_samples_leaf_clf], 'clf_max_samples':[max_samples_clf]
+                                            })
+                    all_parameters.append(parameters)
+
+                elif model == "xgb":
+                    learning_rate_reg = m.regressor_.regressor.named_steps.estimator.learning_rate
+                    n_estimators_reg = m.regressor_.regressor.named_steps.estimator.n_estimators
+                    max_depth_reg = m.regressor_.regressor.named_steps.estimator.max_depth
+                    subsample_reg = m.regressor_.regressor.named_steps.estimator.subsample
+                    colsample_bytree_reg = m.regressor_.regressor.named_steps.estimator.colsample_bytree
+                    gamma_reg = m.regressor_.regressor.named_steps.estimator.gamma
+                    alpha_reg = m.regressor_.regressor.named_steps.estimator.reg_alpha
+
+                    learning_rate_clf = m.classifier.named_steps.estimator.learning_rate
+                    n_estimators_clf = m.classifier.named_steps.estimator.n_estimators
+                    max_depth_clf = m.classifier.named_steps.estimator.max_depth
+                    subsample_clf = m.classifier.named_steps.estimator.subsample
+                    colsample_bytree_clf = m.classifier.named_steps.estimator.colsample_bytree
+                    gamma_clf = m.classifier.named_steps.estimator.gamma
+                    alpha_clf = m.classifier.named_steps.estimator.reg_alpha
+
+
+                    parameters = pd.DataFrame({'target':[target], 'reg_learning_rate':[learning_rate_reg], 'reg_n_estimators':[n_estimators_reg], 
+                                            'reg_max_depth':[max_depth_reg], 'reg_subsample':[subsample_reg], 'reg_colsample_bytree':[colsample_bytree_reg],
+                                            'reg_learning_rate':[learning_rate_reg], 'reg_gamma':[gamma_reg], 'reg_alpha':[alpha_reg],
+                                            'clf_learning_rate':[learning_rate_clf], 'clf_n_estimators':[n_estimators_clf], 
+                                            'clf_max_depth':[max_depth_clf], 'clf_subsample':[subsample_clf], 'clf_colsample_bytree':[colsample_bytree_clf],
+                                            'clf_learning_rate':[learning_rate_clf], 'clf_gamma':[gamma_clf], 'clf_alpha':[alpha_clf]                                           
+                                            })
+                    all_parameters.append(parameters)
+
+                elif model == "knn":
+                    max_samples_reg = m.regressor_.regressor.named_steps.estimator.max_samples
+                    max_features_reg = m.regressor_.regressor.named_steps.estimator.max_features
+                    leaf_size_reg = m.regressor_.regressor.named_steps.estimator.estimator.leaf_size
+                    n_neighbors_reg = m.regressor_.regressor.named_steps.estimator.estimator.n_neighbors
+                    p_reg = m.regressor_.regressor.named_steps.estimator.estimator.p
+                    weights_reg = m.regressor_.regressor.named_steps.estimator.estimator.weights
+
+                    max_samples_clf = m.classifier.named_steps.estimator.max_samples
+                    max_features_clf = m.classifier.named_steps.estimator.max_features
+                    leaf_size_clf = m.classifier.named_steps.estimator.estimator.leaf_size
+                    n_neighbors_clf = m.classifier.named_steps.estimator.estimator.n_neighbors
+                    p_clf = m.classifier.named_steps.estimator.estimator.p
+                    weights_clf = m.classifier.named_steps.estimator.estimator.weights
+
+
+
+                    parameters = pd.DataFrame({'target':[target], 'reg_max_samples':[max_samples_reg], 'reg_max_features':[max_features_reg],
+                                            'reg_leaf_size':[leaf_size_reg], 'reg_n_neighbors':[n_neighbors_reg], 
+                                            'reg_p':[p_reg], 'reg_weights':[weights_reg],
+                                            'clf_max_samples':[max_samples_clf], 'clf_max_features':[max_features_clf],
+                                            'clf_leaf_size':[leaf_size_clf], 'clf_n_neighbors':[n_neighbors_clf], 
+                                            'clf_p':[p_clf], 'clf_weights':[weights_clf]
+                                            })
+                    all_parameters.append(parameters) 
 
         all_parameters= pd.concat(all_parameters)
         try: #make new dir if needed
-            os.makedirs(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/")
+            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters"))
         except:
             None
-        all_parameters.to_csv(self.root + self.model_config['path_out'] + self.model_config['run_name'] + "/posts/parameters/" + model + "_parameters.csv", index=False)
+        all_parameters.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters", model) + "_parameters.csv", index=False)
+
         
         print("finished merging parameters")
-
-
 
     def estimate_carbon(self, variable):
 
         """
-        Estimate carbon content for each species
+        Estimate carbon content for each target based on a specified variable.
 
+        This method calculates the carbon content for each target by scaling the data in `self.d` 
+        with the values of the specified variable from the `traits` DataFrame. The results are 
+        stored back in `self.d`.
 
         Parameters
         ----------
-
-        variable: string
-            carbon content to estimate
-
+        variable : str
+            The name of the column in the `traits` DataFrame containing the carbon content values 
+            to be used for scaling the target data.
         """
 
         w = self.traits.query('Target in @self.targets')
@@ -186,14 +452,19 @@ class post:
 
     def def_groups(self, dict):
         """
-        Define groups of species
+        Define groups of species based on a provided dictionary.
 
         Parameters
         ----------
-
-        dict: dictionary
-        A dictionary containing group definitions
-
+        dict : dict
+            A dictionary where keys represent group names, and values are lists of species or 
+            column names to be grouped under each key.
+            
+        Notes
+        -----
+        - The method renames columns in `self.d` based on the provided dictionary and then sums 
+        their values to create grouped columns.
+        - The resulting grouped data is concatenated to the original `self.d`.
         """     
 
         df = self.d[self.targets]
@@ -209,7 +480,7 @@ class post:
         Parameters
         ----------
 
-        variable: string
+        variable : string
             variable that is used to estimate cwm.
 
         """
@@ -230,7 +501,7 @@ class post:
 
         Notes
         ----------
-        Useful for estimating total species abundances if targets are continuous.
+        Useful for estimating total species abundances or varable sum if targets are continuous.
         Total is estimated based on the target list defined in model_config. 
 
         """
@@ -454,19 +725,80 @@ class post:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 month_str = "_monthly_int" if monthly else ""
                 try: #make new dir if needed
-                    os.makedirs(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/")
+                    os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"))
                 except:
                     None
-                totals.to_csv(self.parent.root + self.parent.model_config['path_out'] + self.parent.model_config['run_name'] + "/posts/integrated_totals/" + model + '_integrated_totals_PI' + self.parent.pi + depth_str + month_str + ".csv", index=False)
+
+                path_out = self.parent.model_config['path_out']
+                run_name = self.parent.model_config['run_name']
+                pi = self.parent.pi
+                datatype = self.parent.datatype
+
+                # Build the full file path
+                output_dir = os.path.join(self.parent.root, path_out, run_name, "posts/integrated_totals")
+                filename = f"{model}_integrated_totals_PI{pi}{depth_str}{month_str}{datatype}.csv"
+                file_path = os.path.join(output_dir, filename)
+
+                # Write to CSV
+                totals.to_csv(file_path, index=False)
+
                 print(f"Exported totals")
 
+    def estimate_applicability(self):
 
-    def merge_env(self, X_predict):
+        # create empty dataframe with the same index as X_predict
+        aoa_dataset = pd.DataFrame(index=self.X_predict.index)
+
+        # estimate the aoa for each target:
+        for i in range(len(self.targets)):
+            
+            target = self.targets[i]
+            target_no_space = target.replace(' ', '_')
+
+            # load the voting regressor model object for each target:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
+                m = pickle.load(file)
+            
+            aoa = area_of_applicability(
+                X_test=self.X_predict,
+                X_train=self.X_train,
+                y_train= self.y_train,
+                model=m
+            )
+
+            # update the dataframe, where each column name is the target analyzed
+            aoa_dataset[target] = aoa
+
+        # convert df to xarray ds:
+        aoa_dataset = aoa_dataset.to_xarray()
+        
+        # add metadata:
+        aoa_dataset['lat'].attrs['units'] = 'degrees_north'
+        aoa_dataset['lat'].attrs['long_name'] = 'latitude'
+
+        aoa_dataset['lon'].attrs['units'] = 'degrees_east'
+        aoa_dataset['lon'].attrs['long_name'] = 'longitude'
+
+        aoa_dataset['depth'].attrs['units'] = 'm'
+        aoa_dataset['depth'].attrs['positive'] = 'down'
+        
+        # export aoa to netcdf:
+        aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"))
+
+
+    def merge_env(self):
         """
-        Merge model output with environmental data 
+        Merge model output with environmental data.
+
+        This method aligns and merges the predicted values (model output) with the existing 
+        environmental dataset stored in `self.d`. The merged data replaces `self.d`.
+
+        Returns
+        -------
+        None
         """
 
-        X_predict = X_predict.to_xarray()
+        X_predict = self.X_predict.to_xarray()
         ds = self.d.to_xarray()
         aligned_datasets = xr.align(ds,X_predict, join="inner")
         ds = xr.merge(aligned_datasets)
@@ -475,24 +807,30 @@ class post:
         self.d = ds.to_dataframe()
         self.d = self.d.dropna()
 
-    def return_d(self):
-        return(self.d)
-
     def export_ds(self, file_name, 
                   author=None, description=None):
         """
-        Export processed dataset to netcdf.
+        Export the processed dataset to a NetCDF file.
+
+        This method saves the processed dataset (`self.d`) to a NetCDF file in the location 
+        defined by `self.path_out`, with optional metadata such as author and description.
 
         Parameters
         ----------
-        file_name: name netcdf will be saved as. 
-        author: author included in netcdf description
-        description: title included in netcdf description
+        file_name : str 
+            The name of the NetCDF file (without extension). 
+        author : str, optional
+            The name of the author to include in NetCDF metadata (default is None).
+        description : str, optional
+            A description or title to include in the NetCDF metadata (default is None).
 
         Notes
-        ----------
-        data export location is defined in the model_config.yml
-
+        -----
+        - The export location is defined in the `model_config.yml` file and is stored in `self.path_out`.
+        - The method sets metadata attributes such as conventions, creator name, and units for 
+        latitude, longitude, and depth.
+        - Missing directories in the export path are created if necessary.
+        - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
         try: #make new dir if needed
@@ -523,23 +861,29 @@ class post:
         #to add loop defining units of variables
 
         print(self.d.head())
-        ds.to_netcdf(self.path_out + file_name + "_PI" + self.pi + ".nc")
-        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + ".nc")
+        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".nc")
+
+        print("exported ds to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype +  ".nc")
         #add nice metadata
 
 
     def export_csv(self, file_name):
         """
-        Export processed dataset to csv.
+        Export the processed dataset to a csv file.
+
+        This method saves the processed dataset (`self.d`) to a csv file in the location 
+        defined by `self.path_out`, with optional metadata such as author and description.
 
         Parameters
         ----------
-        file_name: name csv will be saved as. 
-
+        file_name : str 
+            The name of the csv file (without extension). 
+        
         Notes
-        ----------
-        data export location is defined in the model_config.yml
-
+        -----
+        - The export location is defined in the `model_config.yml` file and is stored in `self.path_out`.
+        - Missing directories in the export path are created if necessary.
+        - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
         try: #make new dir if needed
@@ -548,13 +892,41 @@ class post:
             None
     
         print(self.d.head())
-        self.d.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
+        self.d.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype + ".csv")
+
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
         #add nice metadata
 
     def merge_obs(self, file_name, targets=None):
         """
-        Merge model output with observational data
+        Merge model output with observational data and calculate residuals.
+
+        This function integrates model predictions with observational data based on 
+        spatial and temporal indices, calculates residuals, and exports the merged dataset.
+
+        Parameters
+        ----------
+        file_name : str
+            The base name of the output file to save the merged dataset.
+        targets : list of str, optional
+            A list of target variable names to include in the merge. If None, the default 
+            targets from `self.targets` are used (default is None).
+
+        Notes
+        -----
+        - The function matches the observational data with model predictions based on the 
+        indices `['lat', 'lon', 'depth', 'time']`.
+        - Residuals are calculated as `observed - predicted` for each target variable.
+        - Columns included in the output are the original targets, their modeled values 
+        (suffixed with `_mod`), and their residuals (suffixed with `_resid`).
+        - The merged dataset is saved as a CSV file with a suffix `_PI` followed by the 
+        `pi` value, appended to the output file name.
+        - Observational data is loaded from the path defined in `self.model_config['training']`.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the observational dataset file cannot be found at the specified location.
         """
         # Select and rename the target columns for d
         if targets.all == None:
@@ -562,13 +934,14 @@ class post:
         d = self.d[targets]
 
         mod_columns = {target: target + '_mod' for target in targets}
-        d.rename(mod_columns, inplace=True, axis=1)
+        d = d.rename(mod_columns, axis=1)
         d.reset_index(inplace=True)
         d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
 
         # Read the training targets from the training.csv file defined in model_config
         try:
-            df2_path = self.root + self.model_config['training']
+            df2_path = os.path.join(self.root, self.model_config['training'])
+
             df2 = pd.read_csv(df2_path)
         except:
             raise FileNotFoundError(f"Dataset not found at {df2_path}")
@@ -590,7 +963,8 @@ class post:
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
         print(out.head())
-        out.to_csv(self.path_out + file_name + "_PI" + self.pi + ".csv")
-        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + ".csv")
+        out.to_csv(os.path.join(self.path_out, file_name) + "_PI" + self.pi + self.datatype +  ".csv")
+
+        print("exported d to: " + self.path_out + file_name + "_PI" + self.pi + self.datatype + ".csv")
 
         print('training merged with predictions')

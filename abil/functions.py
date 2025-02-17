@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from inspect import signature
-from scipy.stats import kendalltau
 
 from sklearn.base import BaseEstimator, RegressorMixin, clone, is_regressor, is_classifier
 from sklearn.compose import TransformedTargetRegressor
@@ -12,96 +11,143 @@ from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.datasets import make_regression
 from sklearn.metrics import make_scorer
+from sklearn.utils import resample
 
-
-from mapie._machine_precision import EPSILON
-from mapie._typing import ArrayLike, NDArray
-from mapie.conformity_scores import BaseRegressionScore
-
-
-def tau_scoring(y, y_pred):
-    tau, p_value = kendalltau(y, y_pred)
-    return(tau)
-
-def tau_scoring_p(y, y_pred):
-    tau, p_value = kendalltau(y, y_pred)
-    return(p_value)
-
-def check_tau(scoring):
-
-    if 'tau' in scoring:
-        scoring['tau'] = make_scorer(tau_scoring)
-        scoring['tau_p'] = make_scorer(tau_scoring_p)
-        print(scoring)
-
-    else:
-        scoring = scoring
-
-    return scoring
 
 def do_log(self, x):
-    y = np.log(x+1)
-    return(y)
+    """
+    Apply natural logarithm transformation to the input values.
+    
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    y : array-like
+        Log-transformed values.
+    """
+    y = np.log(x + 1)
+    return y
 
 def do_exp(self, x):
-    y = np.exp(x)-1
-    return(y)
+    """
+    Apply exponential transformation to the input values.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    y : array-like
+        Exponentially transformed values.
+    """
+    y = np.exp(x) - 1
+    return y
+
 
 def upsample(d, target, ratio=10):
-        
-    y_binary = np.where(d[target]!=0, 1, 0)
+    """
+    Upsample zero and non-zero observations in the dataset to balance classes.
+    
+    Parameters
+    ----------
+    d : pd.DataFrame
+        Input dataframe.
+    target : str
+        Target column for upsampling.
+    ratio : int, default=10
+        Ratio of zeros to non-zero samples after upsampling.
 
-    nix = np.where(y_binary==0)[0] #absence index
-    pix = np.where(y_binary==1)[0] #presence index
+    Returns
+    -------
+    ix : pd.DataFrame
+        Upsampled dataframe.
+    """
+    # Separate presence (non-zero) and absence (zero) indices
+    presence_indices = d[d[target] != 0].index
+    absence_indices = d[d[target] == 0].index
 
-    pixu = d.iloc[pix].sample(pix.shape[0], replace=True)
-    nixu = d.iloc[nix].sample(pix.shape[0]*ratio, replace=True)
+    # Calculate the number of zero samples to match the ratio
+    num_presence = len(presence_indices)
+    num_absence_to_sample = num_presence * ratio
 
-    ix = pd.concat([pixu, nixu], ignore_index=True)
+    # Sample zeros with replacement if needed
+    sampled_absence_indices = np.random.choice(absence_indices, size=num_absence_to_sample, replace=True)
 
-    return(ix)
+    # Create the upsampled dataframe by combining presences and sampled absences
+    upsampled_df = pd.concat([d.loc[presence_indices], d.loc[sampled_absence_indices]], ignore_index=True)
 
-def merge_obs_env(obs_path = "../data/gridded_abundances.csv",
-                  env_path = "../data/env_data.nc",
-                  env_vars = ["temperature", "si", 
-                              "phosphate", "din", 
-                              "o2", "mld", "DIC", 
-                              "TA", "irradiance", 
-                              "chlor_a","Rrs_547",
-                              "Rrs_667","CI_2",
-                              "pic","si_star",
-                              "si_n","FID", 
-                              "time", "depth", 
-                              "lat", "lon"],
-                    out_path = "../data/obs_env.csv"):
+    return upsampled_df
+
+
+def merge_obs_env(obs_path="../data/gridded_abundances.csv",
+                  env_path="../data/env_data.nc",
+                  env_vars=None,
+                  out_path="../data/obs_env.csv"):
+    """
+    Merge observational and environmental datasets based on spatial and temporal indices.
+
+    Parameters
+    ----------
+    obs_path : str, default="../data/gridded_abundances.csv"
+        Path to observational data CSV.
+    env_path : str, default="../data/env_data.nc"
+        Path to environmental data NetCDF file.
+    env_vars : list of str, optional
+        List of environmental variables to include in the merge.
+    out_path : str, default="../data/obs_env.csv"
+        Path to save the merged dataset.
+
+    Returns
+    -------
+    None
+    """
+    if env_vars is None:
+        env_vars = ["temperature", "sio4", "po4", "no3", "o2", "mld", "DIC",
+                    "TA", "irradiance", "chlor_a", "Rrs_547", "Rrs_667", "CI_2",
+                    "time", "depth", "lat", "lon"]
 
     d = pd.read_csv(obs_path)
-
     d = d.convert_dtypes()
-
     d = d.groupby(['Latitude', 'Longitude', 'Depth', 'Month']).mean().reset_index()
-    d.rename({'Latitude':'lat','Longitude':'lon','Depth':'depth','Month':'time'},inplace=True,axis=1)
+    d.rename({'Latitude': 'lat', 'Longitude': 'lon', 'Depth': 'depth', 'Month': 'time'}, inplace=True, axis=1)
     d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
 
     print("loading env")
-
     ds = xr.open_dataset(env_path)
     print("converting to dataframe")
     df = ds.to_dataframe()
-    ds = None 
+    ds = None
     df.reset_index(inplace=True)
     df = df[env_vars]
-    df.set_index(['lat','lon','depth','time'],inplace=True)
+    df.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
     print("merging environment")
-
     out = d.merge(df, how="left", left_index=True, right_index=True)
     out.to_csv(out_path, index=True)
     print("fin")
 
 class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
+    """
+    A custom regressor to handle zero-inflated target variables.
 
-    def __init__(self, classifier, regressor) -> None:
-        """Initialize."""
+    Combines a classifier to predict non-zero occurrences and a regressor for non-zero targets.
+    """
+
+    def __init__(self, classifier, regressor):
+        """
+        Initialize the regressor with a classifier and regressor.
+
+        Parameters
+        ----------
+        classifier : estimator
+            A classifier to predict non-zero values.
+        regressor : estimator
+            A regressor to predict non-zero targets.
+        """
         self.classifier = classifier
         self.regressor = regressor
 
@@ -204,7 +250,31 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
 
 
 class LogGridSearch:
+    """
+    Perform grid search with optional logarithmic transformation of the target variable.
+
+    Supports evaluating models with no transformation, log-transformation, or both.
+    """
+
     def __init__(self, m, verbose, cv, param_grid, scoring, regions=None):
+        """
+        Initialize the LogGridSearch.
+
+        Parameters
+        ----------
+        m : estimator
+            Base model for grid search.
+        verbose : int
+            Verbosity level of grid search.
+        cv : int or cross-validation generator
+            Cross-validation strategy.
+        param_grid : dict
+            Grid of parameters to search.
+        scoring : str or callable
+            Scoring metric.
+        regions : optional
+            Additional regions information (if required).
+        """
         self.m = m
         self.verbose = verbose
         self.cv = cv
@@ -221,6 +291,36 @@ class LogGridSearch:
         return(y)
     
     def transformed_fit(self, X, y, log, predictors):
+        """
+        Perform grid search with optional log transformation on the target variable.
+
+        Parameters
+        ----------
+        X : pd.DataFrame or np.ndarray
+            Feature matrix.
+        y : pd.Series or np.ndarray
+            Target variable.
+        log : str
+            Transformation mode: "yes" (log transform), "no" (no transform), or "both" (test both).
+        predictors : list
+            Predictors used for training (not directly used in the function).
+
+        Returns
+        -------
+        GridSearchCV
+            Fitted grid search instance for the best-performing model.
+
+        Notes
+        -----
+        - Applies log transformation using `TransformedTargetRegressor` when `log="yes"`.
+        - If `log="both"`, compares models with and without log transformation.
+        - Uses `self.param_grid`, `self.scoring`, and `self.cv` for grid search.
+
+        Raises
+        ------
+        ValueError
+            If `log` is not "yes", "no", or "both".
+        """
 
         if log=="yes":
 
@@ -270,11 +370,47 @@ class LogGridSearch:
 
 
 class UpsampledZeroStratifiedKFold:
+    """
+    Custom cross-validation generator with upsampling of zero instances for stratified folds.
+    """
+
     def __init__(self, n_splits=3):
+        """
+        Initialize the stratified K-fold with upsampling.
+
+        Parameters
+        ----------
+        n_splits : int, default=3
+            Number of folds.
+        """
         self.n_splits = n_splits
 
     def split(self, X, y, groups=None):
-        #convert target variable to binary for stratified sampling
+        """
+        Generate train-test splits with upsampling of the minority class in the training data.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            Feature matrix.
+        y : array-like, shape (n_samples,)
+            Target variable.
+        groups : array-like, optional
+            Group labels for the samples, used for group-based splitting. Not used in this method.
+
+        Yields
+        ------
+        train_indices : np.ndarray
+            Indices for the training set with upsampled minority class.
+        test_indices : np.ndarray
+            Indices for the test set.
+
+        Notes
+        -----
+        - Converts `y` into a binary variable (`1` for non-zero values, `0` otherwise) for stratified sampling.
+        - Upsamples the minority class in the training set to match the size of the majority class.
+        - Uses `StratifiedKFold` for generating splits based on the binary target variable.
+        """
         y_binary = np.where(y!=0, 1, 0)
 
         for rx, tx in StratifiedKFold(n_splits=self.n_splits).split(X,y_binary):
@@ -289,13 +425,48 @@ class UpsampledZeroStratifiedKFold:
         return self.n_splits
     
     
-    
 class ZeroStratifiedKFold:
+    """
+    Custom cross-validation generator to handle zero-inflated targets with stratification.
+    """
+
     def __init__(self, n_splits=3):
+        """
+        Initialize the stratified K-fold.
+
+        Parameters
+        ----------
+        n_splits : int, default=3
+            Number of folds.
+        """
         self.n_splits = n_splits
 
     def split(self, X, y, groups=None):
-        #convert target variable to binary for stratified sampling
+        """
+        Generate train-test splits with upsampling of the minority class in the training data.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            Feature matrix.
+        y : array-like, shape (n_samples,)
+            Target variable.
+        groups : array-like, optional
+            Group labels for the samples, used for group-based splitting. Not used in this method.
+
+        Yields
+        ------
+        train_indices : np.ndarray
+            Indices for the training set with upsampled minority class.
+        test_indices : np.ndarray
+            Indices for the test set.
+
+        Notes
+        -----
+        - Converts `y` into a binary variable (`1` for non-zero values, `0` otherwise) for stratified sampling.
+        - Upsamples the minority class in the training set to match the size of the majority class.
+        - Uses `StratifiedKFold` for generating splits based on the binary target variable.
+        """
         y_binary = np.where(y!=0, 1, 0)
 
         # Check if there are any zeros in the array
@@ -308,31 +479,125 @@ class ZeroStratifiedKFold:
 
     def get_n_splits(self, X, y, groups=None):
         return self.n_splits
+
+
+def example_data(
+    y_name, 
+    n_samples=100, 
+    n_features=5, 
+    noise=0.1, 
+    train_to_predict_ratio=0.7, 
+    zero_to_non_zero_ratio=0.5, 
+    random_state=59
+    ):
+    """
+    Generate training and prediction datasets with ['lat', 'lon', 'depth', 'time'] indices.
+    Includes zeros in the target and allows upsampling of zero values.
     
+    Parameters:
+        y_name (str): Name of the target variable.
+        n_samples (int): Total number of samples to generate (training + prediction).
+        n_features (int): Number of features for the dataset.
+        noise (float): Noise level for the regression data.
+        train_to_predict_ratio (float): Ratio of training to prediction data.
+        zero_to_non_zero_ratio (float): Ratio of zero to non-zero target values after upsampling.
+        random_state (int): Random seed for reproducibility.
 
-
-def example_data(y_name, n_samples=100, n_features=5, noise=20, random_state=59):
-    #example data:
+    Returns:
+        X_train (pd.DataFrame): Training feature dataset with MultiIndex.
+        X_predict (pd.DataFrame): Prediction feature dataset with MultiIndex.
+        y (pd.Series): Target variable for training dataset.
+    """
+    np.random.seed(random_state)  # Set random seed for reproducibility
+    
+    # Generate regression data
     X, y = make_regression(n_samples=n_samples, n_features=n_features, noise=noise, random_state=random_state)
-    # scale so values are strictly positive:
-    scaler = MinMaxScaler()  
-    scaler.fit(y.reshape(-1,1))  
-    y = scaler.transform(y.reshape(-1,1))
-    # add exp transformation to data
-    # make distribution exponential:
-    y = np.exp(y)-1
-    #cut tail
-    y[y <= 0.5] = 0
-    y = np.squeeze(y)
-    y = pd.Series(y)
-    y = pd.DataFrame({y_name: y})
-    y.name = y_name
-    X = pd.DataFrame(X)
-    X = X.add_prefix('Feature_')
-    return(X, y)
+    
+    # Introduce zeros randomly in the target variable
+    zero_fraction = 0.2  # Fraction of zero values to introduce
+    zero_indices = np.random.choice(len(y), size=int(len(y) * zero_fraction), replace=False)
+    y[zero_indices] = 0
+    
+    # Ensure target values are non-negative by taking absolute values
+    y = np.abs(y)
+    
+    # Split data into training and prediction sets
+    train_size = int(n_samples * train_to_predict_ratio)
+    X_train, X_predict = X[:train_size], X[train_size:]
+    y_train = y[:train_size]
+    
+    # Upsample zeros in the training set
+    X_train_df = pd.DataFrame(X_train, columns=[f"feature_{i+1}" for i in range(X_train.shape[1])])
+    y_train_series = pd.Series(y_train, name=y_name)
+    
+    zero_mask = y_train_series == 0
+    non_zero_mask = y_train_series > 0
+    
+    X_zeros = X_train_df[zero_mask]
+    y_zeros = y_train_series[zero_mask]
+    X_non_zeros = X_train_df[non_zero_mask]
+    y_non_zeros = y_train_series[non_zero_mask]
+    
+    # Upsample zeros to achieve the desired zero_to_non_zero_ratio
+    upsample_count = int(len(y_non_zeros) * zero_to_non_zero_ratio)
+    X_zeros_upsampled, y_zeros_upsampled = resample(
+        X_zeros, y_zeros, 
+        replace=True, 
+        n_samples=upsample_count, 
+        random_state=random_state
+    )
+    
+    # Combine upsampled data
+    X_train_combined = pd.concat([X_non_zeros, X_zeros_upsampled], axis=0)
+    y_train_combined = pd.concat([y_non_zeros, y_zeros_upsampled], axis=0)
+    
+    # Shuffle combined data
+    combined_indices = np.random.permutation(X_train_combined.index)
+    X_train_combined = X_train_combined.loc[combined_indices]
+    y_train_combined = y_train_combined.loc[combined_indices]
+    
+    # Generate random latitude, longitude, depth, and time
+    latitudes_train = np.random.uniform(-90, 90, size=X_train_combined.shape[0])
+    longitudes_train = np.random.uniform(-180, 180, size=X_train_combined.shape[0])
+    depths_train = np.random.uniform(0, 200, size=X_train_combined.shape[0])
+    times_train = np.random.randint(1, 13, size=X_train_combined.shape[0])
+    
+    latitudes_predict = np.random.uniform(-90, 90, size=X_predict.shape[0])
+    longitudes_predict = np.random.uniform(-180, 180, size=X_predict.shape[0])
+    depths_predict = np.random.uniform(0, 200, size=X_predict.shape[0])
+    times_predict = np.random.randint(1, 13, size=X_predict.shape[0])
+    
+    # Set MultiIndex for X_train and X_predict
+    X_train_combined.index = pd.MultiIndex.from_arrays(
+        [latitudes_train, longitudes_train, depths_train, times_train],
+        names=['lat', 'lon', 'depth', 'time']
+    )
+    X_predict = pd.DataFrame(X_predict, columns=[f"feature_{i+1}" for i in range(X_predict.shape[1])])
+    X_predict.index = pd.MultiIndex.from_arrays(
+        [latitudes_predict, longitudes_predict, depths_predict, times_predict],
+        names=['lat', 'lon', 'depth', 'time']
+    )
+    
+    # Set y_train index
+    y_train_combined.index = X_train_combined.index
+    
+    return X_train_combined, X_predict, y_train_combined
 
 
 def abbreviate_species(species_name):
+    """
+    Abbreviate a species name by shortening the first word to its initial.
+
+    Parameters
+    ----------
+    species_name : str
+        Full species name.
+
+    Returns
+    -------
+    str
+        Abbreviated species name.
+    """
     words = species_name.split()
     if len(words) == 1:
         return species_name
@@ -340,95 +605,22 @@ def abbreviate_species(species_name):
     abbreviated_name += ' ' + ' '.join(words[1:])
     return abbreviated_name
 
+
 def inverse_weighting(values):
+    """
+    Compute inverse weighting for a list of values.
+
+    Parameters
+    ----------
+    values : list of float
+        Input values.
+
+    Returns
+    -------
+    list of float
+        Normalized inverse weights.
+    """
     inverse_weights = [1 / value for value in values]
     total_inverse_weight = sum(inverse_weights)
     normalized_weights = [weight / total_inverse_weight for weight in inverse_weights]
     return normalized_weights
-
-
-
-
-class OffsetGammaConformityScore(BaseRegressionScore):
-    """
-    Gamma conformity score.
-
-    The signed conformity score = (y - y_pred) / y_pred.
-    The conformity score is not symmetrical.
-
-    This is appropriate when the confidence interval is not symmetrical and
-    its range depends on the predicted values. Like the Gamma distribution,
-    its support is limited to strictly positive reals.
-    """
-
-    def __init__(
-        self,
-        sym: bool = False,
-        offset=0,
-    ) -> None:
-        super().__init__(sym=sym, consistency_check=False, eps=EPSILON)
-        self.offset = offset  # Adding a new instance variable 'new_variable' initialized to None
-
-    def _check_observed_data(
-        self,
-        y: ArrayLike,
-    ) -> None:
-        if not self._all_non_negative(y):
-            raise ValueError(
-                f"At least one of the observed target is negative "
-                f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be non-negative, "
-                "in conformity with the offset Gamma distribution support."
-            )
-
-    def _check_predicted_data(
-        self,
-        y_pred: ArrayLike,
-    ) -> None:
-        if not self._all_non_negative(y_pred):
-            raise ValueError(
-                f"At least one of the predicted target is negative "
-                f"which is incompatible with {self.__class__.__name__}. "
-                "All values must be non-negative, "
-                "in conformity with the offset Gamma distribution support."
-            )
-
-    @staticmethod
-    def _all_non_negative(
-        y: ArrayLike,
-    ) -> bool:
-        return np.all(np.greater_equal(y, 0))
-
-    def get_signed_conformity_scores(
-        self,
-        y: ArrayLike,
-        y_pred: ArrayLike,
-        **kwargs
-    ) -> NDArray:
-        """
-        Compute the signed conformity scores from the observed values
-        and the predicted ones, from the following formula:
-        signed conformity score = (y - y_pred) / y_pred
-        """
-        self._check_observed_data(y)
-        self._check_predicted_data(y_pred)
-        return np.divide(np.subtract(y, y_pred), y_pred+self.offset)
-
-    def get_estimation_distribution(
-        self,
-        y_pred: ArrayLike,
-        conformity_scores: ArrayLike,
-        **kwargs
-    ) -> NDArray:
-        """
-        Compute samples of the estimation distribution from the predicted
-        values and the conformity scores, from the following formula:
-        signed conformity score = (y - y_pred) / y_pred
-        <=> y = y_pred * (1 + signed conformity score)
-
-        ``conformity_scores`` can be either the conformity scores or
-        the quantile of the conformity scores.
-        """
-        self._check_predicted_data(y_pred)
-        return np.multiply(y_pred, np.add(1, conformity_scores))
-

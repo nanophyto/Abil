@@ -1,167 +1,239 @@
+
+
 import pandas as pd
 import numpy as np
 import pickle
 import os
 import time
-from sklearn.ensemble import VotingRegressor, VotingClassifier
-from sklearn.model_selection import KFold
-from mapie.regression import MapieRegressor
-from mapie.classification import  MapieClassifier
-from mapie.conformity_scores import GammaConformityScore, AbsoluteConformityScore
 
-
-from sklearn.model_selection import cross_validate
+from sklearn.ensemble import VotingRegressor
+from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
+    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 else:
-    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, check_tau
+    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 
-def def_prediction(path_out, ensemble_config, n, species):
+def def_prediction(path_out, ensemble_config, n, target):
+    """
+    Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
 
-    path_to_scores  = path_out + "scoring/" + ensemble_config["m"+str(n+1)] + "/"
-    path_to_param  = path_out + "model/"  +  ensemble_config["m"+str(n+1)] + "/"
+    Parameters
+    ----------
+    path_out : str
+        Path to the output folder containing model and scoring information.
+    ensemble_config : dict
+        Dictionary containing configuration details for the ensemble models, including model names, regressor or classifier status.
+    n : int
+        Index of the model to load in the ensemble.
+    target : str
+        The target for which predictions are made (used to load target-specific files).
 
+    Returns
+    -------
+    tuple
+        A tuple containing the model and the mean absolute error (MAE) score.
+
+    Raises
+    ------
+    ValueError
+        If both regressor and classifier are set to False, or if a classifier is used when only regressors are supported.
+    """
+
+    path_to_scores  = os.path.join(path_out, "scoring", ensemble_config["m"+str(n+1)])
+    path_to_param  = os.path.join(path_out, "model", ensemble_config["m"+str(n+1)])
 
     if (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == False):
-        print("predicting classifier")
-        species_no_space = species.replace(' ', '_')
-        with open(path_to_param + species_no_space + '_clf.sav', 'rb') as file:
-            m = pickle.load(file)
-        with open(path_to_scores + species_no_space + '_clf.sav', 'rb') as file:
-            scoring = pickle.load(file)
-        scores = np.mean(scoring['test_accuracy'])
+        raise ValueError("classifiers are not supported")
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         print("predicting regressor")
-        species_no_space = species.replace(' ', '_')
-        with open(path_to_param + species_no_space + '_reg.sav', 'rb') as file:
+        target_no_space = target.replace(' ', '_')
+        with open(os.path.join(path_to_param, target_no_space) + '_reg.sav', 'rb') as file:
             m = pickle.load(file)
-        with open(path_to_scores + species_no_space + '_reg.sav', 'rb') as file:
+        with open(os.path.join(path_to_scores, target_no_space) + '_reg.sav', 'rb') as file:
             scoring = pickle.load(file) 
         scores = abs(np.mean(scoring['test_MAE']))
 
 
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
         print("predicting zero-inflated regressor")
-        species_no_space = species.replace(' ', '_')
-        with open(path_to_param + species_no_space + '_zir.sav', 'rb') as file:
+        target_no_space = target.replace(' ', '_')
+        with open(os.path.join(path_to_param, target_no_space) + '_zir.sav', 'rb') as file:
             m = pickle.load(file)
-        with open(path_to_scores + species_no_space + '_zir.sav', 'rb') as file:
+        with open(os.path.join(path_to_scores, target_no_space) + '_zir.sav', 'rb') as file:
             scoring = pickle.load(file)
         scores = abs(np.mean(scoring['test_MAE']))
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == False):
-
-        print("Both regressor and classifier are defined as false")
+        raise ValueError("Both regressor and classifier are defined as false")
 
     return(m, scores)
 
 
 def parallel_predict(prediction_function, X_predict, n_threads=1):
+    """
+    Splits the prediction task across multiple threads to predict on large datasets.
 
-    df_sections = np.array_split(X_predict,  n_threads)
+    Parameters
+    ----------
+    prediction_function : callable
+        The model's prediction function to be applied to each chunk of data.
+    X_predict : DataFrame
+        The features (input data) on which to make predictions.
+    n_threads : int, optional, default=1
+        The number of threads to use for parallel processing.
 
-    predictions = Parallel(n_jobs= n_threads)(delayed(prediction_function)(df_section) for df_section in df_sections)
+    Returns
+    -------
+    np.ndarray
+        The combined predictions from all threads.
+    """    
 
+    # Split the indices of X_predict into chunks
+    chunk_indices = np.array_split(X_predict.index, n_threads)
+
+
+    # Create a list of DataFrame chunks based on the split indices
+    df_sections = [X_predict.loc[chunk_idx] for chunk_idx in chunk_indices]
+
+    # Use joblib to process each chunk in parallel
+    predictions = Parallel(n_jobs=n_threads)(
+        delayed(prediction_function)(df_section) for df_section in df_sections
+    )
+
+    # Combine the predictions from all threads
     combined_predictions = np.concatenate(predictions)
 
-    return(combined_predictions)
+    return combined_predictions
 
 
-def parallel_predict_mapie(X_predict, mapie, alpha, chunksize = 1000):
+def export_prediction(m, target, target_no_space, X_predict, model_out, n_threads=1):
+    """
+    Exports model predictions to a NetCDF file.
 
-    # Define a function to make predictions and PIs for a chunk of data
-    def predict_chunk(model, X_chunk, alpha):
-        pred, pis = model.predict(X_chunk, alpha=alpha)
-        return pred, pis
-
-    # Define the chunk size
-
-    # Split the data into chunks
-    data_chunks = [X_predict[i:i+chunksize] for i in range(0, len(X_predict), chunksize)]
-
-    # Use parallel processing to make predictions and PIs for each chunk
-    results = Parallel(n_jobs=-1)(delayed(predict_chunk)(mapie, chunk, alpha) for chunk in data_chunks)
-
-    # Combine the results
-    y_pred = []
-    y_pis = []
-    for pred, pis in results:
-        y_pred.extend(pred)
-        y_pis.extend(pis)
-
-    return np.array(y_pred), np.array(y_pis)
-    # Now y_pred contains the predicted values and y_pis contains the prediction intervals
-
-
-
-def export_prediction(m, species, X_predict, model_config, 
-                      ensemble_config, ens_model_out, n_threads=1):
+    Parameters
+    ----------
+    m : object
+        The trained model used for predictions.
+    target : str
+        The name of the target variable.
+    target_no_space : str
+        The target variable name with spaces replaced by underscores.
+    X_predict : pd.DataFrame of shape (n_points, n_features)
+        Features to predict on (e.g., environmental data), where n_points
+        is the total 1-d size of the features to predict on 
+        (ex. 31881600 for full 180x360x41x12 grid).
+    model_out : str
+        Path where the predictions should be saved.
+    n_threads : int, optional, default=1
+        The number of threads to use for parallel prediction.
+    """
 
     d = X_predict.copy()
-    if (model_config['predict_probability'] == True) and (ensemble_config["regressor"] ==False):
-        print("predicting probabilities")
-        d[species] = parallel_predict(m.predict_proba, X_predict, n_threads)
-    elif (model_config['predict_probability'] == True) and (ensemble_config["regressor"] ==True):
-        print("error: can't predict probabilities if the model is a regressor")
-    else:
-        d[species] = parallel_predict(m.predict, X_predict, n_threads)
+    d[target] = parallel_predict(m.predict, X_predict, n_threads)
     d = d.to_xarray()
     
     try: #make new dir if needed
-        os.makedirs(ens_model_out)
+        os.makedirs(model_out)
     except:
         None
 
-    d[species].to_netcdf(ens_model_out + species + ".nc") 
+    export_path = os.path.join(model_out, target_no_space + ".nc")
 
+
+    d[target].to_netcdf(export_path) 
 
 
 class predict:
     """
+    Predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.
+
     Parameters
     ----------
+    X_train : pd.DataFrame of shape (n_samples, n_features)
+        Training features used for model fitting.
+    y : pd.Series of shape (n_samples,) or (n_samples, n_outputs)
+        Target values used for model fitting.
+    X_predict : pd.DataFrame of shape (n_points, n_features)
+        Features to predict on, where `n_points` represents the total number of prediction points 
+        (e.g., 31881600 for a full 180x360x41x12 grid).
+    model_config : dict
+        Dictionary containing model configuration parameters, including:
+            - seed : int
+                Random seed for reproducibility.
+            - root : str
+                Path to the root folder.
+            - path_out : str
+                Directory where predictions are saved.
+            - path_in : str
+                Directory containing tuned models.
+            - target : str
+                File name of the target list.
+            - verbose : int
+                Verbosity level (0-3).
+            - n_threads : int
+                Number of threads to use for parallel processing.
+            - cv : int
+                Number of cross-validation folds.
+            - ensemble_config : dict
+                Configuration for the ensemble setup, containing:
+                    - classifier : bool
+                        Whether to train a classification model.
+                    - regressor : bool
+                        Whether to train a regression model.
+                    - m{n} : str
+                        Model names (e.g., "m1: 'rf'", "m2: 'xgb'").
+            - clf_scoring : list of str
+                Metrics for classification scoring.
+            - reg_scoring : list of str
+                Metrics for regression scoring (e.g., "r2", "neg_mean_absolute_error").
+    n_jobs : int, optional, default=1
+        Number of threads to use for parallel processing.
 
-    X_train : {array-like, sparse matrix} of shape (n_samples, n_features)
-        should be the same as the X used for tuning
+    Attributes
+    ----------
+    path_out : str
+        Path where predictions and model outputs are saved.
+    target : str
+        Name of the target variable.
+    target_no_space : str
+        Target variable name with spaces replaced by underscores.
+    verbose : int
+        Verbosity level for logging.
+    n_jobs : int
+        Number of parallel threads used for prediction and cross-validation.
 
-    y : array-like of shape (n_samples,) or (n_samples, n_outputs)
-        should be the same as the y used for tuning
-
-    X_predict : {array-like, sparse matrix} of shape (n_samples, n_features)
-        Features to predict on (i.e. gridded environmental data). 
-            
-    model_config: dictionary, default=None
-        A dictionary containing:
-
-        `seed` : int, used to create random numbers
-
-        `root`: string, path to folder
-        
-        `path_out`: string, where predictions are saved
-        
-        `path_in`: string, where to find tuned models
-        
-        `traits`: string, file name of your trait file
-        
-        `verbose`: int, to set verbosity (0-3)
-                
-        `cv` : int, number of cross-folds
-
-        `n_threads`: int, number of threads to use
-                
-        `ensemble_config` : 
-        
-        `clf_scoring` :
-        
-        `reg_scoring` :
-
+    Methods
+    -------
+    make_prediction()
+        Train the ensemble models and generate predictions, exporting them to NetCDF.
     """
+
     def __init__(self, X_train, y, X_predict, model_config, n_jobs=1):
-        
+        """
+        Initialize the `predict` class with training data, prediction data, and model configurations.
+
+        Parameters
+        ----------
+        X_train : pd.DataFrame of shape (n_samples, n_features)
+            Training features used for model fitting.
+        y : pd.Series of shape (n_samples,) or (n_samples, n_outputs)
+            Target values used for model fitting.
+        X_predict : pd.DataFrame of shape (n_points, n_features)
+            Features for which predictions are to be made.
+        model_config : dict
+            Dictionary containing configuration parameters for the model and ensemble.
+        n_jobs : int, optional, default=1
+            Number of threads for parallel processing.
+
+        Returns
+        -------
+        None
+        """
+                
         self.st = time.time()
 
         self.y = y.sample(frac=1, random_state=model_config['seed']) #shuffle
@@ -172,12 +244,8 @@ class predict:
         self.target_no_space = self.target.replace(' ', '_')
         self.verbose = model_config['verbose']
 
-        if model_config['hpc']==False:
-            self.path_out = model_config['local_root'] + model_config['path_out'] + model_config['run_name'] + "/"
-        elif model_config['hpc']==True:
-            self.path_out = model_config['hpc_root'] + model_config['path_out'] + model_config['run_name'] + "/"
-        else:
-            raise ValueError("hpc True or False not defined in yml")
+        self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'])
+
             
         if model_config['stratify']==True:
             if model_config['upsample']==True:
@@ -196,24 +264,18 @@ class predict:
         self.n_jobs = n_jobs
 
         if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == False):
-            self.scoring = model_config['clf_scoring']
-            self.y[self.y > 0] = 1
-
+            raise ValueError("classifiers are not supported")
         elif (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == False):
             raise ValueError("classifier and regressor can't both be False")
         else:
-            self.scoring = check_tau(self.model_config['reg_scoring']) 
+            self.scoring = self.model_config['reg_scoring']
 
-
-        if (self.ensemble_config["classifier"] !=True) and (self.ensemble_config["classifier"] !=False):
-            raise ValueError("classifier should be True or False")
-        
         if (self.ensemble_config["regressor"] !=True) and (self.ensemble_config["regressor"] !=False):
             raise ValueError("regressor should be True or False")
 
 
         if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-            self.extension = "_clf.sav"
+            raise ValueError("classifiers are not supported")
         elif self.model_config['ensemble_config']['classifier'] and self.model_config['ensemble_config']['regressor']:
             self.extension = "_zir.sav"
         else:
@@ -221,78 +283,22 @@ class predict:
 
         print("initialized prediction")
         
-    def make_prediction(self, prediction_inference=False, alpha=[0.05], cv=None,
-                        conformity_score = AbsoluteConformityScore()):
-
+    def make_prediction(self):
         """
-        Calculates performance of model(s) and exports prediction(s) to netcdf
+        Fit models in the ensemble and generate predictions.
 
-        If more than one model is defined an weighted ensemble is generated using 
-        a voting Regressor or Classifier.
+        Predictions are exported to NetCDF files. If the ensemble contains multiple models, 
+        predictions are made for each individual model and the ensemble.
 
-        To determine model error Prediction Inference is implemented using MAPIE.
+        Returns
+        -------
+        None
 
-        Parameters
-        ----------
-        prediction_inference: Optional[bool]
-            Whether or not to include prediction inference.
-            
-        alpha: Optional[float]
-            Must be float between ``0`` and ``1``, represents the uncertainty of the
-            confidence interval.
-            Lower ``alpha`` produce larger (more conservative) prediction
-            intervals.
-            ``alpha`` is the complement of the target coverage level.
-
-            By default ``[0.05]`.
-
-        conformity_score: Optional[ConformityScore]
-            ConformityScore instance.
-            It defines the link between the observed values, the predicted ones
-            and the conformity scores. 
-
-            - ConformityScore: any MAPIE ``ConformityScore`` class
-
-            By default ``AbsoluteConformityScore()``.
-
-
-        cv: Optional[Union[int, str, BaseCrossValidator]]
-            The cross-validation strategy for computing conformity scores.
-            It directly drives the distinction between jackknife and cv variants.
-            Choose among:
-
-            - ``None``, to use the default 5-fold cross-validation
-            - integer, to specify the number of folds.
-            If equal to ``-1``, equivalent to
-            ``sklearn.model_selection.LeaveOneOut()``.
-            - CV splitter: any ``sklearn.model_selection.BaseCrossValidator``
-            Main variants are:
-                - ``sklearn.model_selection.LeaveOneOut`` (jackknife),
-                - ``sklearn.model_selection.KFold`` (cross-validation),
-                - ``subsample.Subsample`` object (bootstrap).
-            - ``"split"``, does not involve cross-validation but a division
-            of the data into training and calibration subsets. The splitter
-            used is the following: ``sklearn.model_selection.ShuffleSplit``.
-            ``method`` parameter is set to ``"base"``.
-            - ``"prefit"``, assumes that ``estimator`` has been fitted already,
-            and the ``method`` parameter is set to ``"base"``.
-            All data provided in the ``fit`` method is then used
-            for computing conformity scores only.
-            At prediction time, quantiles of these conformity scores are used
-            to provide a prediction interval with fixed width.
-            The user has to take care manually that data for model fitting and
-            conformity scores estimate are disjoint.
-
-            By default ``None``.
-
-        
         Notes
         -----
-        If more than one model is provided, predictions are made for both 
-        invidiual models and an ensemble of the models. 
-
-        For MAPIE: A GammaConformityScore assumes there is no zeros or negative values in Y.
-        If this is not the case,  AbsoluteConformityScore() should be used.
+        - Individual model predictions and ensemble predictions are saved separately.
+        - Performance metrics (e.g., cross-validation scores) are saved for the ensemble.
+        - Only regression models are supported; classification is not implemented.
         """
 
         number_of_models = len(self.ensemble_config) -2
@@ -302,19 +308,11 @@ class predict:
 
             m, mae1 = def_prediction(self.path_out, self.ensemble_config, 0, self.target_no_space)
 
-            if self.ensemble_config["regressor"] ==True:
-                if prediction_inference==True:
-                    mapie = MapieRegressor(m, conformity_score=conformity_score, cv=cv) #            
-            else:
-                if prediction_inference==True:
-                    mapie = MapieClassifier(m, conformity_score=conformity_score, cv=cv) #
-
-
             model_name = self.ensemble_config["m" + str(1)]
-            model_out = self.path_out + "predictions/" + model_name + "/" 
-            export_prediction(m, self.target_no_space, self.X_predict, 
-                              self.model_config, self.ensemble_config, 
-                              model_out, n_threads=self.n_jobs)
+            model_out = os.path.join(self.path_out, "predictions", model_name)
+
+            export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)
 
         elif number_of_models >=2:
                     
@@ -326,10 +324,10 @@ class predict:
             for i in range(number_of_models):
                 m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
-                model_out = self.path_out + "predictions/" + model_name + "/"  
-                export_prediction(m, self.target_no_space, self.X_predict, 
-                                  self.model_config, self.ensemble_config, 
-                                  model_out, n_threads=self.n_jobs)
+                model_out = os.path.join(self.path_out, "predictions", model_name, "50")
+
+                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)
 
                 print("exporting " + model_name + " prediction to: " + model_out)
 
@@ -339,82 +337,45 @@ class predict:
             w = inverse_weighting(mae_values) 
 
             if self.ensemble_config["regressor"] ==True:
-                m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)
-                if prediction_inference==True:
-                    mapie = MapieRegressor(m, conformity_score=conformity_score, cv=cv) #            
+                m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
+                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
+                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                              model_out = model_out, n_threads=self.n_jobs)      
+
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
+                print("exporting to ens: ", file_path)
+
             else:
-                m= VotingClassifier(estimators=models, weights=w, voting='soft').fit(self.X_train, self.y)
-                if prediction_inference==True:
-                    mapie = MapieClassifier(m, cv=cv) #
+                raise ValueError("classifiers are not supported")
 
             print(np.min(self.y))
 
             scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
                                     scoring=self.scoring, n_jobs=self.n_jobs)
 
-            model_out_scores = self.path_out + "scoring/ens/"
+            model_out_scores = os.path.join(self.path_out, "scoring", "ens")
+
             try: #make new dir if needed
                 os.makedirs(model_out_scores)
             except:
                 None
 
-            with open(model_out_scores + self.target_no_space + self.extension, 'wb') as f:
+            with open(os.path.join(model_out_scores, self.target_no_space) + self.extension, 'wb') as f:
                 pickle.dump(scores, f)
             print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
-
-
-        if prediction_inference==True:
-            print()
-            mapie.fit(self.X_train, self.y)
-
-            #low_name = str(int(alpha[0]*100))
-            pi_name = str(int(np.round((1-alpha[0])*100)))
-            pi_LL = pi_name + "_LL"
-            pi_UL = pi_name + "_UL"
-
-            y_pred, y_pis = parallel_predict_mapie(self.X_predict, mapie, 
-                                                    alpha, chunksize = 1000)
-
-            low_model_out = self.path_out + "predictions/mapie/" + pi_LL +"/"
-            pi50_model_out = self.path_out + "predictions/mapie/50/"
-            up_model_out = self.path_out + "predictions/mapie/" + pi_UL +"/"
-            
-            try: #make new dir if needed
-                os.makedirs(low_model_out)
-            except:
-                None
-            try: #make new dir if needed
-                os.makedirs(pi50_model_out)
-            except:
-                None
-            try: #make new dir if needed
-                os.makedirs(up_model_out)
-            except:
-                None
-
-            d_pi50 = self.X_predict.copy()
-            d_pi50[self.target] = y_pred
-            d_pi50 = d_pi50.to_xarray()
-            d_pi50[self.target].to_netcdf(pi50_model_out + self.target_no_space + ".nc", mode='w') 
-            print("exported MAPIE PI50 prediction to: " + pi50_model_out + self.target_no_space + ".nc")
-            d_pi50 = None
-            y_pred = None
-
-            d_low = self.X_predict.copy()
-
-            d_low[self.target] = y_pis[:,0,:].flatten()
-            d_low[self.target].to_xarray().to_netcdf(low_model_out + self.target_no_space + ".nc", mode='w') 
-            print("exported MAPIE PI" + pi_LL + " prediction to: " + low_model_out + self.target_no_space + ".nc")
-            d_low = None
-
-            d_up = self.X_predict.copy()
-            d_up[self.target] = y_pis[:,1,:].flatten()
-            d_up[self.target].to_xarray().to_netcdf(up_model_out + self.target_no_space + ".nc", mode='w') 
-            print("exported MAPIE PI" + pi_UL + " prediction to: " + up_model_out + self.target_no_space + ".nc")
-            d_up = None
 
         et = time.time()
         elapsed_time = et-self.st
