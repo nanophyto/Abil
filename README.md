@@ -6,6 +6,30 @@
 
 Abil.py provides functions to interpolate distributions of biogeochemical observations using Machine Learning algorithms in Python. The library is optimized to interpolate many predictions in parallel and is thus particularly suited for distribution models of species, genes and transcripts. The library relies on [scikit-learn](https://scikit-learn.org/).
 
+## Installation
+
+To install this package directly from GitHub, follow these steps:
+
+### Prerequisites
+Ensure you have the following installed on your system:
+- [Python](https://www.python.org/downloads/) (>=3.7 recommended)
+- [Git](https://git-scm.com/downloads)
+- [pip](https://pip.pypa.io/en/stable/installation/)
+
+### Install via pip
+Run the following command to install the package directly from GitHub:
+```sh
+pip install abil
+```
+
+### Install via cloning (for development)
+If you want to modify the package, clone the repository and install it in editable mode:
+```sh
+git clone https://github.com/nanophyto/Abil.git
+cd Abil
+pip install -e .
+```
+
 ## Documentation
 
-For detailed developer documentation, please visit [https://nanophyto.github.io/Abil/](https://nanophyto.github.io/Abil/).
+See the [documentation](https://nanophyto.github.io/Abil/) for instructions on how to setup and run the models.
