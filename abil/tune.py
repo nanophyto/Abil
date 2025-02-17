@@ -20,9 +20,9 @@ from sklearn.gaussian_process import GaussianProcessClassifier, GaussianProcessR
 
 
 if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
+    from abil.utils import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 else:
-    from functions import  ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
+    from abil.utils import  ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 
 class tune:
     """
