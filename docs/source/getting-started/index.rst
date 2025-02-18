@@ -14,7 +14,7 @@ Ensure you have the following installed on your system:
 - `pip <https://pip.pypa.io/en/stable/installation/>`_
 
 Install via pip
---------------
+---------------
 
 Run the following command to install the package directly from GitHub:
 

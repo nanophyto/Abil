@@ -1,5 +1,5 @@
 Zero Inflated Regressor
-======================
+=======================
 
 .. automodule:: abil.zir
    :members:
