@@ -9,16 +9,10 @@ import warnings
 
 from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
-from joblib import Parallel, delayed
-from joblib import parallel_backend  
+from joblib import Parallel, delayed, parallel_backend  
 
-
-if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
-    from abil.unified_tree_or_bag import process_data_with_model
-else:
-    from functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
-    from unified_tree_or_bag import process_data_with_model
+from .functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
+from .unified_tree_or_bag import process_data_with_model   
 
 def load_model_and_scores(path_out, ensemble_config, n, target):
     """

@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
-from inspect import signature
 
 from sklearn.base import BaseEstimator, RegressorMixin, clone, is_regressor, is_classifier
 from sklearn.compose import TransformedTargetRegressor
@@ -10,9 +9,8 @@ from sklearn.exceptions import NotFittedError
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.datasets import make_regression
-from sklearn.metrics import make_scorer
 from sklearn.utils import resample
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_curve, roc_auc_score, make_scorer
 
 
 def do_log(self, x):

@@ -7,13 +7,8 @@ import gc
 from yaml import dump, Dumper
 from skbio.diversity.alpha import shannon
 
-# from . import analyze #it seems this does not work on my machine?
 
-if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.analyze import area_of_applicability
-else:
-    from analyze import area_of_applicability
-
+from .analyze import area_of_applicability
 
 class post:
     """

@@ -8,20 +8,10 @@ import pandas as pd
 
 import numpy as np
 
-
-if os.path.exists(os.path.join(os.path.dirname(__file__), '../.git')): #assumes this local
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../abil/')))
-    from tune import tune
-    from functions import upsample, example_data# example_training_data, example_predict_data
-    from predict import predict
-    from post import post
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-else: #if on github CI
-    from abil.tune import tune
-
-    from abil.functions import upsample, example_data# example_training_data, example_predict_data
-    from abil.predict import predict
-    from abil.post import post
+from abil.tune import tune
+from abil.functions import example_data # example_training_data, example_predict_data
+from abil.predict import predict
+from abil.post import post
 
 class TestRegressors(unittest.TestCase):
 
