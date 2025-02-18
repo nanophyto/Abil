@@ -20,5 +20,5 @@ genes and transcripts. The library relies on `scikit-learn <https://scikit-learn
 
    source/getting-started/index
    source/user-guide/index
-   source/development/index
    source/reference/index
+   source/development/index
