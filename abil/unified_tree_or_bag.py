@@ -174,18 +174,22 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             def pred_job(i, booster=booster, chunk=chunk):
                 dm = DMatrix(chunk)
                 return booster.predict(dm, iteration_range=(i, i+1))
-        
             pred_jobs = (
                 pred_job(i, booster=booster, chunk=chunk)
                 for i in range(model.n_estimators)
             )
-            results = engine(pred_jobs)
         except AttributeError:
+            members, features_for_members = _flatten_metaensemble(model)
+            @delayed
+            def pred_job(member, features):
+                with warnings.catch_warnings(action='ignore', category=UserWarning):
+                    out = member.predict(features)
+                return out
             pred_jobs = (
-                delayed(member.predict)(chunk)
-                for member in _flatten_metaensemble(model)
+                pred_job(member, chunk.iloc[:,features_for_member])
+                for features_for_member, member in zip(features_for_members, members)
             )
-            results = engine(pred_jobs)
+        results = engine(pred_jobs)
         chunk_preds = pd.DataFrame(
             inverse_transform(np.column_stack(results)),
             index=getattr(chunk, "index", None),
@@ -207,19 +211,30 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     output = pd.concat(stats, axis=0, ignore_index=False)
     return output
 
-
 def _flatten_metaensemble(me):
     """
-    Recurse through a meta ensemble and extract all of the basic ensemble estimators
+    Memoized verison of the recursive meta-ensemble unpacking
     """
-    if isinstance(me, Pipeline):
-        return _flatten_metaensemble(me.named_steps['estimator'])
-    elif not hasattr(me, "estimators_"):
-        return [me]
-    output = []
-    for sub_estimator in me.estimators_:
-        output.extend(_flatten_metaensemble(sub_estimator))
-    return output
+    estimators = [(me,None)]
+    estimators_and_feature_indices = []
+    while estimators:
+        member, member_features = estimators.pop(0)
+        if isinstance(member, ZeroInflatedRegressor):
+            raise NotImplementedError("Cannot flatten a heterogeneous ensemble of classifiers and regressors")
+        elif isinstance(member, Pipeline):
+            estimators.append((member.named_steps['estimator'], list(np.arange(member.named_steps['estimator'].n_features_in_))))
+        elif isinstance(member, TransformedTargetRegressor):
+            estimators.append((member.regressor_, list(np.arange(member.regressor_.n_features_in_))))
+        elif hasattr(member, "estimators_"):
+            submembers_features = getattr(member, "estimators_features_", [list(np.arange(member.n_features_in_))]*len(member.estimators_))
+            estimators.extend(list(zip(member.estimators_, submembers_features)))
+        else:
+            estimators_and_feature_indices.append((member, member_features))
+    estimators, features = zip(*estimators_and_feature_indices)
+    return estimators, features
+        
+        
+
 
 
 # Example Usage
