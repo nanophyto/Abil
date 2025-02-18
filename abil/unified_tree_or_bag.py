@@ -96,14 +96,14 @@ def process_data_with_model(
     if isinstance(model, ZeroInflatedRegressor):
         classifier_stats = process_data_with_model(
             model.classifier_,
-            X_predict,
-            X_train,
-            y_train > 0,
+            X_predict = X_predict,
+            X_train = X_train,
+            y_train = y_train > 0,
             cv=cv,
             chunksize=chunksize,
         )
         regressor_stats = process_data_with_model(
-            model.regressor_, X_predict, X_train, y_train, cv=cv, chunksize=chunksize
+            model.regressor_, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, chunksize=chunksize
         )
         return {
             **{f"classifier_{k}": v for k, v in classifier_stats.items()},
@@ -129,8 +129,8 @@ def process_data_with_model(
         train_summary_stats = _summarize_predictions(
             model,
             X_train=X_train,
-            y_train=y_train,
             X_predict=X_train,
+            y_train=y_train,
             chunksize=chunksize,
         )
 
