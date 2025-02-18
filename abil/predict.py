@@ -398,10 +398,10 @@ class predict:
                                     model_out, n_threads=self.n_jobs)
                     print("exporting " + model_name + " prediction to: " + model_out)
                 if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
-                    warnings.warn('prediction of individual ZIR models broken')
+                    #warnings.warn('prediction of individual ZIR models broken')
 
-                    # export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
-                    #                 model_out, n_threads=self.n_jobs)
+                    export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                     model_out, n_threads=self.n_jobs)
 
                 models.append((model_name, m))
                 mae_values.append(mae)

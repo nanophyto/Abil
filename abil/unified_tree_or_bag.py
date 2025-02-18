@@ -173,18 +173,24 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     for chunk in chunks:
         try:
             booster = model.get_booster()
+            @delayed
+            def pred_job(i, booster=booster, chunk=chunk):
+                dm = DMatrix(chunk)
+                return booster.predict(dm, iteration_range=(i, i+1))
+        
             pred_jobs = (
-                delayed(booster.predict)(DMatrix(chunk), iteration_range=(i, i + 1))
+                pred_job(i, booster=booster, chunk=chunk)
                 for i in range(model.n_estimators)
             )
-
+            results = engine(pred_jobs)
         except AttributeError:
             pred_jobs = (
                 delayed(member.predict)(chunk)
                 for member in _flatten_metaensemble(model)
             )
+            results = engine(pred_jobs)
         chunk_preds = pd.DataFrame(
-            inverse_transform(np.column_stack(engine(pred_jobs))),
+            inverse_transform(np.column_stack(results)),
             index=getattr(chunk, "index", None),
         )
         chunk_stats = pd.DataFrame.from_dict(
