@@ -215,7 +215,9 @@ def _flatten_metaensemble(me):
     """
     Recurse through a meta ensemble and extract all of the basic ensemble estimators
     """
-    if not hasattr(me, "estimators_"):
+    if isinstance(me, Pipeline):
+        return _flatten_metaensemble(me.named_steps['estimator'])
+    elif not hasattr(me, "estimators_"):
         return [me]
     output = []
     for sub_estimator in me.estimators_:
