@@ -8,12 +8,12 @@ To define how your model is ran (e.g. where output is saved or which parameters 
 Paths:
 
 >>> root: ./
->>> run_name:
->>> path_out: examples/ModelOutput/ #root + folder
->>> path_in:  examples/predictions/ens/ #root + folder
->>> prediction:  examples/data/prediction.csv #root + folder
->>> targets:  examples/data/targets.csv #root + folder
->>> training:  examples/data/training.csv #root + folder
+>>> run_name: run_name #update for specific run name
+>>> path_out: studies/study_name/ModelOutput/ #root + folder
+>>> path_in:  predictions/ens/ #root + folder
+>>> prediction:  studies/study_name/data/prediction.csv #root + folder
+>>> targets:  studies/study_name/data/targets.csv #root + folder
+>>> training:  studies/study_name/data/training.csv #root + folder
 
 Predictors to be used:
 
@@ -23,16 +23,15 @@ System setup:
 
 >>> verbose: 1
 >>> seed : 1 # random seed
->>> n_threads : 3 # how many cpu threads to use
+>>> n_threads : 1 # how many cpu threads to use
 >>> cv : 3
->>> predict_probability: False 
 
 
 Ensemble configuration:
 
 >>> ensemble_config: 
->>>   classifier: False
->>>   regressor: True
+>>>   classifier: False #set as True for 2-phase model (classifier only not supported)
+>>>   regressor: True #set as True for regressor model or 2-phase model
 >>>   m1: "rf"
 >>>   m2: "xgb"
 >>>   m3: "knn"
