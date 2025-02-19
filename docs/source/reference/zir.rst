@@ -1,7 +1,6 @@
 Zero Inflated Regressor
 =======================
 
-.. automodule:: abil.zir
+.. autoclass:: abil.zir.ZeroInflatedRegressor
    :members:
-   :undoc-members:
-   :show-inheritance:
+   :exclude-members: set_score_request, set_fit_request
