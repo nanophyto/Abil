@@ -18,7 +18,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder,  StandardScaler
 from sklearn.gaussian_process import GaussianProcessClassifier, GaussianProcessRegressor
 
-from .functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
+from .zir import ZeroInflatedRegressor
+from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+from .log_grid_search import LogGridSearch
 
 class tune:
     """

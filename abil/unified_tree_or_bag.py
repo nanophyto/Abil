@@ -21,7 +21,7 @@ from sklearn import base
 from joblib import delayed, Parallel
 
 
-from .functions import ZeroInflatedRegressor
+from .zir import ZeroInflatedRegressor
 
 def process_data_with_model(
     model, X_predict, X_train, y_train, cv=None, chunksize=None
