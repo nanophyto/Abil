@@ -38,7 +38,7 @@ and the Abil :ref:`getting-started`.
     from abil.tune import tune
     from abil.predict import predict
     from abil.post import post
-    from abil.functions import example_data 
+    from abil.utils import example_data 
     import os
 
 
