@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+import os
+import warnings
+
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.ensemble import (
@@ -10,21 +13,15 @@ from sklearn.ensemble import (
     VotingRegressor,
     VotingClassifier,
 )
+from sklearn.compose import TransformedTargetRegressor
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from xgboost import XGBRegressor, DMatrix
 from sklearn.pipeline import Pipeline
 from sklearn import base
-
-# these are designed for internal use
 from joblib import delayed, Parallel
 
-import os
 
-if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from zir import ZeroInflatedRegressor 
-else:
-    from abil.zir import ZeroInflatedRegressor 
-
+from .functions import ZeroInflatedRegressor
 
 def process_data_with_model(
     model, X_predict, X_train, y_train, cv=None, chunksize=None
@@ -96,14 +93,14 @@ def process_data_with_model(
     if isinstance(model, ZeroInflatedRegressor):
         classifier_stats = process_data_with_model(
             model.classifier_,
-            X_predict,
-            X_train,
-            y_train > 0,
+            X_predict = X_predict,
+            X_train = X_train,
+            y_train = y_train > 0,
             cv=cv,
             chunksize=chunksize,
         )
         regressor_stats = process_data_with_model(
-            model.regressor_, X_predict, X_train, y_train, cv=cv, chunksize=chunksize
+            model.regressor_, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, chunksize=chunksize
         )
         return {
             **{f"classifier_{k}": v for k, v in classifier_stats.items()},
@@ -129,8 +126,8 @@ def process_data_with_model(
         train_summary_stats = _summarize_predictions(
             model,
             X_train=X_train,
-            y_train=y_train,
             X_predict=X_train,
+            y_train=y_train,
             chunksize=chunksize,
         )
 
@@ -173,18 +170,28 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     for chunk in chunks:
         try:
             booster = model.get_booster()
+            @delayed
+            def pred_job(i, booster=booster, chunk=chunk):
+                dm = DMatrix(chunk)
+                return booster.predict(dm, iteration_range=(i, i+1))
             pred_jobs = (
-                delayed(booster.predict)(DMatrix(chunk), iteration_range=(i, i + 1))
+                pred_job(i, booster=booster, chunk=chunk)
                 for i in range(model.n_estimators)
             )
-
         except AttributeError:
+            members, features_for_members = _flatten_metaensemble(model)
+            @delayed
+            def pred_job(member, features):
+                with warnings.catch_warnings(action='ignore', category=UserWarning):
+                    out = member.predict(features)
+                return out
             pred_jobs = (
-                delayed(member.predict)(chunk)
-                for member in _flatten_metaensemble(model)
+                pred_job(member, chunk.iloc[:,features_for_member])
+                for features_for_member, member in zip(features_for_members, members)
             )
+        results = engine(pred_jobs)
         chunk_preds = pd.DataFrame(
-            inverse_transform(np.column_stack(engine(pred_jobs))),
+            inverse_transform(np.column_stack(results)),
             index=getattr(chunk, "index", None),
         )
         chunk_stats = pd.DataFrame.from_dict(
@@ -204,17 +211,30 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     output = pd.concat(stats, axis=0, ignore_index=False)
     return output
 
-
 def _flatten_metaensemble(me):
     """
-    Recurse through a meta ensemble and extract all of the basic ensemble estimators
+    Memoized verison of the recursive meta-ensemble unpacking
     """
-    if not hasattr(me, "estimators_"):
-        return [me]
-    output = []
-    for sub_estimator in me.estimators_:
-        output.extend(_flatten_metaensemble(sub_estimator))
-    return output
+    estimators = [(me,None)]
+    estimators_and_feature_indices = []
+    while estimators:
+        member, member_features = estimators.pop(0)
+        if isinstance(member, ZeroInflatedRegressor):
+            raise NotImplementedError("Cannot flatten a heterogeneous ensemble of classifiers and regressors")
+        elif isinstance(member, Pipeline):
+            estimators.append((member.named_steps['estimator'], list(np.arange(member.named_steps['estimator'].n_features_in_))))
+        elif isinstance(member, TransformedTargetRegressor):
+            estimators.append((member.regressor_, list(np.arange(member.regressor_.n_features_in_))))
+        elif hasattr(member, "estimators_"):
+            submembers_features = getattr(member, "estimators_features_", [list(np.arange(member.n_features_in_))]*len(member.estimators_))
+            estimators.extend(list(zip(member.estimators_, submembers_features)))
+        else:
+            estimators_and_feature_indices.append((member, member_features))
+    estimators, features = zip(*estimators_and_feature_indices)
+    return estimators, features
+        
+        
+
 
 
 # Example Usage

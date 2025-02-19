@@ -18,16 +18,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder,  StandardScaler
 from sklearn.gaussian_process import GaussianProcessClassifier, GaussianProcessRegressor
 
-
-if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from zir import ZeroInflatedRegressor
-    from log_grid_search import LogGridSearch 
-    from zero_stratified_kfold import ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
-else:
-    from abil.zir import ZeroInflatedRegressor
-    from abil.log_grid_search import LogGridSearch 
-    from abil.zero_stratified_kfold import ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
-
+from .functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 
 class tune:
     """
