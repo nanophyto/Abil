@@ -65,8 +65,6 @@ Note that this is operating system specific, as Unix and Mac use '/' while for W
         .. code-block:: python
 
             #define root directory:
-            
-            #define root directory:
             os.chdir('.\Abil\')  
 
             #load configuration yaml:
