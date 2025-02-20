@@ -1,11 +1,9 @@
 # import required packages
 import pandas as pd
-import numpy as np
 import sys
 from yaml import load
 from yaml import CLoader as Loader
-from abil.tune import tune 
-from sklearn.preprocessing import OneHotEncoder
+from abil.tune import tune
 
 try:
     print(sys.argv[1])

@@ -3,14 +3,14 @@
   local_root: /home/mv23682/Documents/Abil/
 
 
-  run_name: run_name #update for specific run name
+  run_name: 5_presample #update for specific run name
 
   path_out:  studies/wiseman2024/ModelOutput/ #root + folder
-  path_in:  predictions/mapie/ #root + folder
+  path_in:  predictions/ens/ #root + folder
 
   prediction: studies/wiseman2024/data/env_data.csv #root + folder
   targets: studies/wiseman2024/data/traits_calc.csv #root + folder
-  training: studies/wiseman2024/data/calcif_env.csv
+  training: studies/wiseman2024/data/calcif_env_presample.csv
 
   predictors: ["temperature", 
     "sio4", "po4", "no3", 

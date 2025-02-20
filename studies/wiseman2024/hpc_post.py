@@ -1,9 +1,10 @@
 # import required packages
+import pandas as pd
 import sys
 from yaml import load
 from yaml import CLoader as Loader
 from abil.post import post
-import pandas as pd
+
 
 from datetime import datetime
 current_date = datetime.today().strftime('%Y-%m-%d')
@@ -22,17 +23,24 @@ except:
     model_config['hpc'] = False
     root = model_config['local_root']
 
-print("path:")
-print(root+model_config['targets'])
 targets=pd.read_csv(root+model_config['targets'])
-targets=targets['Target'].values
+target =  targets['Target'][0]
+targets = targets['Target'].values
+
+d = pd.read_csv(root + model_config['training'])
+predictors = model_config['predictors']
+d = d.dropna(subset=predictors)
 
 X_predict = pd.read_csv(root + model_config['prediction'])
 X_predict.set_index(['time','depth','lat','lon'],inplace=True)
 X_predict = X_predict[model_config['predictors']]
+X_predict = X_predict.dropna()
+y = d[target]
+X_train = d[predictors]
 
-def do_post(pi):
-    m = post(model_config, pi=pi)
+def do_post(statistic):
+    m = post(X_train, y, X_predict, model_config, statistic)
+    m.estimate_applicability()
     m.merge_performance(model="ens") 
     m.merge_performance(model="xgb")
     m.merge_performance(model="rf")
@@ -51,11 +59,11 @@ def do_post(pi):
     magnitude_conversion = 1e-21
     molar_mass = 12.01
     integ = m.integration(m, magnitude_conversion=magnitude_conversion,molar_mass=molar_mass,rate=True)
-    print(targets)
     integ.integrated_totals(targets)
-    integ.integrated_totals(targets, subset_depth=100)
 
-do_post(pi="50")
-do_post(pi="95_UL")
-do_post(pi="95_LL")
+do_post(statistic="mean")
+do_post(statistic="median")
+do_post(statistic="sd")
+do_post(statistic="ci95_UL")
+do_post(statistic="ci95_LL")
 
