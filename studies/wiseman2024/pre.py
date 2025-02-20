@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 
 # Load raw dataset from Marsh et al.
-d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_2018_v2.csv',
+d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_2018_v2.0.1.csv',
                  skiprows=1,
                  names=["PI","Expedition","OS Region","Reference_Author_Published_year","Reference_doi",
                         "Date","Sample_ID","Latitude","Longitude","Depth","Irr_Depth",
