@@ -12,7 +12,7 @@ try:
     model_config['hpc'] = True
     n_jobs = pd.to_numeric(sys.argv[1])
     n_spp = pd.to_numeric(sys.argv[2])
-    root = model_config['hpc_root']
+    root = model_config['root']
     model_config['cv'] = 10
 
 except:

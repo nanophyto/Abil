@@ -15,7 +15,7 @@ try:
     with open('/user/work/mv23682/Abil/studies/wiseman2024/ensemble_regressor.yml', 'r') as f:
         model_config = load(f, Loader=Loader)
     model_config['hpc'] = True
-    root = model_config['hpc_root']
+    root = model_config['root']
 
 except:
     with open('/home/mv23682/Documents/Abil/studies/wiseman2024/ensemble_regressor.yml', 'r') as f:
