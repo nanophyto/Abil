@@ -23,7 +23,7 @@ except:
     model_config['hpc'] = False
     root = model_config['local_root']
 
-targets=pd.read_csv(root+model_config['targets'])
+targets = pd.read_csv(root+model_config['targets'])
 target =  targets['Target'][0]
 targets = targets['Target'].values
 
