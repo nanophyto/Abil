@@ -22,7 +22,7 @@ X_predict.set_index(['time','depth','lat','lon'],inplace=True)
 X_predict = X_predict[model_config['predictors']]
 
 def do_post(pi, datatype, diversity=False):
-    m = post(model_config, pi=pi)
+    m = post(model_config, pi=pi, datatype=datatype)
     m.estimate_carbon(datatype)
     if diversity:
         m.diversity()
@@ -32,12 +32,12 @@ def do_post(pi, datatype, diversity=False):
     m.merge_obs(file_name, targets)
 
     m.export_ds(file_name)
-    m.export_csv(file_name)
 
     vol_conversion = 1e3 #L-1 to m-3
     integ = m.integration(m, vol_conversion=vol_conversion)
     integ.integrated_totals(targets, monthly=True)
     integ.integrated_totals(targets)
+    integ.integrated_totals(targets, subset_depth=100)
 
 do_post(pi="50", datatype="pg poc", diversity=True)
 do_post(pi="50", datatype="pg pic")

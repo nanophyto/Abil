@@ -18,7 +18,7 @@ def merge_cascade_env(
         env_path="../data/env_data.nc",
         env_vars=None,
         out_path="../data/obs_env.csv",
-        pseudo_absences=3000):
+        pseudo_absences=1000):
     """
     Merge observational and environmental datasets based on spatial and temporal indices.
 
@@ -93,7 +93,8 @@ merge_cascade_env(obs_path = "/home/phyto-2/CASCADE/gridded_datasets/gridded_abu
                             "PAR","chlor_a",
                             "time", "depth", 
                             "lat", "lon"],
-                    out_path = "/home/phyto-2/Abil/studies/devries2024/data/obs_env.csv")
+                    out_path = "/home/phyto-2/Abil/studies/devries2024/data/obs_env.csv",
+                    pseudo_absences=100)
 
 # Load the obs_env.csv file
 obs = pd.read_csv("/home/phyto-2/Abil/studies/devries2024/data/obs_env.csv")

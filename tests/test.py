@@ -8,20 +8,10 @@ import pandas as pd
 
 import numpy as np
 
-
-if os.path.exists(os.path.join(os.path.dirname(__file__), '../.git')): #assumes this local
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../abil/')))
-    from tune import tune
-    from functions import upsample, example_data# example_training_data, example_predict_data
-    from predict import predict
-    from post import post
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-else: #if on github CI 
-    from abil.tune import tune
-
-    from abil.functions import upsample, example_data# example_training_data, example_predict_data
-    from abil.predict import predict
-    from abil.post import post
+from abil.tune import tune
+from abil.functions import example_data # example_training_data, example_predict_data
+from abil.predict import predict
+from abil.post import post
 
 class TestRegressors(unittest.TestCase):
 
@@ -29,7 +19,7 @@ class TestRegressors(unittest.TestCase):
         self.workspace = os.getenv('GITHUB_WORKSPACE', '.')
         with open(os.path.join(self.workspace,'tests/regressor.yml'), 'r') as f:
             self.model_config = load(f, Loader=Loader)
-            
+
         self.model_config['local_root'] = self.workspace # yaml_path
 
 
@@ -48,8 +38,8 @@ class TestRegressors(unittest.TestCase):
         m.make_prediction()
 
         targets = np.array([self.target_name])
-        def do_post(pi):
-            m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi)
+        def do_post(statistic):
+            m = post(self.X_train, self.y, self.X_predict, self.model_config, statistic, datatype="poc")
             #estimate aoa for each target and export to aoa.nc:
             m.estimate_applicability()
 
@@ -69,7 +59,11 @@ class TestRegressors(unittest.TestCase):
             integ.integrated_totals(targets)
             integ.integrated_totals(targets, monthly=True)
 
-        do_post(pi="50")
+        do_post(statistic="mean")
+        do_post(statistic="median")
+        do_post(statistic="sd")
+        do_post(statistic="ci95_UL")
+        do_post(statistic="ci95_LL")
 
 
 
@@ -103,8 +97,8 @@ class Test2Phase(unittest.TestCase):
 
         targets = np.array([self.target_name])
 
-        def do_post(pi):
-            m = post(self.X_train, self.y, self.X_predict, self.model_config, pi=pi, datatype="poc")
+        def do_post(statistic):
+            m = post(self.X_train, self.y, self.X_predict, self.model_config, statistic, datatype="poc")
             #estimate aoa for each target and export to aoa.nc:
             m.estimate_applicability()
             m.estimate_carbon("pg poc")
@@ -122,8 +116,11 @@ class Test2Phase(unittest.TestCase):
             integ.integrated_totals(targets, monthly=True)
             integ.integrated_totals(targets)
 
-
-        do_post(pi="50")
+        do_post(statistic="mean")
+        do_post(statistic="median")
+        do_post(statistic="sd")
+        do_post(statistic="ci95_UL")
+        do_post(statistic="ci95_LL")
 
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order

@@ -1,7 +1,7 @@
 ---
   root: /user/work/ba18321/Abil/
 
-  run_name: dec_2024_depth_env_vars_extra_pseudos #update for specific run name
+  run_name: dec_2024_depth_env_vars_best_pseudos #update for specific run name
 
   path_out:  studies/devries2024/ModelOutput/ #root + folder
   path_in:  predictions/ens/ #root + folder

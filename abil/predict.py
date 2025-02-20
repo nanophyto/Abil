@@ -5,18 +5,16 @@ import numpy as np
 import pickle
 import os
 import time
+import warnings
 
-from sklearn.ensemble import VotingRegressor
+from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, parallel_backend  
 
+from .functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
+from .unified_tree_or_bag import process_data_with_model   
 
-if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
-    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
-else:
-    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
-
-def def_prediction(path_out, ensemble_config, n, target):
+def load_model_and_scores(path_out, ensemble_config, n, target):
     """
     Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
 
@@ -110,7 +108,7 @@ def parallel_predict(prediction_function, X_predict, n_threads=1):
     return combined_predictions
 
 
-def export_prediction(m, target, target_no_space, X_predict, model_out, n_threads=1):
+def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=1):
     """
     Exports model predictions to a NetCDF file.
 
@@ -132,19 +130,71 @@ def export_prediction(m, target, target_no_space, X_predict, model_out, n_thread
         The number of threads to use for parallel prediction.
     """
 
-    d = X_predict.copy()
-    d[target] = parallel_predict(m.predict, X_predict, n_threads)
-    d = d.to_xarray()
-    
-    try: #make new dir if needed
-        os.makedirs(model_out)
-    except:
-        None
-
-    export_path = os.path.join(model_out, target_no_space + ".nc")
 
 
-    d[target].to_netcdf(export_path) 
+    if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
+        with parallel_backend("loky", n_jobs=n_threads):
+            d = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["predict_stats"]
+        
+        d = d.to_xarray()
+        d['target'] = target
+        export_path = os.path.join(model_out, target_no_space + ".nc")
+        try: #make new dir if needed
+            os.makedirs(model_out)
+        except:
+            None
+        d.to_netcdf(export_path) 
+        print("finished exporting summary stats to: ",  export_path)
+        
+    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            # Generate classifier and regressor stats
+            d_clf = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["classifier_predict_stats"]
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            d_reg = process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
+            )["regressor_predict_stats"]
+
+        columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
+        d = pd.DataFrame(d_reg)
+        y_clf = y_train.copy()
+        y_clf[y_clf > 0] = 1
+        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
+        for col in columns:
+            d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
+
+        d_clf = d_clf.to_xarray()
+        d_reg = d_reg.to_xarray()
+        d = d.to_xarray()
+        d_clf['target'] = target
+        d_reg['target'] = target
+        d['target'] = target
+
+        clf_export_path = os.path.join(model_out, "clf", target_no_space + ".nc")
+        reg_export_path = os.path.join(model_out,"reg", target_no_space + ".nc")
+        zir_export_path = os.path.join(model_out, target_no_space + ".nc")
+
+        for dir_name in ["", "clf", "reg"]:
+            try:
+                os.makedirs(os.path.join(model_out, dir_name))
+            except FileExistsError:
+                pass
+
+        d_clf.to_netcdf(clf_export_path) 
+        print("finished exporting summary stats to: ",  clf_export_path)
+        d_reg.to_netcdf(reg_export_path) 
+        print("finished exporting summary stats to: ",  reg_export_path)
+        d.to_netcdf(zir_export_path) 
+        print("finished exporting summary stats to: ",  zir_export_path)
+
+    else:
+        raise ValueError("classifiers are not supported")
 
 
 class predict:
@@ -306,13 +356,15 @@ class predict:
 
         if number_of_models==1:
 
-            m, mae1 = def_prediction(self.path_out, self.ensemble_config, 0, self.target_no_space)
+            m, mae1 = load_model_and_scores(self.path_out, self.ensemble_config, 0, self.target_no_space)
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = os.path.join(self.path_out, "predictions", model_name)
 
-            export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
+            # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+            #                   model_out = model_out, n_threads=self.n_jobs)
+            export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                              model_out, n_threads=self.n_jobs)
 
         elif number_of_models >=2:
                     
@@ -322,27 +374,101 @@ class predict:
             w = []
 
             for i in range(number_of_models):
-                m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
+                m, mae = load_model_and_scores(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
-                model_out = os.path.join(self.path_out, "predictions", model_name, "50")
+                model_out = os.path.join(self.path_out, "predictions", model_name)
+                
+                print("===================")
+                print("DEBUG OF ZIR MODELS")
+                print("===================")
+                print(model_name)
+                print(type(m))
+                print(type(self.X_predict))
+                print(type(self.X_train))
 
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
 
-                print("exporting " + model_name + " prediction to: " + model_out)
+                if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
+                    export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                    model_out, n_threads=self.n_jobs)
+                    print("exporting " + model_name + " prediction to: " + model_out)
+                if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
+                    #warnings.warn('prediction of individual ZIR models broken')
+
+                    export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                     model_out, n_threads=self.n_jobs)
 
                 models.append((model_name, m))
                 mae_values.append(mae)
 
             w = inverse_weighting(mae_values) 
-
-            if self.ensemble_config["regressor"] ==True:
+            if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
-                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)      
-
+                model_out = os.path.join(self.path_out, "predictions", "ens")
+                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                #               model_out = model_out, n_threads=self.n_jobs)      
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
+                
+                #export model object:
                 base_output_path = os.path.join(self.path_out, "model", "ens")
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
+                print("exporting m ens to: ", file_path)
+            elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
+                clf_models = []
+                reg_models = []
+
+                for i in range(number_of_models):
+                    path_to_param  = os.path.join(self.path_out, "model", self.ensemble_config["m"+str(i+1)])
+                    print("loading clf")
+
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_clf.sav', 'rb') as file:
+                        m_clf = pickle.load(file)       
+                    clf_models.append(('clf'+str(i+1), m_clf))  
+
+                    print("loading reg")
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_reg.sav', 'rb') as file:
+                        m_reg = pickle.load(file)
+
+                    reg_models.append(('reg'+str(i+1), m_reg))  
+
+                print("defining voting regressor")
+                y = self.y.values.ravel().copy()
+
+                voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(self.X_train, y)
+                y_clf = y.copy()
+                y_clf[y_clf > 0] = 1
+
+                voting_clf = VotingClassifier(estimators=clf_models, weights=w, voting="soft").fit(self.X_train, y_clf)
+
+                optimal_threshold = find_optimal_threshold(voting_clf, self.X_train, y_clf)
+                print("optimal clf threshold: ", optimal_threshold)
+                print("defining ZIR")
+                m = ZeroInflatedRegressor(
+                    classifier=voting_clf,
+                    regressor=voting_reg,
+                    threshold=optimal_threshold
+                )
+                print("predicting ZIR")
+                m.fit(self.X_train, y)
+
+                model_out = os.path.join(self.path_out, "predictions", "ens")
+
+                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
+                #               model_out = model_out, n_threads=self.n_jobs)  
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
+                print("exporting ZIR object")
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+
                 try: #make new dir if needed
                     os.makedirs(base_output_path)
                 except:
@@ -358,8 +484,6 @@ class predict:
             else:
                 raise ValueError("classifiers are not supported")
 
-            print(np.min(self.y))
-
             scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
                                     scoring=self.scoring, n_jobs=self.n_jobs)
 
@@ -370,9 +494,12 @@ class predict:
             except:
                 None
 
-            with open(os.path.join(model_out_scores, self.target_no_space) + self.extension, 'wb') as f:
+            scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
+
+
+            with open(scores_file_path, 'wb') as f:
                 pickle.dump(scores, f)
-            print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
+            print("exporting ensemble scores to: " + scores_file_path)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
