@@ -5,12 +5,12 @@ YAML example
 ~~~~~~~~~~~~
 
 Before running the model, model specifications need to be defined in a YAML file. 
-For a detailed explanation of each parameter see :ref:`yaml explained`.
+For a detailed explanation of each parameter see :ref:`yaml_config`.
 
 An example of YAML file of a 2-phase model is provided below.
 Note that compared to a 1-phase regressor model, the hyper-parameters for the classifier also need to be specified.
 
-.. literalinclude:: ../tests/2-phase.yml
+.. literalinclude:: ../../../tests/2-phase.yml
    :language: yaml
 
 Running the model
@@ -26,21 +26,20 @@ Loading dependencies
 ^^^^^^^^^^^^^^^^^^^^
 
 Before running the Python script we need to import all relevant Python packages.
-For instructions on how to install these packages, see :ref:`dependencies install`
-and the Abil :ref:`install instructions`.
+For instructions on how to install these packages, see `requirements.txt <../../../../../requirements.txt>`_
+and the Abil :ref:`getting-started`.
 
 .. code-block:: python
 
     #load dependencies:
-    import pandas as pd
     import numpy as np
     from yaml import load
     from yaml import CLoader as Loader
     from abil.tune import tune
     from abil.predict import predict
     from abil.post import post
-    from abil.functions import example_data 
-    import os, sys
+    from abil.utils import example_data 
+    import os
 
 
 Defining paths
@@ -67,13 +66,12 @@ Note that this is operating system specific, as Unix and Mac use '/' while for W
 
         .. code-block:: python
 
-            #define root directory:
-            
-            os.chdir('/home/phyto-2/Abil/')  
+             #define root directory:
+            os.chdir('.\Abil\')  
 
             #load configuration yaml:
-            #with open('./tests/2-phase.yml', 'r') as f:
-            #    model_config = load(f, Loader=Loader)
+            with open('.\tests\2-phase.yml', 'r') as f:
+                model_config = load(f, Loader=Loader)
 
 Creating example data
 ^^^^^^^^^^^^^^^^^^^^^
@@ -100,7 +98,7 @@ YAML file this can be computationally very expensive and it recommended to do th
 
     #train your model:
     m = tune(X_train, y, model_config)
-    m.train(model="rf", classifier=True)
+    m.train(model="rf")
 
 Making predictions
 ^^^^^^^^^^^^^^^^^^
@@ -110,8 +108,7 @@ After training our model we can make predictions on a new dataset (X_predict):
 .. code-block:: python
 
     #predict your model:
-    m = predict(X_train=X_train, y=y, X_predict=X_predict, 
-        model_config=model_config, n_jobs=2)
+    m = predict(X_train, y, X_predict, model_config)
     m.make_prediction()
 
 Post-processing
@@ -122,30 +119,36 @@ Finally, we conduct the post-processing.
 .. code-block:: python
 
     #post:
-    m = post(model_config)
-    m.export_ds("my_first_model")
+    targets = np.array([target_name])
+    def do_post(statistic)
+        m = post(X_train, y, X_predict, model_config, statistic, datatype="poc")
+        
+        m.estimate_applicability()
+        m.estimate_carbon("pg poc")
+        m.total()
 
-    m = post(model_config)
-    m.merge_performance(model="ens") 
-    m.merge_performance(model="xgb")
-    m.merge_performance(model="rf")
-    m.merge_performance(model="knn")
+        m.merge_performance(model="ens") 
+        m.merge_performance(model="xgb")
+        m.merge_performance(model="rf")
+        m.merge_performance(model="knn")
 
-    m.merge_parameters(model="rf")
-    m.merge_parameters(model="xgb")
-    m.merge_parameters(model="knn")
-    m.estimate_carbon("pg poc")
-    m.diversity()
+        m.merge_parameters(model="rf")
+        m.merge_parameters(model="xgb")
+        m.merge_parameters(model="knn")
 
-    m.total()
+        m.merge_env()
+        m.merge_obs("test",targets)
 
-    m.merge_env(X_predict)
-    m.merge_obs("test",targets)
+        m.export_ds("test")
+        m.export_csv("test")
 
-    m.export_ds("test")
-    m.export_csv("test")
+        vol_conversion = 1e3 #L-1 to m-3
+        integ = m.integration(m, vol_conversion=vol_conversion)
+        integ.integrated_totals(targets, monthly=True)
+        integ.integrated_totals(targets)
 
-    vol_conversion = 1e3 #L-1 to m-3
-    integ = m.integration(m, vol_conversion=vol_conversion)
-    integ.integrated_totals(targets, monthly=True)
-    integ.integrated_totals(targets)
+    do_post(statistic="mean")
+    do_post(statistic="median")
+    do_post(statistic="std")
+    do_post(statistic="ci95_UL")
+    do_post(statistic="ci95_LL")

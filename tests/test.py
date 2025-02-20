@@ -5,11 +5,10 @@ import sys, os
 from yaml import load
 from yaml import CLoader as Loader
 import pandas as pd
-
 import numpy as np
 
 from abil.tune import tune
-from abil.functions import example_data # example_training_data, example_predict_data
+from abil.utils import example_data # example_training_data, example_predict_data
 from abil.predict import predict
 from abil.post import post
 

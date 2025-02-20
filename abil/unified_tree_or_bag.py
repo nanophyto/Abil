@@ -21,7 +21,7 @@ from sklearn import base
 from joblib import delayed, Parallel
 
 
-from .functions import ZeroInflatedRegressor
+from .zir import ZeroInflatedRegressor
 
 def process_data_with_model(
     model, X_predict, X_train, y_train, cv=None, chunksize=None
@@ -242,7 +242,7 @@ if __name__ == "__main__":
     # Generate sample data
     from sklearn.datasets import make_regression
     from joblib import parallel_backend  # this is user-facing
-    from abil.functions import ZeroInflatedRegressor, ZeroStratifiedKFold
+    from abil.utils import ZeroInflatedRegressor, ZeroStratifiedKFold
 
     X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
     X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
