@@ -4,7 +4,7 @@ import sys
 from yaml import load
 from yaml import CLoader as Loader
 from abil.predict import predict
-from abil.functions import upsample
+from abil.utils import upsample
 
 with open('/user/work/ba18321/Abil/studies/devries2024/2-phase.yml', 'r') as f:
     model_config = load(f, Loader=Loader)

@@ -5,7 +5,7 @@ import sys
 from yaml import load
 from yaml import CLoader as Loader
 from abil.tune import tune 
-from abil.functions import upsample
+from abil.utils import upsample
 from sklearn.preprocessing import OneHotEncoder
 
 with open('/user/work/ba18321/Abil/studies/devries2024/2-phase.yml', 'r') as f:
