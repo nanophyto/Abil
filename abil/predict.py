@@ -12,6 +12,13 @@ from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed, parallel_backend  
 
 from .functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
+import shutil
+# Set the custom temporary folder for loky
+temp_folder = os.path.join(".","tmp") 
+os.environ["LOKY_TEMP_FOLDER"] = temp_folder
+# Ensure the directory exists
+os.makedirs(temp_folder, exist_ok=True)
+
 from .unified_tree_or_bag import process_data_with_model   
 
 def load_model_and_scores(path_out, ensemble_config, n, target):
@@ -71,43 +78,6 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
     return(m, scores)
 
 
-def parallel_predict(prediction_function, X_predict, n_threads=1):
-    """
-    Splits the prediction task across multiple threads to predict on large datasets.
-
-    Parameters
-    ----------
-    prediction_function : callable
-        The model's prediction function to be applied to each chunk of data.
-    X_predict : DataFrame
-        The features (input data) on which to make predictions.
-    n_threads : int, optional, default=1
-        The number of threads to use for parallel processing.
-
-    Returns
-    -------
-    np.ndarray
-        The combined predictions from all threads.
-    """    
-
-    # Split the indices of X_predict into chunks
-    chunk_indices = np.array_split(X_predict.index, n_threads)
-
-
-    # Create a list of DataFrame chunks based on the split indices
-    df_sections = [X_predict.loc[chunk_idx] for chunk_idx in chunk_indices]
-
-    # Use joblib to process each chunk in parallel
-    predictions = Parallel(n_jobs=n_threads)(
-        delayed(prediction_function)(df_section) for df_section in df_sections
-    )
-
-    # Combine the predictions from all threads
-    combined_predictions = np.concatenate(predictions)
-
-    return combined_predictions
-
-
 def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=1):
     """
     Exports model predictions to a NetCDF file.
@@ -130,14 +100,12 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         The number of threads to use for parallel prediction.
     """
 
-
-
     if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         with parallel_backend("loky", n_jobs=n_threads):
             d = process_data_with_model(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
-        
+
         d = d.to_xarray()
         d['target'] = target
         export_path = os.path.join(model_out, target_no_space + ".nc")
@@ -196,6 +164,8 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
     else:
         raise ValueError("classifiers are not supported")
 
+    #remove loky tmp data:
+    shutil.rmtree(temp_folder, ignore_errors=True)
 
 class predict:
     """
