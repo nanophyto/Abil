@@ -90,20 +90,23 @@ class post:
             """
             print("merging...")
             print(path_in)
-            def preprocess(ds):
-                """Subset the dataset by the specified statistic."""
-                if statistic in ds:
-                    return ds[[statistic, "target"]]
-                else:
-                    raise ValueError(f"The specified statistic '{statistic}' is not found in the dataset.")
 
-            # Open all NetCDF files and apply the preprocessing function
-            ds = xr.open_mfdataset(
-                os.path.join(path_in, "*.nc"),
-                preprocess=preprocess,  # Apply the preprocessing function to each file
-            )
-            print("finished loading netcdf files")
-            return(ds)
+            datasets = []
+            
+            for file in os.listdir(path_in):
+                if file.endswith(".nc"):
+                    ds = xr.open_dataset(os.path.join(path_in, file))
+                    if statistic in ds:
+                        ds_subset = ds[[statistic, "target"]]
+                        datasets.append(ds_subset)
+                    else:
+                        print(f"Statistic '{statistic}' not found in {file}")
+
+            # Merge datasets by variables, keeping same coordinates
+            merged_ds = xr.merge(datasets, compat='override')  # 'override' skips conflicts
+
+            print("finished merging NetCDF files")
+            return merged_ds
 
         self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
         self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in']), statistic)
