@@ -9,7 +9,7 @@
   path_in:  predictions/ens/ #root + folder
 
   prediction: studies/wiseman2024/data/env_data.csv #root + folder
-  targets: studies/wiseman2024/data/traits_calc.csv #root + folder
+  targets: studies/wiseman2024/data/traits_calc_presample.csv #root + folder
   training: studies/wiseman2024/data/calcif_env_presample.csv
 
   predictors: ["temperature", 
