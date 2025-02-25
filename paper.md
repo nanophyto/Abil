@@ -39,7 +39,7 @@ By combining a user-friendly interface, parallel processing capabilities, and a 
 
 # Usage Example
 
-There are three steps to running `Abil`, outlined below. Additional documentation for `Abil` is available on the github (LINK). 
+There are three steps to running `Abil`, outlined below. Additional documentation for `Abil` is available through [github](https://nanophyto.github.io/Abil). 
 
 ## Tune
 
