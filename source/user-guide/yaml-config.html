@@ -2,13 +2,13 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="./" >
+<html lang="en" data-content_root="../../" >
 
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Model Configuration &#8212; Abil 0.0.9 documentation</title>
+    <title>Model YAML Configuration &#8212; Abil 25.02.25 documentation</title>
   
   
   
@@ -16,8 +16,8 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
-  <!-- 
-    this give us a css class that will be invisible only if js is disabled 
+  <!--
+    this give us a css class that will be invisible only if js is disabled
   -->
   <noscript>
     <style>
@@ -27,27 +27,27 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script src="_static/scripts/fontawesome.js?digest=26a4bc78f4c0ddb94549"></script>
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=f7cdbf68"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'yaml-config';</script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Conformal Inference" href="mapie.html" />
-    <link rel="prev" title="Examples" href="examples.html" />
+    <script src="../../_static/documentation_options.js?v=6f11c1be"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/user-guide/yaml-config';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="1-phase Ensemble" href="one-phase-ensemble.html" />
+    <link rel="prev" title="User Guide" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -69,7 +69,7 @@
   <dialog id="pst-search-dialog">
     
 <form class="bd-search d-flex align-items-center"
-      action="search.html"
+      action="../../search.html"
       method="get">
   <i class="fa-solid fa-magnifying-glass"></i>
   <input type="search"
@@ -105,14 +105,14 @@
     
   
 
-<a class="navbar-brand logo" href="index.html">
+<a class="navbar-brand logo" href="../../index.html">
   
   
   
   
   
   
-    <p class="title logo__title">Abil 0.0.9 documentation</p>
+    <p class="title logo__title">Abil 25.02.25 documentation</p>
   
 </a></div>
     
@@ -127,36 +127,29 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="quick-start.html">
-    Quick Start
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples.html">
-    Examples
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Installation
   </a>
 </li>
 
 
 <li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
-    Model Configuration
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="mapie.html">
-    Conformal Inference
+  <a class="nav-link nav-internal" href="../reference/index.html">
+    API Reference
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="hpc.html">
-    High Performance Computing
+  <a class="nav-link nav-internal" href="../development/index.html">
+    How to contribute
   </a>
 </li>
 
@@ -187,6 +180,26 @@
   <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
 </button></div>
       
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
     </div>
     
   </div>
@@ -202,10 +215,6 @@
     </div>
   
 
-  
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
-      <span class="fa-solid fa-outdent"></span>
-    </button>
   
 </div>
 
@@ -234,36 +243,29 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="quick-start.html">
-    Quick Start
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples.html">
-    Examples
+  <a class="nav-link nav-internal" href="../getting-started/index.html">
+    Installation
   </a>
 </li>
 
 
 <li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
-    Model Configuration
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="mapie.html">
-    Conformal Inference
+  <a class="nav-link nav-internal" href="../reference/index.html">
+    API Reference
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="hpc.html">
-    High Performance Computing
+  <a class="nav-link nav-internal" href="../development/index.html">
+    How to contribute
   </a>
 </li>
 
@@ -285,6 +287,26 @@
   <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
 </button></div>
         
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
       </div>
     
   </div>
@@ -294,15 +316,26 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"></div>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Model YAML Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="one-phase-ensemble.html">1-phase Ensemble</a></li>
+<li class="toctree-l1"><a class="reference internal" href="two-phase-ensemble.html">2-phase Ensemble</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hpc.html">High Performance Computing</a></li>
+</ul>
+</div>
 </nav></div>
     </div>
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -324,11 +357,14 @@
   <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
-      <a href="index.html" class="nav-link" aria-label="Home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Model Configuration</span></li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Model YAML Configuration</span></li>
   </ul>
 </nav>
 </div>
@@ -345,57 +381,65 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="model-configuration">
-<h1>Model Configuration<a class="headerlink" href="#model-configuration" title="Link to this heading">#</a></h1>
+  <section id="model-yaml-configuration">
+<span id="yaml-config"></span><h1>Model YAML Configuration<a class="headerlink" href="#model-yaml-configuration" title="Link to this heading">#</a></h1>
 <p>To define how your model is ran (e.g. where output is saved or which parameters to tune) a configuration YAML is used.</p>
-<p>YAML is xyz</p>
-<p>Paths:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">hpc</span><span class="p">:</span> <span class="kc">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">local_root</span><span class="p">:</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">phyto</span><span class="o">/</span><span class="n">Abil</span><span class="o">/</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">hpc_root</span><span class="p">:</span> <span class="o">/</span><span class="n">user</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">ba18321</span><span class="o">/</span><span class="n">Abil</span><span class="o">/</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">path_out</span><span class="p">:</span> <span class="n">examples</span><span class="o">/</span><span class="n">ModelOutput</span><span class="o">/</span> <span class="c1">#root + folder</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">path_in</span><span class="p">:</span>  <span class="n">examples</span><span class="o">/</span><span class="n">ModelOutput</span><span class="o">/</span><span class="n">mapie</span><span class="o">/</span> <span class="c1">#root + folder</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">env_data_path</span><span class="p">:</span>  <span class="n">examples</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">prediction</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">targets</span><span class="p">:</span>  <span class="n">examples</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">targets</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">training</span><span class="p">:</span>  <span class="n">examples</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">training</span><span class="o">.</span><span class="n">csv</span>
+<section id="paths">
+<h2>Paths:<a class="headerlink" href="#paths" title="Link to this heading">#</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">root</span><span class="p">:</span> <span class="o">./</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">run_name</span><span class="p">:</span> <span class="n">run_name</span> <span class="c1">#update for specific run name</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">path_out</span><span class="p">:</span> <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">ModelOutput</span><span class="o">/</span> <span class="c1">#root + folder</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">path_in</span><span class="p">:</span>  <span class="n">predictions</span><span class="o">/</span><span class="n">ens</span><span class="o">/</span> <span class="c1">#root + folder</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span><span class="p">:</span>  <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">prediction</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">targets</span><span class="p">:</span>  <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">targets</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">training</span><span class="p">:</span>  <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">training</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
 </pre></div>
 </div>
-<p>Predictors to be used:</p>
+</section>
+<section id="predictors-to-be-used">
+<h2>Predictors to be used:<a class="headerlink" href="#predictors-to-be-used" title="Link to this heading">#</a></h2>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">predictors</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;din&quot;</span><span class="p">,</span> <span class="s2">&quot;irradiance&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>System setup:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">verbose</span><span class="p">:</span> <span class="mi">1</span>
+</section>
+<section id="system-setup">
+<h2>System setup:<a class="headerlink" href="#system-setup" title="Link to this heading">#</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">verbose</span><span class="p">:</span> <span class="mi">1</span> <span class="c1"># scikit-learn warning verbosity</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">seed</span> <span class="p">:</span> <span class="mi">1</span> <span class="c1"># random seed</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">n_threads</span> <span class="p">:</span> <span class="mi">3</span> <span class="c1"># how many cpu threads to use</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cv</span> <span class="p">:</span> <span class="mi">3</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">predict_probability</span><span class="p">:</span> <span class="kc">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_threads</span> <span class="p">:</span> <span class="mi">1</span> <span class="c1"># how many cpu threads to use</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cv</span> <span class="p">:</span> <span class="mi">3</span> <span class="c1"># number of cross-folds</span>
 </pre></div>
 </div>
-<p>Ensemble configuration:</p>
+</section>
+<section id="ensemble-configuration">
+<h2>Ensemble configuration:<a class="headerlink" href="#ensemble-configuration" title="Link to this heading">#</a></h2>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ensemble_config</span><span class="p">:</span>
-<span class="gp">&gt;&gt;&gt; </span>  <span class="n">classifier</span><span class="p">:</span> <span class="kc">False</span>
-<span class="gp">&gt;&gt;&gt; </span>  <span class="n">regressor</span><span class="p">:</span> <span class="kc">True</span>
+<span class="gp">&gt;&gt;&gt; </span>  <span class="n">classifier</span><span class="p">:</span> <span class="kc">False</span> <span class="c1">#set as True for 2-phase model (classifier only not supported)</span>
+<span class="gp">&gt;&gt;&gt; </span>  <span class="n">regressor</span><span class="p">:</span> <span class="kc">True</span> <span class="c1">#set as True for regressor model or 2-phase model</span>
 <span class="gp">&gt;&gt;&gt; </span>  <span class="n">m1</span><span class="p">:</span> <span class="s2">&quot;rf&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span>  <span class="n">m2</span><span class="p">:</span> <span class="s2">&quot;xgb&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span>  <span class="n">m3</span><span class="p">:</span> <span class="s2">&quot;knn&quot;</span>
 </pre></div>
 </div>
-<p>Sampling and stratification:</p>
+</section>
+<section id="sampling-and-stratification">
+<h2>Sampling and stratification:<a class="headerlink" href="#sampling-and-stratification" title="Link to this heading">#</a></h2>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">upsample</span><span class="p">:</span> <span class="kc">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">stratify</span><span class="p">:</span> <span class="kc">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stratify</span><span class="p">:</span> <span class="kc">True</span> <span class="c1">#zero stratification</span>
 </pre></div>
 </div>
-<p>Scoring method to be used:</p>
+</section>
+<section id="scoring-method-to-be-used">
+<h2>Scoring method to be used:<a class="headerlink" href="#scoring-method-to-be-used" title="Link to this heading">#</a></h2>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">clf_scoring</span><span class="p">:</span>
 <span class="gp">&gt;&gt;&gt; </span> <span class="n">accuracy</span><span class="p">:</span> <span class="n">balanced_accuracy</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">reg_scoring</span><span class="p">:</span>
 <span class="gp">&gt;&gt;&gt; </span> <span class="n">R2</span><span class="p">:</span> <span class="n">r2</span>
 <span class="gp">&gt;&gt;&gt; </span> <span class="n">MAE</span><span class="p">:</span> <span class="n">neg_mean_absolute_error</span>
 <span class="gp">&gt;&gt;&gt; </span> <span class="n">RMSE</span><span class="p">:</span> <span class="n">neg_root_mean_squared_error</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">tau</span><span class="p">:</span> <span class="n">kendall_tau</span>
 </pre></div>
 </div>
+</section>
 </section>
 
 
@@ -409,20 +453,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="examples.html"
+       href="index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Examples</p>
+        <p class="prev-next-title">User Guide</p>
       </div>
     </a>
     <a class="right-next"
-       href="mapie.html"
+       href="one-phase-ensemble.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Conformal Inference</p>
+        <p class="prev-next-title">1-phase Ensemble</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -432,21 +476,6 @@
             </div>
             
             
-              
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-
-  <div class="sidebar-secondary-item">
-
-  <div class="tocsection sourcelink">
-    <a href="_sources/yaml-config.rst.txt">
-      <i class="fa-solid fa-file-lines"></i> Show Source
-    </a>
-  </div>
-</div>
-
-</div></div>
               
             
           </div>
@@ -459,8 +488,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549"></script>
-<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -480,7 +509,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.1.
     <br/>
   </p>
 </div>
@@ -493,7 +522,8 @@
       
         <div class="footer-item">
 <p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.0.
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
 </p></div>
       
     </div>
