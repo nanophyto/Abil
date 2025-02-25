@@ -5,7 +5,7 @@ os.environ['MKL_DYNAMIC'] = 'FALSE'
 os.environ["OMP_THREAD_LIMIT"] = "1"
 
 import time
-import pickle
+import dill as pickle
 import pandas as pd
 import numpy as np
 from joblib import parallel_backend

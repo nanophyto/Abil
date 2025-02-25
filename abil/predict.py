@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import pickle
+import dill as pickle
 import os
 import time
 import warnings
@@ -14,12 +14,12 @@ from .unified_tree_or_bag import process_data_with_model
 from .zir import ZeroInflatedRegressor
 from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 import shutil
-# Set the custom temporary folder for loky
-temp_folder = os.path.join(".","tmp") 
-os.environ["LOKY_TEMP_FOLDER"] = temp_folder
+import tempfile
+# Set the custom temporary folder for JOBLIB
+#temp_folder = os.path.join(".","tmp") 
+#os.environ["JOBLIB_TEMP_FOLDER"] = temp_folder
 # Ensure the directory exists
-os.makedirs(temp_folder, exist_ok=True)
-
+#os.makedirs(temp_folder, exist_ok=True)
 def load_model_and_scores(path_out, ensemble_config, n, target):
     """
     Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
@@ -101,7 +101,7 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
 
     if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
-        with parallel_backend("loky", n_jobs=n_threads):
+        with parallel_backend("multiprocessing", n_jobs=n_threads):
             d = process_data_with_model(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
@@ -118,13 +118,13 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
 
-        with parallel_backend("loky", n_jobs=n_threads):
+        with parallel_backend("multiprocessing", n_jobs=n_threads):
             # Generate classifier and regressor stats
             d_clf = process_data_with_model(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["classifier_predict_stats"]
 
-        with parallel_backend("loky", n_jobs=n_threads):
+        with parallel_backend("multiprocessing", n_jobs=n_threads):
             d_reg = process_data_with_model(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["regressor_predict_stats"]
@@ -164,8 +164,8 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
     else:
         raise ValueError("classifiers are not supported")
 
-    #remove loky tmp data:
-    shutil.rmtree(temp_folder, ignore_errors=True)
+    #remove tmp data:
+    #shutil.rmtree(temp_folder, ignore_errors=True)
 
 class predict:
     """
