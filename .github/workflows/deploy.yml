@@ -29,6 +29,10 @@ jobs:
           pip install pydata-sphinx-theme
           pip install sphinx-design
 
+      - name: Install Abil
+        run: |
+          pip install .
+
       - name: Build Sphinx documentation
         run: |
           cd docs
