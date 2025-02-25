@@ -68,7 +68,7 @@ Run the following command to install the package directly from GitHub:
 Install via Cloning (for Development)
 -------------------------------------
 
-If you want to modify the package, clone the repository and install it using `PIP editable install<https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_:
+If you want to modify the package, clone the repository and install it using `PIP editable install <https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_:
 
 .. code-block:: sh
 

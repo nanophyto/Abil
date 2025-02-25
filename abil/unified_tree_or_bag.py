@@ -31,7 +31,7 @@ def process_data_with_model(
     and predict on X_predict with summary stats.
 
     Parameters:
-    ----------
+    -----------
     X_train : DataFrame
         Training feature set with MultiIndex for coordinates.
 
@@ -53,7 +53,7 @@ def process_data_with_model(
         "xgb" for XGBRegressor.
 
     Returns:
-    -------
+    --------
     dict
         Dictionary containing summary statistics for both training and prediction datasets.
         Keys: "train_stats", "predict_stats".
