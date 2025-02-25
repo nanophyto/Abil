@@ -1,7 +1,7 @@
 singularity/
 ModelOutput/
 plotting/
-data/
+/data/
 _build/
 studies/wiseman2024/preprocessing
 studies/wiseman2024/env_data_processing/raw_data
