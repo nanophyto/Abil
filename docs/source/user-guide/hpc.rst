@@ -1,6 +1,10 @@
 High Performance Computing
 ==========================
 
+Prerequisites
+-----------
+
+
 Singularity
 -----------
 To run abil on a HPC machine, first compile singularity from the terminal:
