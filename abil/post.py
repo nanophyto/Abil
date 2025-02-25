@@ -516,6 +516,9 @@ class post:
         print("finished calculating CWM " + variable)
 
     def diversity(self):
+        """
+        Estimates Shannon diversity using scikit-bio.
+        """
         self.d['shannon'] = self.d.apply(shannon, axis=1)
         print("finished calculating shannon diversity")
 
@@ -770,6 +773,13 @@ class post:
                 print(f"Exported totals")
 
     def estimate_applicability(self):
+        """
+        Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
+
+        This calculates the importance-weighted feature distances from test to train points,
+        and then defines the "applicable" test sites as those closer than some threshold
+        distance.
+        """
 
         # create empty dataframe with the same index as X_predict
         aoa_dataset = pd.DataFrame(index=self.X_predict.index)
