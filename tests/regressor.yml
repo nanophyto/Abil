@@ -5,9 +5,9 @@
   path_out:  tests/ModelOutput/ #root + folder
   path_in:  predictions/ens/ #root + folder
 
-  prediction:  examples/data/prediction.csv #root + folder
-  targets:  examples/data/targets.csv #root + folder
-  training:  examples/data/training.csv
+  prediction:  docs/examples/data/prediction.csv #root + folder
+  targets:  docs/examples/data/targets.csv #root + folder
+  training:  docs/examples/data/training.csv
 
   predictors: ["feature_1", "feature_2", "feature_3"]
 
