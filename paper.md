@@ -55,7 +55,7 @@ To post-process the model, initialize the class with m = post(model_config). Add
 
 # Acknowledgements
 
-This work was supported by funding from the Natural Environment Research Council (NERC).
+This work was supported by funding from the UK Research and Innovation Natural Environment Research Council (CoccoTrait, NE/X001261/1).
 
 # References
 
