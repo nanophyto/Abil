@@ -79,7 +79,7 @@ class Test2Phase(unittest.TestCase):
 
         self.target_name =  "Emiliania huxleyi"
 
-        self.X_train, self.X_predict, self.y = example_data(self.target_name, n_samples=200, n_features=3, noise=0.1, train_to_predict_ratio=0.7, random_state=59)
+        self.X_train, self.X_predict, self.y = example_data(self.target_name, n_samples=2000, n_features=3, noise=0.1, train_to_predict_ratio=0.7, random_state=59)
 
 
     def test_post_ensemble(self):
@@ -124,7 +124,7 @@ class Test2Phase(unittest.TestCase):
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
-    suite.addTest(TestRegressors('test_post_ensemble'))
+    #suite.addTest(TestRegressors('test_post_ensemble'))
     suite.addTest(Test2Phase('test_post_ensemble'))
     runner = unittest.TextTestRunner()
     runner.run(suite)

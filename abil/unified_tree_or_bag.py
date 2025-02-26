@@ -164,10 +164,13 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, n_jobs=
 
     if chunksize is not None:
         n_chunks = int(np.ceil(n_samples / chunksize))
+        print("n_chunks: ", n_chunks)
+        print(f"Splitting {n_samples} samples into {n_chunks} chunks of approximately {chunksize} each.")
         chunks = np.array_split(X_predict, n_chunks)
     else:
+        print("chunk size is None")
         chunks = [X_predict]
-
+        
     stats = []
     inverse_transform = getattr(
         model, "inverse_transform", FunctionTransformer().inverse_transform

@@ -12,7 +12,7 @@
   predictors: ["feature_1", "feature_2", "feature_3"]
   verbose: 1
   seed : 1 # random seed
-  n_threads : 1 # how many cpu threads to use
+  n_threads : 3 # how many cpu threads to use
   cv : 3
 
   ensemble_config: 
