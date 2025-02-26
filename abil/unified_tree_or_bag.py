@@ -24,7 +24,7 @@ from joblib import delayed, Parallel
 from .zir import ZeroInflatedRegressor
 
 def process_data_with_model(
-    model, X_predict, X_train, y_train, n_jobs=1, cv=None, chunksize=None, backend="multiprocessing"
+    model, X_predict, X_train, y_train, n_jobs=1, cv=None, chunksize=2e4, backend="multiprocessing"
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
@@ -170,7 +170,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, n_jobs=
     else:
         print("chunk size is None")
         chunks = [X_predict]
-        
+
     stats = []
     inverse_transform = getattr(
         model, "inverse_transform", FunctionTransformer().inverse_transform
