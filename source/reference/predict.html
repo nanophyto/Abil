@@ -386,8 +386,231 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="predict">
-<h1>Predict<a class="headerlink" href="#predict" title="Link to this heading">#</a></h1>
+  <section id="module-abil.predict">
+<span id="predict"></span><h1>Predict<a class="headerlink" href="#module-abil.predict" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="abil.predict.export_prediction">
+<span class="sig-prename descclassname"><span class="pre">abil.predict.</span></span><span class="sig-name descname"><span class="pre">export_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ensemble_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_no_space</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_predict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.predict.export_prediction" title="Link to this definition">#</a></dt>
+<dd><p>Exports model predictions to a NetCDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>m</strong> (<em>object</em>) – The trained model used for predictions.</p></li>
+<li><p><strong>target</strong> (<em>str</em>) – The name of the target variable.</p></li>
+<li><p><strong>target_no_space</strong> (<em>str</em>) – The target variable name with spaces replaced by underscores.</p></li>
+<li><p><strong>X_predict</strong> (<em>pd.DataFrame</em><em> of </em><em>shape</em><em> (</em><em>n_points</em><em>, </em><em>n_features</em><em>)</em>) – Features to predict on (e.g., environmental data), where n_points
+is the total 1-d size of the features to predict on
+(ex. 31881600 for full 180x360x41x12 grid).</p></li>
+<li><p><strong>model_out</strong> (<em>str</em>) – Path where the predictions should be saved.</p></li>
+<li><p><strong>n_threads</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – The number of threads to use for parallel prediction.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="abil.predict.load_model_and_scores">
+<span class="sig-prename descclassname"><span class="pre">abil.predict.</span></span><span class="sig-name descname"><span class="pre">load_model_and_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.predict.load_model_and_scores" title="Link to this definition">#</a></dt>
+<dd><p>Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path_out</strong> (<em>str</em>) – Path to the output folder containing model and scoring information.</p></li>
+<li><p><strong>ensemble_config</strong> (<em>dict</em>) – Dictionary containing configuration details for the ensemble models, including model names, regressor or classifier status.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – Index of the model to load in the ensemble.</p></li>
+<li><p><strong>target</strong> (<em>str</em>) – The target for which predictions are made (used to load target-specific files).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the model and the mean absolute error (MAE) score.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If both regressor and classifier are set to False, or if a classifier is used when only regressors are supported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="abil.predict.predict">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">abil.predict.</span></span><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_predict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.predict.predict" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X_train</strong> (<em>pd.DataFrame</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Training features used for model fitting.</p></li>
+<li><p><strong>y</strong> (<em>pd.Series</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>) or </em><em>(</em><em>n_samples</em><em>, </em><em>n_outputs</em><em>)</em>) – Target values used for model fitting.</p></li>
+<li><p><strong>X_predict</strong> (<em>pd.DataFrame</em><em> of </em><em>shape</em><em> (</em><em>n_points</em><em>, </em><em>n_features</em><em>)</em>) – Features to predict on, where <cite>n_points</cite> represents the total number of prediction points
+(e.g., 31881600 for a full 180x360x41x12 grid).</p></li>
+<li><p><strong>model_config</strong> (<em>dict</em>) – <dl class="simple">
+<dt>Dictionary containing model configuration parameters, including:</dt><dd><ul>
+<li><dl class="simple">
+<dt>seed<span class="classifier">int</span></dt><dd><p>Random seed for reproducibility.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>root<span class="classifier">str</span></dt><dd><p>Path to the root folder.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>path_out<span class="classifier">str</span></dt><dd><p>Directory where predictions are saved.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>path_in<span class="classifier">str</span></dt><dd><p>Directory containing tuned models.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>target<span class="classifier">str</span></dt><dd><p>File name of the target list.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>verbose<span class="classifier">int</span></dt><dd><p>Verbosity level (0-3).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>n_threads<span class="classifier">int</span></dt><dd><p>Number of threads to use for parallel processing.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>cv<span class="classifier">int</span></dt><dd><p>Number of cross-validation folds.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ensemble_config<span class="classifier">dict</span></dt><dd><dl class="simple">
+<dt>Configuration for the ensemble setup, containing:</dt><dd><ul>
+<li><dl class="simple">
+<dt>classifier<span class="classifier">bool</span></dt><dd><p>Whether to train a classification model.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>regressor<span class="classifier">bool</span></dt><dd><p>Whether to train a regression model.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>m{n}<span class="classifier">str</span></dt><dd><p>Model names (e.g., “m1: ‘rf’”, “m2: ‘xgb’”).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>clf_scoring<span class="classifier">list of str</span></dt><dd><p>Metrics for classification scoring.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>reg_scoring<span class="classifier">list of str</span></dt><dd><p>Metrics for regression scoring (e.g., “r2”, “neg_mean_absolute_error”).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>n_jobs</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Number of threads to use for parallel processing.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="abil.predict.predict.path_out">
+<span class="sig-name descname"><span class="pre">path_out</span></span><a class="headerlink" href="#abil.predict.predict.path_out" title="Link to this definition">#</a></dt>
+<dd><p>Path where predictions and model outputs are saved.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="abil.predict.predict.target">
+<span class="sig-name descname"><span class="pre">target</span></span><a class="headerlink" href="#abil.predict.predict.target" title="Link to this definition">#</a></dt>
+<dd><p>Name of the target variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="abil.predict.predict.target_no_space">
+<span class="sig-name descname"><span class="pre">target_no_space</span></span><a class="headerlink" href="#abil.predict.predict.target_no_space" title="Link to this definition">#</a></dt>
+<dd><p>Target variable name with spaces replaced by underscores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="abil.predict.predict.verbose">
+<span class="sig-name descname"><span class="pre">verbose</span></span><a class="headerlink" href="#abil.predict.predict.verbose" title="Link to this definition">#</a></dt>
+<dd><p>Verbosity level for logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="abil.predict.predict.n_jobs">
+<span class="sig-name descname"><span class="pre">n_jobs</span></span><a class="headerlink" href="#abil.predict.predict.n_jobs" title="Link to this definition">#</a></dt>
+<dd><p>Number of parallel threads used for prediction and cross-validation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.predict.predict.make_prediction">
+<span class="sig-name descname"><span class="pre">make_prediction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.predict.predict.make_prediction" title="Link to this definition">#</a></dt>
+<dd><p>Train the ensemble models and generate predictions, exporting them to NetCDF.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">make_prediction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Link to this definition">#</a></dt>
+<dd><p>Fit models in the ensemble and generate predictions.</p>
+<p>Predictions are exported to NetCDF files. If the ensemble contains multiple models,
+predictions are made for each individual model and the ensemble.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Individual model predictions and ensemble predictions are saved separately.</p></li>
+<li><p>Performance metrics (e.g., cross-validation scores) are saved for the ensemble.</p></li>
+<li><p>Only regression models are supported; classification is not implemented.</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

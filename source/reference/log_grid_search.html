@@ -386,8 +386,83 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="log-grid-search">
-<h1>Log Grid Search<a class="headerlink" href="#log-grid-search" title="Link to this heading">#</a></h1>
+  <section id="module-abil.log_grid_search">
+<span id="log-grid-search"></span><h1>Log Grid Search<a class="headerlink" href="#module-abil.log_grid_search" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="abil.log_grid_search.LogGridSearch">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">abil.log_grid_search.</span></span><span class="sig-name descname"><span class="pre">LogGridSearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scoring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.log_grid_search.LogGridSearch" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Perform grid search with optional logarithmic transformation of the target variable.</p>
+<p>Supports evaluating models with no transformation, log-transformation, or both.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.log_grid_search.LogGridSearch.do_exp">
+<span class="sig-name descname"><span class="pre">do_exp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.log_grid_search.LogGridSearch.do_exp" title="Link to this definition">#</a></dt>
+<dd><p>Apply exponential transformation to the input values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>array-like</em>) – Input values.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>y</strong> – Exponentially transformed values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array-like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.log_grid_search.LogGridSearch.do_log">
+<span class="sig-name descname"><span class="pre">do_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.log_grid_search.LogGridSearch.do_log" title="Link to this definition">#</a></dt>
+<dd><p>Apply natural logarithm transformation to the input values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>array-like</em>) – Input values.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>y</strong> – Log-transformed values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array-like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.log_grid_search.LogGridSearch.transformed_fit">
+<span class="sig-name descname"><span class="pre">transformed_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictors</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.log_grid_search.LogGridSearch.transformed_fit" title="Link to this definition">#</a></dt>
+<dd><p>Perform grid search with optional log transformation on the target variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Feature matrix.</p></li>
+<li><p><strong>y</strong> (<em>pd.Series</em><em> or </em><em>np.ndarray</em>) – Target variable.</p></li>
+<li><p><strong>log</strong> (<em>str</em>) – Transformation mode: “yes” (log transform), “no” (no transform), or “both” (test both).</p></li>
+<li><p><strong>predictors</strong> (<em>list</em>) – Predictors used for training (not directly used in the function).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Fitted grid search instance for the best-performing model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GridSearchCV</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Applies log transformation using <cite>TransformedTargetRegressor</cite> when <cite>log=”yes”</cite>.</p></li>
+<li><p>If <cite>log=”both”</cite>, compares models with and without log transformation.</p></li>
+<li><p>Uses <cite>self.param_grid</cite>, <cite>self.scoring</cite>, and <cite>self.cv</cite> for grid search.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <cite>log</cite> is not “yes”, “no”, or “both”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

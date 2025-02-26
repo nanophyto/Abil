@@ -386,8 +386,86 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="zero-stratified-kfolds">
-<h1>Zero Stratified KFolds<a class="headerlink" href="#zero-stratified-kfolds" title="Link to this heading">#</a></h1>
+  <section id="module-abil.zero_stratified_kfold">
+<span id="zero-stratified-kfolds"></span><h1>Zero Stratified KFolds<a class="headerlink" href="#module-abil.zero_stratified_kfold" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">abil.zero_stratified_kfold.</span></span><span class="sig-name descname"><span class="pre">UpsampledZeroStratifiedKFold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Custom cross-validation generator with upsampling of zero instances for stratified folds.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.get_n_splits">
+<span class="sig-name descname"><span class="pre">get_n_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.get_n_splits" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.split">
+<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.split" title="Link to this definition">#</a></dt>
+<dd><p>Generate train-test splits with upsampling of the minority class in the training data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix.</p></li>
+<li><p><strong>y</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – Target variable.</p></li>
+<li><p><strong>groups</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Group labels for the samples, used for group-based splitting. Not used in this method.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Yields<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>train_indices</strong> (<em>np.ndarray</em>) – Indices for the training set with upsampled minority class.</p></li>
+<li><p><strong>test_indices</strong> (<em>np.ndarray</em>) – Indices for the test set.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Converts <cite>y</cite> into a binary variable (<cite>1</cite> for non-zero values, <cite>0</cite> otherwise) for stratified sampling.</p></li>
+<li><p>Upsamples the minority class in the training set to match the size of the majority class.</p></li>
+<li><p>Uses <cite>StratifiedKFold</cite> for generating splits based on the binary target variable.</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">abil.zero_stratified_kfold.</span></span><span class="sig-name descname"><span class="pre">ZeroStratifiedKFold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Custom cross-validation generator to handle zero-inflated targets with stratification.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold.get_n_splits">
+<span class="sig-name descname"><span class="pre">get_n_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold.get_n_splits" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold.split">
+<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold.split" title="Link to this definition">#</a></dt>
+<dd><p>Generate train-test splits with upsampling of the minority class in the training data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix.</p></li>
+<li><p><strong>y</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – Target variable.</p></li>
+<li><p><strong>groups</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Group labels for the samples, used for group-based splitting. Not used in this method.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Yields<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>train_indices</strong> (<em>np.ndarray</em>) – Indices for the training set with upsampled minority class.</p></li>
+<li><p><strong>test_indices</strong> (<em>np.ndarray</em>) – Indices for the test set.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Converts <cite>y</cite> into a binary variable (<cite>1</cite> for non-zero values, <cite>0</cite> otherwise) for stratified sampling.</p></li>
+<li><p>Upsamples the minority class in the training set to match the size of the majority class.</p></li>
+<li><p>Uses <cite>StratifiedKFold</cite> for generating splits based on the binary target variable.</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

@@ -386,8 +386,324 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="post">
-<h1>Post<a class="headerlink" href="#post" title="Link to this heading">#</a></h1>
+  <section id="module-abil.post">
+<span id="post"></span><h1>Post<a class="headerlink" href="#module-abil.post" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="abil.post.post">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">abil.post.</span></span><span class="sig-name descname"><span class="pre">post</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_predict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">statistic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datatype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Post processing of SDM</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.cwm">
+<span class="sig-name descname"><span class="pre">cwm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.cwm" title="Link to this definition">#</a></dt>
+<dd><p>Calculate community weighted mean values for a given parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>variable</strong> (<em>string</em>) – variable that is used to estimate cwm.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.def_groups">
+<span class="sig-name descname"><span class="pre">def_groups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.def_groups" title="Link to this definition">#</a></dt>
+<dd><p>Define groups of species based on a provided dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dict</strong> (<em>dict</em>) – A dictionary where keys represent group names, and values are lists of species or
+column names to be grouped under each key.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method renames columns in <cite>self.d</cite> based on the provided dictionary and then sums</p></li>
+</ul>
+<p>their values to create grouped columns.
+- The resulting grouped data is concatenated to the original <cite>self.d</cite>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.diversity">
+<span class="sig-name descname"><span class="pre">diversity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.diversity" title="Link to this definition">#</a></dt>
+<dd><p>Estimates Shannon diversity using scikit-bio.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.estimate_applicability">
+<span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
+<dd><p>Estimate the area of applicability for the data using a strategy similar to Meyer &amp; Pebesma 2022).</p>
+<p>This calculates the importance-weighted feature distances from test to train points,
+and then defines the “applicable” test sites as those closer than some threshold
+distance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.estimate_carbon">
+<span class="sig-name descname"><span class="pre">estimate_carbon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_carbon" title="Link to this definition">#</a></dt>
+<dd><p>Estimate carbon content for each target based on a specified variable.</p>
+<p>This method calculates the carbon content for each target by scaling the data in <cite>self.d</cite>
+with the values of the specified variable from the <cite>traits</cite> DataFrame. The results are
+stored back in <cite>self.d</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>variable</strong> (<em>str</em>) – The name of the column in the <cite>traits</cite> DataFrame containing the carbon content values
+to be used for scaling the target data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.export_csv">
+<span class="sig-name descname"><span class="pre">export_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.export_csv" title="Link to this definition">#</a></dt>
+<dd><p>Export the processed dataset to a csv file.</p>
+<p>This method saves the processed dataset (<cite>self.d</cite>) to a csv file in the location
+defined by <cite>self.path_out</cite>, with optional metadata such as author and description.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_name</strong> (<em>str</em>) – The name of the csv file (without extension).</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The export location is defined in the <cite>model_config.yml</cite> file and is stored in <cite>self.path_out</cite>.</p></li>
+<li><p>Missing directories in the export path are created if necessary.</p></li>
+<li><p>The file is saved with a suffix that includes the <cite>pi</cite> value (e.g., <cite>_PI50.nc</cite>).</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.export_ds">
+<span class="sig-name descname"><span class="pre">export_ds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.export_ds" title="Link to this definition">#</a></dt>
+<dd><p>Export the processed dataset to a NetCDF file.</p>
+<p>This method saves the processed dataset (<cite>self.d</cite>) to a NetCDF file in the location
+defined by <cite>self.path_out</cite>, with optional metadata such as author and description.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – The name of the NetCDF file (without extension).</p></li>
+<li><p><strong>author</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the author to include in NetCDF metadata (default is None).</p></li>
+<li><p><strong>description</strong> (<em>str</em><em>, </em><em>optional</em>) – A description or title to include in the NetCDF metadata (default is None).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The export location is defined in the <cite>model_config.yml</cite> file and is stored in <cite>self.path_out</cite>.</p></li>
+<li><p>The method sets metadata attributes such as conventions, creator name, and units for</p></li>
+</ul>
+<p>latitude, longitude, and depth.
+- Missing directories in the export path are created if necessary.
+- The file is saved with a suffix that includes the <cite>pi</cite> value (e.g., <cite>_PI50.nc</cite>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.export_model_config">
+<span class="sig-name descname"><span class="pre">export_model_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.export_model_config" title="Link to this definition">#</a></dt>
+<dd><p>Export the model_config dictionary to a YAML file in self.path_out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – If an error occurs during the directory creation or file writing process, an exception
+    is caught and an error message is printed.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The YAML file is saved as “model_config.yml” in the <cite>self.path_out</cite> directory.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="abil.post.post.integration">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">integration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution_lat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution_lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_w</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vol_conversion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude_conversion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_mass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.integration" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.integration.calculate_volume">
+<span class="sig-name descname"><span class="pre">calculate_volume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.integration.calculate_volume" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the volume for each cell and add it as a new field to the dataset.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">Integration</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">resolution_lat</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">resolution_lon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">depth_w</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">vol_conversion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">magnitude_conversion</span><span class="o">=</span><span class="mf">1e-21</span><span class="p">,</span> <span class="n">molar_mass</span><span class="o">=</span><span class="mf">12.01</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Volume calculated:&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="o">.</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.integration.integrate_total">
+<span class="sig-name descname"><span class="pre">integrate_total</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'total'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monthly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.integration.integrate_total" title="Link to this definition">#</a></dt>
+<dd><p>Estimates global integrated values for a single target. Returns the depth integrated annual total.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variable</strong> (<em>str</em>) – The field to be integrated. Default is ‘total’ from PIC or POC Abil output.</p></li>
+<li><p><strong>monthly</strong> (<em>bool</em>) – Whether or not to calculate a monthly average value instead of an annual total. Default is False.</p></li>
+<li><p><strong>subset_depth</strong> (<em>float</em>) – Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">Integration</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">resolution_lat</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">resolution_lon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">depth_w</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">vol_conversion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">magnitude_conversion</span><span class="o">=</span><span class="mf">1e-21</span><span class="p">,</span> <span class="n">molar_mass</span><span class="o">=</span><span class="mf">12.01</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">integration</span><span class="o">.</span><span class="n">integrate_total</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;Calcification&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Final integrated total:&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.integration.integrated_totals">
+<span class="sig-name descname"><span class="pre">integrated_totals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monthly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ens'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.integration.integrated_totals" title="Link to this definition">#</a></dt>
+<dd><p>Estimates global integrated values for all targets.</p>
+<p>Considers latitude and depth bin size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>targets</strong> (<em>str</em>) – The fields to be integrated. Default is ‘total’ from PIC or POC Abil output.</p></li>
+<li><p><strong>monthly</strong> (<em>bool</em>) – Whether or not to calculate a monthly average value instead of an annual total. Default is False.</p></li>
+<li><p><strong>subset_depth</strong> (<em>float</em>) – Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.</p></li>
+<li><p><strong>export</strong> (<em>bool</em>) – Whether of not to export integrated totals as .csv. Default is True.</p></li>
+<li><p><strong>model</strong> (<em>str</em>) – The model version to be integrated. Default is “ens”. Other options include {“rf”, “xgb”, “knn”}.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.merge_env">
+<span class="sig-name descname"><span class="pre">merge_env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_env" title="Link to this definition">#</a></dt>
+<dd><p>Merge model output with environmental data.</p>
+<p>This method aligns and merges the predicted values (model output) with the existing
+environmental dataset stored in <cite>self.d</cite>. The merged data replaces <cite>self.d</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.merge_obs">
+<span class="sig-name descname"><span class="pre">merge_obs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_obs" title="Link to this definition">#</a></dt>
+<dd><p>Merge model output with observational data and calculate residuals.</p>
+<p>This function integrates model predictions with observational data based on
+spatial and temporal indices, calculates residuals, and exports the merged dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_name</strong> (<em>str</em>) – The base name of the output file to save the merged dataset.</p></li>
+<li><p><strong>targets</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – A list of target variable names to include in the merge. If None, the default
+targets from <cite>self.targets</cite> are used (default is None).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function matches the observational data with model predictions based on the</p></li>
+</ul>
+<p>indices <cite>[‘lat’, ‘lon’, ‘depth’, ‘time’]</cite>.
+- Residuals are calculated as <cite>observed - predicted</cite> for each target variable.
+- Columns included in the output are the original targets, their modeled values
+(suffixed with <cite>_mod</cite>), and their residuals (suffixed with <cite>_resid</cite>).
+- The merged dataset is saved as a CSV file with a suffix <cite>_PI</cite> followed by the
+<cite>pi</cite> value, appended to the output file name.
+- Observational data is loaded from the path defined in <cite>self.model_config[‘training’]</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>FileNotFoundError</strong> – If the observational dataset file cannot be found at the specified location.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.merge_parameters">
+<span class="sig-name descname"><span class="pre">merge_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_parameters" title="Link to this definition">#</a></dt>
+<dd><p>Merges model parameters for multiple models as specified in the model configuration.</p>
+<p class="rubric">Notes</p>
+<p>The method operates by iterating over each model in the ensemble configuration, collecting
+model parameters using <cite>merge_parameters_single_model</cite>, and saving the results to a CSV file
+in the “posts/parameters” directory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.merge_parameters_single_model">
+<span class="sig-name descname"><span class="pre">merge_parameters_single_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_parameters_single_model" title="Link to this definition">#</a></dt>
+<dd><p>Merges and saves model parameters for a single model.</p>
+<p>This method extracts the hyperparameters of a specified model (e.g., “rf”, “xgb”, “knn”) from
+serialized files stored as pickle objects. The method supports different model types, including
+regression (“reg”), classification (“clf”), and ensemble (“zir”) models. The extracted parameters
+are stored in a DataFrame and then saved to a CSV file.</p>
+<p>The function also handles the creation of the necessary directories to save the resulting CSV file
+if they do not already exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<em>str</em>) – The name of the model for which parameters are being merged. Expected models include
+“rf” (Random Forest), “xgb” (XGBoost), and “knn” (K-Nearest Neighbors).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the model configuration includes classifiers but not regressors, an error is raised
+    since classifiers are not supported for parameter merging.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The method processes the parameters of each model for regression and ensemble models,
+extracting hyperparameters such as <cite>n_estimators</cite>, <cite>max_depth</cite>, <cite>learning_rate</cite>, and others.
+The parameters for each target are aggregated into a DataFrame and saved as a CSV file in the
+“posts/parameters” directory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.merge_performance">
+<span class="sig-name descname"><span class="pre">merge_performance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_performance" title="Link to this definition">#</a></dt>
+<dd><p>Merges the performance data of multiple models as specified in the model configuration.</p>
+<p class="rubric">Notes</p>
+<p>The function relies on the <cite>merge_performance_single_model</cite> method to merge individual model
+performance data, and this is done for each model in the list, including the ensemble model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.merge_performance_single_model">
+<span class="sig-name descname"><span class="pre">merge_performance_single_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_performance_single_model" title="Link to this definition">#</a></dt>
+<dd><p>Merges performance metrics for a single model and saves the results to a CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<em>str</em>) – The name of the model for which performance metrics are being calculated and merged.
+The model’s performance data is expected to be stored in a <cite>pickle</cite> file in the “scoring”
+directory under the model name and target name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the model configuration includes a classifier but not a regressor, an error is raised
+    since classifiers are not supported for performance merging.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<dl class="simple">
+<dt>The method calculates several performance metrics for each target column in the dataset:</dt><dd><ul class="simple">
+<li><p>R2: Coefficient of determination.</p></li>
+<li><p>RMSE: Root Mean Squared Error.</p></li>
+<li><p>MAE: Mean Absolute Error.</p></li>
+<li><p>rRMSE: Relative Root Mean Squared Error.</p></li>
+<li><p>rMAE: Relative Mean Absolute Error.</p></li>
+</ul>
+</dd>
+</dl>
+<p>The performance metrics for each target are aggregated into a DataFrame, which is then saved
+as a CSV file in the “posts/performance” directory for the specified model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.total">
+<span class="sig-name descname"><span class="pre">total</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.total" title="Link to this definition">#</a></dt>
+<dd><p>Sum target rows to estimate total.</p>
+<p class="rubric">Notes</p>
+<p>Useful for estimating total species abundances or varable sum if targets are continuous.
+Total is estimated based on the target list defined in model_config.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

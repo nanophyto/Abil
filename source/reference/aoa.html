@@ -386,8 +386,60 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="area-of-applicability">
-<h1>Area of Applicability<a class="headerlink" href="#area-of-applicability" title="Link to this heading">#</a></h1>
+  <section id="module-abil.analyze">
+<span id="area-of-applicability"></span><h1>Area of Applicability<a class="headerlink" href="#module-abil.analyze" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="abil.analyze.area_of_applicability">
+<span class="sig-prename descclassname"><span class="pre">abil.analyze.</span></span><span class="sig-name descname"><span class="pre">area_of_applicability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'euclidean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'permutation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_weight_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tukey'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.analyze.area_of_applicability" title="Link to this definition">#</a></dt>
+<dd><p>Estimate the area of applicability for the data using a strategy similar to Meyer &amp; Pebesma 2022).</p>
+<p>This calculates the importance-weighted feature distances from test to train points,
+and then defines the “applicable” test sites as those closer than some threshold
+distance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X_test</strong> (<em>numpy.ndarray</em>) – array of features to be used in the estimation of the area of applicability</p></li>
+<li><p><strong>X_train</strong> (<em>numpy.ndarray</em>) – the training features used to calibrate cutoffs for the area of applicability</p></li>
+<li><p><strong>y_train</strong> (<em>numpy.ndarray</em>) – the outcome values to estimate feature importance weights. Must be provided
+if the permutation feature importance is calculated.</p></li>
+<li><p><strong>model</strong> (<em>sklearn.BaseEstimator</em>) – the model for which the feature importance will be calculated. Must be provided
+if the permutation feature importance is calculated.</p></li>
+<li><p><strong>cv</strong> (<em>sklearn.BaseCrossValidator</em>) – the crossvalidator to use on the input training data, in order to calculate the
+within-sample extrapolation threshold</p></li>
+<li><p><strong>metric</strong> (<em>str</em><em> (</em><em>Default: 'euclidean'</em><em>)</em>) – the name of the metric used to calculate feature-based distances.</p></li>
+<li><p><strong>feature_weights</strong> (<em>str</em><em> or </em><em>numpy.ndarray</em><em> (</em><em>Default: 'permutation'</em><em>)</em>) – the name of the feature importance weighting strategy to be used. By default,
+scikit-learn’s permutation feature importance is used. Pre-calculated
+feature importance scores can also be used. To ignore feature importance,
+set feature_weights=False.</p></li>
+<li><p><strong>feature_weight_kwargs</strong> (<em>dict</em><em>(</em><em>)</em>) – options to pass to the feature weight estimation function. By default, these
+are passed directly to sklearn.inspection.permutation_importance()</p></li>
+<li><p><strong>threshold</strong> (<em>str</em><em> or </em><em>float</em><em> (</em><em>Default: 'tukey'</em><em>)</em>) – how to calculate the cutoff value to determine whether a model is applicable
+for a given test point. This cutoff is calculated within the training
+data, and applied to the test data.
+- ‘tukey’: use the tukey rule, setting the cutoff at 1.5 times the inter-quartile range (IQR) above the upper hinge (75th percentile) for the train data
+dissimilarity index.
+- ‘mad’: use a median absolute deviation rule, setting the cutoff at three times
+the median absolute deviation above the median train data dissimilarity index
+- float: if a value between zero and one is provided, then the cutoff is set at the
+percentile provided for the train data dissimilarity index.</p></li>
+<li><p><strong>return_all</strong> (<em>bool</em><em> (</em><em>Default: False</em><em>)</em>) – whether to return the dissimilarity index and density of train points near the test
+point. Specifically, the dissimilarity index is the distance from test to train points in feature space, divided by the average distance between training points. The local density is the count of training datapoints whose feature distance is closer than the threshold value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>If return_local_density=False, the output is a numpy.ndarray of shape (n_training_samples, ) describing where a model</em></p></li>
+<li><p><em>might be considered “applicable” among the test samples.</em></p></li>
+<li><p><em>If return_local_density=True, then the output is a tuple of numpy arrays.</em></p></li>
+<li><p><em>The first element is the applicability mentioned above, the second is the</em></p></li>
+<li><p><em>dissimilarity index for the test points, and the thord</em></p></li>
+<li><p><em>is the local density of training points near each test point.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 

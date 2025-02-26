@@ -388,6 +388,54 @@
                   
   <section id="zero-inflated-regressor">
 <h1>Zero Inflated Regressor<a class="headerlink" href="#zero-inflated-regressor" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="abil.zir.ZeroInflatedRegressor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">abil.zir.</span></span><span class="sig-name descname"><span class="pre">ZeroInflatedRegressor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regressor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zir.ZeroInflatedRegressor" title="Link to this definition">#</a></dt>
+<dd><p>A custom regressor to handle zero-inflated target variables.</p>
+<p>Combines a classifier to predict non-zero occurrences and a regressor for non-zero targets.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.zir.ZeroInflatedRegressor.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zir.ZeroInflatedRegressor.fit" title="Link to this definition">#</a></dt>
+<dd><p>Fit the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>np.ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – The training data.</p></li>
+<li><p><strong>y</strong> (<em>np.ndarray</em><em>, </em><em>1-dimensional</em>) – The target values.</p></li>
+<li><p><strong>sample_weight</strong> (<em>Optional</em><em>[</em><em>np.array</em><em>]</em><em>, </em><em>default=None</em>) – Individual weights for each sample.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Fitted regressor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#abil.zir.ZeroInflatedRegressor" title="abil.zir.ZeroInflatedRegressor">ZeroInflatedRegressor</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <cite>classifier</cite> is not a classifier or <cite>regressor</cite> is not a regressor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="abil.zir.ZeroInflatedRegressor.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zir.ZeroInflatedRegressor.predict" title="Link to this definition">#</a></dt>
+<dd><p>Get predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Samples to get predictions of.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>y</strong> – The predicted values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray, shape (n_samples,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
