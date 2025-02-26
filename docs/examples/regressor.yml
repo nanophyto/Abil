@@ -2,19 +2,19 @@
   root: ./
 
   run_name: regressor #update for specific run name
-  path_out:  tests/ModelOutput/ #root + folder
+  path_out:  ModelOutput/ #root + folder
   path_in:  predictions/ens/ #root + folder
 
-  prediction:  docs/examples/data/prediction.csv #root + folder
-  targets:  docs/examples/data/targets.csv #root + folder
-  training:  docs/examples/data/training.csv
+  prediction:  data/prediction.csv #root + folder
+  targets:  data/targets.csv #root + folder
+  training:  data/training.csv
 
   predictors: ["feature_1", "feature_2", "feature_3"]
 
-  verbose: 1
+  verbose: 1 # scikit-learn warning verbosity
   seed : 1 # random seed
   n_threads : 1 # how many cpu threads to use
-  cv : 10
+  cv : 5 # number of cross folds
 
   ensemble_config: 
     classifier: False

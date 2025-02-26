@@ -24,14 +24,14 @@ from joblib import delayed, Parallel
 from .zir import ZeroInflatedRegressor
 
 def process_data_with_model(
-  model, X_predict, X_train, y_train, n_jobs=1, cv=None, chunksize=None, backend="multiprocessing"
+    model, X_predict, X_train, y_train, n_jobs=1, cv=None, chunksize=None, backend="multiprocessing"
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
     and predict on X_predict with summary stats.
 
     Parameters:
-    ----------
+    -----------
     X_train : DataFrame
         Training feature set with MultiIndex for coordinates.
 
@@ -53,7 +53,7 @@ def process_data_with_model(
         "xgb" for XGBRegressor.
 
     Returns:
-    -------
+    --------
     dict
         Dictionary containing summary statistics for both training and prediction datasets.
         Keys: "train_stats", "predict_stats".
@@ -137,6 +137,7 @@ def process_data_with_model(
 
     predict_summary_stats = _summarize_predictions(
         model, X_predict=X_predict, n_jobs=n_jobs, chunksize=chunksize, backend=backend
+
     )
 
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}

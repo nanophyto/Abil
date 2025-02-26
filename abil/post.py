@@ -70,6 +70,7 @@ class post:
         merge_netcdf(path_in):
             Merges multiple NetCDF files from the specified directory into a single dataset.
         """
+
         def merge_netcdf(path_in, statistic):
             """
             Merges multiple NetCDF files from the specified directory into a single dataset.
@@ -82,21 +83,29 @@ class post:
             ----------
             path_in : str
                 The path to the directory containing the NetCDF files to be merged.
+            statistic : str
+                The name of the statistic variable to extract from each dataset.
 
             Returns
             -------
             xarray.Dataset
                 The merged dataset containing the combined data from all the NetCDF files in the directory.
+                The variable names in the merged dataset are derived from the 'target' values in each file.
             """
             print("merging...")
             print(path_in)
-            datasets = []
 
+            datasets = []
+            
             for file in os.listdir(path_in):
                 if file.endswith(".nc"):
                     ds = xr.open_dataset(os.path.join(path_in, file))
                     if statistic in ds:
-                        ds_subset = ds[[statistic, "target"]]
+                        # Extract the target name
+                        target_name = ds['target'].values.item()  # Assuming target is a single value
+                        
+                        # Select the statistic and rename it to the target name
+                        ds_subset = ds[[statistic]].rename({statistic: target_name})
                         datasets.append(ds_subset)
                     else:
                         print(f"Statistic '{statistic}' not found in {file}")
@@ -110,17 +119,14 @@ class post:
         self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
         self.ds = merge_netcdf(os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], model_config['path_in']), statistic)
         self.traits = pd.read_csv(os.path.join(model_config['root'], model_config['targets']))
-        self.unique_targets = np.unique(self.ds['target'].values).tolist()
 
         self.root  =  model_config['root'] 
         self.statistic = statistic
 
         self.d = self.ds.to_dataframe()
-        self.d = self.d.reset_index()
-        print(self.d.head())
-        self.d = self.d.pivot(index=['lat', 'lon', 'time', 'depth'], columns='target', values=self.statistic)
+        self.unique_targets = np.unique(self.d.columns.values).tolist()
+
         self.d = self.d.dropna()
-        #self.targets = self.traits['Target'][self.traits['Target'].isin(self.d.columns.values)]
         self.targets = self.unique_targets
 
         self.model_config = model_config
@@ -510,6 +516,9 @@ class post:
         print("finished calculating CWM " + variable)
 
     def diversity(self):
+        """
+        Estimates Shannon diversity using scikit-bio.
+        """
         self.d['shannon'] = self.d.apply(shannon, axis=1)
         print("finished calculating shannon diversity")
 
@@ -764,6 +773,13 @@ class post:
                 print(f"Exported totals")
 
     def estimate_applicability(self):
+        """
+        Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
+
+        This calculates the importance-weighted feature distances from test to train points,
+        and then defines the "applicable" test sites as those closer than some threshold
+        distance.
+        """
 
         # create empty dataframe with the same index as X_predict
         aoa_dataset = pd.DataFrame(index=self.X_predict.index)
@@ -867,16 +883,21 @@ class post:
         ds.attrs['Conventions'] = 'CF-1.5'
         if author is not None:
             ds.attrs['creator_name'] = author
-
-        ds['lat'].attrs['units'] = 'degrees_north'
-        ds['lat'].attrs['long_name'] = 'latitude'
-
-        ds['lon'].attrs['units'] = 'degrees_east'
-        ds['lon'].attrs['long_name'] = 'longitude'
-
-        ds['depth'].attrs['units'] = 'm'
-        ds['depth'].attrs['positive'] = 'down'
-
+        try:
+            ds['lat'].attrs['units'] = 'degrees_north'
+            ds['lat'].attrs['long_name'] = 'latitude'
+        except:
+            pass
+        try:
+            ds['lon'].attrs['units'] = 'degrees_east'
+            ds['lon'].attrs['long_name'] = 'longitude'
+        except:
+            pass
+        try:
+            ds['depth'].attrs['units'] = 'm'
+            ds['depth'].attrs['positive'] = 'down'
+        except:
+            pass
         #to add loop defining units of variables
 
         print(self.d.head())

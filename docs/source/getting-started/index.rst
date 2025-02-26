@@ -22,10 +22,13 @@ Run the following command to install the package directly from GitHub:
 
    pip install abil
 
+.. note::
+   If you are using a conda environment remember to activate it before running pip
+
 Install via Cloning (for Development)
 -------------------------------------
 
-If you want to modify the package, clone the repository and install it:
+If you want to modify the package, clone the repository and install it using `PIP editable install <https://setuptools.pypa.io/en/latest/userguide/development_mode.html>`_:
 
 .. code-block:: sh
 
