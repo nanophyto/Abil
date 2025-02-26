@@ -9,6 +9,5 @@ studies/wiseman2024/env_data_processing/regridded_data
 abil.sif
 __pycache__/
 abil/__pycache__/
-dist/abil-25.2.19-py3-none-any.whl
-dist/abil-25.2.19.tar.gz
+dist/
 examples/singularity/Singularity.sif
