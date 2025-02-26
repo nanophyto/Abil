@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import dill as pickle
+import pickle
 import os
 import time
 import warnings
@@ -101,10 +101,10 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
 
     if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
-        with parallel_backend("multiprocessing", n_jobs=n_threads):
-            d = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["predict_stats"]
+
+        d = process_data_with_model(
+            m, X_predict=X_predict, X_train=X_train, y_train=y_train, n_jobs = n_threads, cv=cv
+        )["predict_stats"]
         
         d = d.to_xarray()
         d['target'] = target
@@ -118,16 +118,14 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
 
-        with parallel_backend("multiprocessing", n_jobs=n_threads):
-            # Generate classifier and regressor stats
-            d_clf = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["classifier_predict_stats"]
+        # Generate classifier and regressor stats
+        d_clf = process_data_with_model(
+            m, X_predict=X_predict, X_train=X_train, y_train=y_train, n_jobs = n_threads, cv=cv
+        )["classifier_predict_stats"]
 
-        with parallel_backend("multiprocessing", n_jobs=n_threads):
-            d_reg = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["regressor_predict_stats"]
+        d_reg = process_data_with_model(
+            m, X_predict=X_predict, X_train=X_train, y_train=y_train, n_jobs = n_threads, cv=cv
+        )["regressor_predict_stats"]
 
         columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
         d = pd.DataFrame(d_reg)
