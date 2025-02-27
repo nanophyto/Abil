@@ -115,7 +115,9 @@ def process_data_with_model(
                 X_predict=X_train.iloc[test_idx],
                 X_train=X_train.iloc[train_idx],
                 y_train=y_train.iloc[train_idx],
+                n_jobs=n_jobs,
                 chunksize=chunksize,
+                backend=backend
             )
             for train_idx, test_idx in cv.split(X_train, y_train)
         ]
@@ -129,17 +131,20 @@ def process_data_with_model(
             X_train=X_train,
             X_predict=X_train,
             y_train=y_train,
+            n_jobs=n_jobs,
             chunksize=chunksize,
+            backend=backend
         )
 
     predict_summary_stats = _summarize_predictions(
-        model, X_predict=X_predict, chunksize=chunksize
+        model, X_predict=X_predict, n_jobs=n_jobs, chunksize=chunksize, backend=backend
+
     )
 
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
 
 
-def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksize=2e4):
+def _summarize_predictions(model, X_predict, X_train=None, y_train=None, n_jobs=1, chunksize=2e4, backend="multiprocessing"):
     # need to extract the ensemble predictions for each X
     # over all learners, then summarize those
     # and do that in parallel.
@@ -154,6 +159,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         raise ValueError(
             "Both X_train and y_train must be provided, or neither must be."
         )
+
 
     n_samples, n_features = X_predict.shape
 

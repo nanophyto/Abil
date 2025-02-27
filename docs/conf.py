@@ -9,7 +9,11 @@
 project = 'Abil'
 copyright = '2024, Abil developers'
 author = 'nanophyto'
+<<<<<<< HEAD
+release = '25.02.17'
+=======
 release = '25.02.25'
+>>>>>>> parallel_changes
 
 
 # -- General configuration ---------------------------------------------------

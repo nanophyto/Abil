@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 
 # Load raw dataset from Marsh et al.
-d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_2018_v2.csv',
+d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_2018_v2.0.1.csv',
                  skiprows=1,
                  names=["PI","Expedition","OS Region","Reference_Author_Published_year","Reference_doi",
                         "Date","Sample_ID","Latitude","Longitude","Depth","Irr_Depth",
@@ -104,26 +104,17 @@ zeros_df = mask_zeros.to_dataframe().reset_index()
 # Drop rows where the mask is not 0
 zeros_df = zeros_df[zeros_df['mask'] == 0]
 
-# Randomly select 10% (~30,000 points) for 10:1 pseudo zero to obs
-zeros_df_subset = zeros_df.sample(frac=0.1, random_state=42)
-
-# Add columns for zeros in Calcification and Primary_Production
-zeros_df_subset['Calcification'] = 0
-
-# Append zeros data to d
-d = pd.concat([d, zeros_df_subset[['lat', 'lon', 'depth', 'time', 'Calcification']]], ignore_index=True)
-
-# Create a zeros dataframe with the same structure
-#zeros_df_subset = d.copy()
+# Randomly select 10% (~10,000 points) for 10:1 pseudo zero to obs
+zeros_df_subset = zeros_df.sample(n=(10*(d["Calcification"].notna().sum())), random_state=42)
 
 # Get all relevant columns (Calcification + sample_{n})
-#columns_to_zero = ['Calcification'] + [col for col in d.columns if col.startswith('sample_')]
+columns_to_zero = ['Calcification'] + [col for col in d.columns if col.startswith('sample_')]
 
 # Set the selected columns to zero
-#zeros_df_subset[columns_to_zero] = 0
+zeros_df_subset[columns_to_zero] = 0
 
 # Append the new rows to the original dataframe
-#d = pd.concat([d, zeros_df_subset[['lat', 'lon', 'depth', 'time'] + columns_to_zero]], ignore_index=True)
+d = pd.concat([d, zeros_df_subset[['lat', 'lon', 'depth', 'time'] + columns_to_zero]], ignore_index=True)
 
 ## Concat with env data (required for all data)
 # Set index for joining to env_data

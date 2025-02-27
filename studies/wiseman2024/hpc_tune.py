@@ -1,11 +1,9 @@
 # import required packages
 import pandas as pd
-import numpy as np
 import sys
 from yaml import load
 from yaml import CLoader as Loader
-from abil.tune import tune 
-from sklearn.preprocessing import OneHotEncoder
+from abil.tune import tune
 
 try:
     print(sys.argv[1])
@@ -15,7 +13,7 @@ try:
     model_config['hpc'] = True
     n_jobs = pd.to_numeric(sys.argv[1])
     n_spp = pd.to_numeric(sys.argv[2])
-    root = model_config['hpc_root']
+    root = model_config['root']
     model_config['cv'] = 10
     model = sys.argv[3]
     predictors = model_config['predictors']

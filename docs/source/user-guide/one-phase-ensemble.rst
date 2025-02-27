@@ -12,7 +12,6 @@ An example of YAML file of a 1-phase model is provided below.
 .. literalinclude:: ../../../tests/regressor.yml
    :language: yaml
 
-
 Running the model
 ~~~~~~~~~~~~~~~~~
 After specifying the model configuration in the relevant YAML file, we can use the Abil API

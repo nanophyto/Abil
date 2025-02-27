@@ -1,13 +1,9 @@
 # import required packages
 import pandas as pd
-import numpy as np
 import sys
 from yaml import load
 from yaml import CLoader as Loader
 from abil.predict import predict
-from sklearn.preprocessing import OneHotEncoder
-from mapie.conformity_scores import AbsoluteConformityScore
-from abil.functions import OffsetGammaConformityScore
 
 try:
     print(sys.argv[1])
@@ -16,7 +12,7 @@ try:
     model_config['hpc'] = True
     n_jobs = pd.to_numeric(sys.argv[1])
     n_spp = pd.to_numeric(sys.argv[2])
-    root = model_config['hpc_root']
+    root = model_config['root']
     model_config['cv'] = 10
 
 except:
@@ -47,4 +43,4 @@ X_train = d[predictors]
 print("finished loading data")
 
 m = predict(X_train, y, X_predict, model_config, n_jobs=n_jobs)
-m.make_prediction(prediction_inference=True,conformity_score=AbsoluteConformityScore())
+m.make_prediction()

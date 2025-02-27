@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --mem=10000M
 #SBATCH --cpus-per-task=16
-#SBATCH --array=0-1
+#SBATCH --array=0-5
 #SBATCH --account=GEOG024542
 
 i=${SLURM_ARRAY_TASK_ID}
