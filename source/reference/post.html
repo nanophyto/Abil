@@ -694,6 +694,17 @@ as a CSV file in the “posts/performance” directory for the specified model.<
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="abil.post.post.process_resampled_runs">
+<span class="sig-name descname"><span class="pre">process_resampled_runs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.process_resampled_runs" title="Link to this definition">#</a></dt>
+<dd><p>Take mean of target rows.
+Take the standard deviation of the target rows.
+Calculate the 2.5th and 97.5th percentiles of target rows.</p>
+<p class="rubric">Notes</p>
+<p>Useful when running resampled targets of the same initial target.
+Mean is estimated based on the target list defined in model_config.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="abil.post.post.total">
 <span class="sig-name descname"><span class="pre">total</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.total" title="Link to this definition">#</a></dt>
 <dd><p>Sum target rows to estimate total.</p>
@@ -773,7 +784,7 @@ Total is estimated based on the target list defined in model_config.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     <br/>
   </p>
 </div>
