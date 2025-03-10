@@ -24,6 +24,8 @@ Both require a Linux operating system, but provide instructions for installing o
 
     .. tab-item:: Unix
 
+        For installation instructions, see the links below.
+
         `Install Apptainer <https://apptainer.org/docs/admin/main/installation.html>`_
 
         `Install Singularity <https://docs.sylabs.io/guides/3.0/user-guide/installation.html>`_
@@ -42,23 +44,51 @@ Building Singularity Container
 
 To run Abil on a HPC machine, first compile Singularity from the terminal:
 
-First, change directory to the Singularity folder:
+.. tab-set::
 
-.. code-block:: 
+    .. tab-item:: Unix
 
-    cd ./Abil/singularity/
+        First, change directory to the Singularity folder:
 
-If using Apptainer (recommended):
+        .. code-block:: 
 
-.. code-block:: 
+            cd ./Abil/singularity/
 
-    sudo apptainer build abil.sif Singularity.sif
+        If using Apptainer (recommended):
 
-If using Singularity:
+        .. code-block:: 
 
-.. code-block:: 
+            sudo apptainer build abil.sif Singularity.sif
 
-    sudo singularity build abil.sif Singularity.sif
+        If using Singularity:
+
+        .. code-block:: 
+
+            sudo singularity build abil.sif Singularity.sif
+
+    .. tab-item:: Windows/MacOS
+
+        Singularity/Apptainer is not natively supported on Windows or MacOS and requires a Virtual Machine (VM).
+    	For more details see the `Apptainer admin guide <https://apptainer.org/docs/admin/main/installation.html#installation-on-windows-or-mac>`_
+        or the `Singularity admin guide <https://docs.sylabs.io/guides/3.0/user-guide/installation.html#install-on-windows-or-mac>`_. 
+
+        Once the VM is installed following the instructions for your OS, use the terminal of the VM to change directory to the Singularity folder:
+
+        .. code-block:: 
+
+            cd ./Abil/singularity/
+
+        If using Apptainer (recommended):
+
+        .. code-block:: 
+
+            sudo apptainer build abil.sif Singularity.sif
+
+        If using Singularity:
+
+        .. code-block:: 
+
+            sudo singularity build abil.sif Singularity.sif        
 
 Transfer Abil to your HPC Machine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
