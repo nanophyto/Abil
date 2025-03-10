@@ -23,14 +23,16 @@ Both require a Linux operating system, but provide instructions for installing o
 .. tab-set::
 
     .. tab-item:: Unix
+
         `Install Apptainer <https://apptainer.org/docs/admin/main/installation.html>`_
 
         `Install Singularity <https://docs.sylabs.io/guides/3.0/user-guide/installation.html>`_
 
     .. tab-item:: Windows/MacOS
+
         Singularity/Apptainer is not natively supported on Windows or MacOS and requires a Virtual Machine (VM).
-    	For more details see the `Apptainer Admin guide <https://apptainer.org/docs/admin/main/installation.html#installation-on-windows-or-mac>`_
-        Or the `Singularity Admin guide <https://docs.sylabs.io/guides/3.0/user-guide/installation.html#install-on-windows-or-mac>`_
+    	For more details see the `Apptainer admin guide <https://apptainer.org/docs/admin/main/installation.html#installation-on-windows-or-mac>`_
+        or the `Singularity admin guide <https://docs.sylabs.io/guides/3.0/user-guide/installation.html#install-on-windows-or-mac>`_
 
 
 
@@ -87,7 +89,7 @@ Transfer Abil to your HPC Machine
         For more instructions, check with your organization.
 
 SLURM scripts
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 To execute Abil on an HPC machine, we use SLURM scripts. The SLURM script tells the HPC machine what to load (the Singularity container), what to execute (Python scripts), and how much compute is required, in a single executable file.
 

@@ -404,9 +404,16 @@ Both require a Linux operating system, but provide instructions for installing o
 <div class="sd-tab-set docutils">
 <input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
 <label class="sd-tab-label" for="sd-tab-item-0">
-Unix
-<a class="reference external" href="https://apptainer.org/docs/admin/main/installation.html">Install Apptainer</a></label><div class="sd-tab-content docutils">
+Unix</label><div class="sd-tab-content docutils">
+<p><a class="reference external" href="https://apptainer.org/docs/admin/main/installation.html">Install Apptainer</a></p>
 <p><a class="reference external" href="https://docs.sylabs.io/guides/3.0/user-guide/installation.html">Install Singularity</a></p>
+</div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Windows/MacOS</label><div class="sd-tab-content docutils">
+<p>Singularity/Apptainer is not natively supported on Windows or MacOS and requires a Virtual Machine (VM).
+For more details see the <a class="reference external" href="https://apptainer.org/docs/admin/main/installation.html#installation-on-windows-or-mac">Apptainer admin guide</a>
+or the <a class="reference external" href="https://docs.sylabs.io/guides/3.0/user-guide/installation.html#install-on-windows-or-mac">Singularity admin guide</a></p>
 </div>
 </div>
 </section>
@@ -429,8 +436,8 @@ Unix
 <section id="transfer-abil-to-your-hpc-machine">
 <h2>Transfer Abil to your HPC Machine<a class="headerlink" href="#transfer-abil-to-your-hpc-machine" title="Link to this heading">#</a></h2>
 <div class="sd-tab-set docutils">
-<input checked="checked" id="sd-tab-item-1" name="sd-tab-set-1" type="radio">
-<label class="sd-tab-label" for="sd-tab-item-1">
+<input checked="checked" id="sd-tab-item-2" name="sd-tab-set-1" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-2">
 Unix/MacOS</label><div class="sd-tab-content docutils">
 <p>To transfer to your home directory (~):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scp</span> <span class="o">-</span><span class="n">r</span> <span class="o">./</span><span class="n">Abil</span> <span class="o">&lt;</span><span class="n">username</span><span class="o">&gt;</span><span class="nd">@HPC_machine</span><span class="o">.</span><span class="n">ac</span><span class="o">.</span><span class="n">uk</span><span class="p">:</span><span class="o">~</span>
@@ -441,8 +448,8 @@ Unix/MacOS</label><div class="sd-tab-content docutils">
 </pre></div>
 </div>
 </div>
-<input id="sd-tab-item-2" name="sd-tab-set-1" type="radio">
-<label class="sd-tab-label" for="sd-tab-item-2">
+<input id="sd-tab-item-3" name="sd-tab-set-1" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-3">
 Windows</label><div class="sd-tab-content docutils">
 <p>To transfer from a Windows machine, use <a class="reference external" href="https://winscp.net/eng/index.php">WinSCP</a>.</p>
 <p>To use WinSCP, type the host in the <cite>Host name</cite> box, then enture your username in the <cite>User Name</cite> box.</p>
