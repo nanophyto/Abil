@@ -11,7 +11,6 @@ Paths:
 >>> root: ./
 >>> run_name: run_name #update for specific run name
 >>> path_out: studies/study_name/ModelOutput/ #root + folder
->>> path_in:  predictions/ens/ #root + folder
 >>> prediction:  studies/study_name/data/prediction.csv #root + folder
 >>> targets:  studies/study_name/data/targets.csv #root + folder
 >>> training:  studies/study_name/data/training.csv #root + folder
@@ -41,14 +40,5 @@ Sampling and stratification:
 ----------------------------
 >>> upsample: False
 >>> stratify: True #zero stratification
-
-Scoring method to be used:
---------------------------
->>> clf_scoring:
->>>  accuracy: balanced_accuracy
->>> reg_scoring:
->>>  R2: r2
->>>  MAE: neg_mean_absolute_error
->>>  RMSE: neg_root_mean_squared_error
 
 

@@ -389,7 +389,6 @@
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">root</span><span class="p">:</span> <span class="o">./</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">run_name</span><span class="p">:</span> <span class="n">run_name</span> <span class="c1">#update for specific run name</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">path_out</span><span class="p">:</span> <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">ModelOutput</span><span class="o">/</span> <span class="c1">#root + folder</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">path_in</span><span class="p">:</span>  <span class="n">predictions</span><span class="o">/</span><span class="n">ens</span><span class="o">/</span> <span class="c1">#root + folder</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prediction</span><span class="p">:</span>  <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">prediction</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">targets</span><span class="p">:</span>  <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">targets</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">training</span><span class="p">:</span>  <span class="n">studies</span><span class="o">/</span><span class="n">study_name</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">training</span><span class="o">.</span><span class="n">csv</span> <span class="c1">#root + folder</span>
@@ -426,17 +425,6 @@
 <h2>Sampling and stratification:<a class="headerlink" href="#sampling-and-stratification" title="Link to this heading">#</a></h2>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">upsample</span><span class="p">:</span> <span class="kc">False</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">stratify</span><span class="p">:</span> <span class="kc">True</span> <span class="c1">#zero stratification</span>
-</pre></div>
-</div>
-</section>
-<section id="scoring-method-to-be-used">
-<h2>Scoring method to be used:<a class="headerlink" href="#scoring-method-to-be-used" title="Link to this heading">#</a></h2>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">clf_scoring</span><span class="p">:</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">accuracy</span><span class="p">:</span> <span class="n">balanced_accuracy</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">reg_scoring</span><span class="p">:</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">R2</span><span class="p">:</span> <span class="n">r2</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">MAE</span><span class="p">:</span> <span class="n">neg_mean_absolute_error</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">RMSE</span><span class="p">:</span> <span class="n">neg_root_mean_squared_error</span>
 </pre></div>
 </div>
 </section>

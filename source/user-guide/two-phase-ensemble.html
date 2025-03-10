@@ -394,7 +394,6 @@ Note that compared to a 1-phase regressor model, the hyper-parameters for the cl
 
 <span class="w">  </span><span class="nt">run_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2-phase</span><span class="w"> </span><span class="c1">#update for specific run name</span>
 <span class="w">  </span><span class="nt">path_out</span><span class="p">:</span><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">tests/ModelOutput/</span><span class="w"> </span><span class="c1">#root + folder </span>
-<span class="w">  </span><span class="nt">path_in</span><span class="p">:</span><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">predictions/ens/</span><span class="w"> </span><span class="c1">#root + folder</span>
 
 <span class="w">  </span><span class="nt">prediction</span><span class="p">:</span><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">docs/examples/data/prediction.csv</span><span class="w"> </span><span class="c1">#root + folder</span>
 <span class="w">  </span><span class="nt">targets</span><span class="p">:</span><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">docs/examples/data/targets.csv</span><span class="w"> </span><span class="c1">#root + folder</span>
@@ -415,14 +414,6 @@ Note that compared to a 1-phase regressor model, the hyper-parameters for the cl
 
 <span class="w">  </span><span class="nt">upsample</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="w">  </span><span class="nt">stratify</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-
-<span class="w">  </span><span class="nt">reg_scoring</span><span class="p">:</span>
-<span class="w">   </span><span class="nt">R2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">r2</span>
-<span class="w">   </span><span class="nt">MAE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">neg_mean_absolute_error</span>
-<span class="w">   </span><span class="nt">RMSE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">neg_root_mean_squared_error</span>
-
-<span class="w">  </span><span class="nt">clf_scoring</span><span class="p">:</span>
-<span class="w">   </span><span class="nt">accuracy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">balanced_accuracy</span>
 
 <span class="w">  </span><span class="nt">param_grid</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">rf_param_grid</span><span class="p">:</span>
