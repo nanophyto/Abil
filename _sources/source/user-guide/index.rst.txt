@@ -4,12 +4,13 @@
 User Guide
 ==========
 
+The following guide contains documentation for model configuration, running either a 1-phase or 2-phase ensemble, and configuring Abil to run on an HPC machine.
+
 Guides
 ------
 
 .. toctree::
-   :maxdepth: 2
-   :hidden:
+   :maxdepth: 1
 
    yaml-config
    one-phase-ensemble

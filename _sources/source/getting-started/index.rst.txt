@@ -44,13 +44,13 @@ If you decide to use Anaconda, an Abil specific environment can be created as be
 
         .. code-block:: bat
 
-            :: Create a new Conda environment (replace 'myenv' with your desired environment name)
+            # Create a new Conda environment (replace 'myenv' with your desired environment name)
             conda create --name myenv
 
-            :: Activate the environment
+            # Activate the environment
             conda activate myenv
 
-            :: Install the dependencies from requirements.txt
+            # Install the dependencies from requirements.txt
             pip install -r C:\path\to\requirements.txt
 
 Install via pip
