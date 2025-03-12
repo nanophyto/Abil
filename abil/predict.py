@@ -103,7 +103,7 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
     if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         with parallel_backend("loky", n_jobs=n_threads):
-            d = pp.process_data_with_model(
+            d = pp.estimate_prediction_quantiles(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
 
@@ -120,7 +120,7 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
 
         with parallel_backend("loky", n_jobs=n_threads):
-            d_both = pp.process_data_with_model(
+            d_both = pp.estimate_prediction_quantiles(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train>0, cv=cv
             )
             # Generate classifier and regressor stats

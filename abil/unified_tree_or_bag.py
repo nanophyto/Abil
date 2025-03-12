@@ -24,7 +24,7 @@ from joblib import delayed, Parallel
 from .zir import ZeroInflatedRegressor
 from . import utils as u
 
-def process_data_with_model(
+def estimate_prediction_quantiles(
     model, X_predict, X_train, y_train, cv=None, chunksize=20_000
 ):
     """
@@ -92,7 +92,7 @@ def process_data_with_model(
     # effect of leaving a fold out. Do this in parallel.
 
     if isinstance(model, ZeroInflatedRegressor):
-        classifier_stats = process_data_with_model(
+        classifier_stats = estimate_prediction_quantiles(
             model.classifier_,
             X_predict = X_predict,
             X_train = X_train,
@@ -100,7 +100,7 @@ def process_data_with_model(
             cv=cv,
             chunksize=chunksize,
         )
-        regressor_stats = process_data_with_model(
+        regressor_stats = estimate_prediction_quantiles(
             model.regressor_, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, chunksize=chunksize
         )
         return {
@@ -335,19 +335,19 @@ if __name__ == "__main__":
     # this sets the backend type and number of jobs to use in the internal
     # Parallel() call.
     with parallel_backend("loky", n_jobs=16):
-        results = process_data_with_model(
+        results = estimate_prediction_quantiles(
             model, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
     with parallel_backend("loky", n_jobs=16):
-        vresults = process_data_with_model(
+        vresults = estimate_prediction_quantiles(
             vmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
     with parallel_backend("loky", n_jobs=16):
-        zirresults = process_data_with_model(
+        zirresults = estimate_prediction_quantiles(
             zirmodel, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
     with parallel_backend("loky", n_jobs=16):
-        vzir_results = process_data_with_model(
+        vzir_results = estimate_prediction_quantiles(
             zir_of_vmodels, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
     print("\n=== Training Summary Stats ===\n", results["train_stats"].head())
