@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import warnings
+from sklearn.metrics import mean_squared_error, balanced_accuracy_score
 
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import FunctionTransformer
@@ -139,10 +140,7 @@ def estimate_prediction_quantiles(
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
 
 
-def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksize=2e4):
-    # need to extract the ensemble predictions for each X
-    # over all learners, then summarize those
-    # and do that in parallel.
+def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksize=2e4, threshold=0.5):
     if (X_train is not None) & (y_train is not None):
         model = base.clone(model).fit(X_train, y_train)
     elif not all([(X_train is None), (y_train is None)]):
@@ -150,13 +148,9 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             raise ValueError(
                 "model provided is not fit, and no data is provided to fit the model on. Fit the model on the data first."
             )
-
-        raise ValueError(
-            "Both X_train and y_train must be provided, or neither must be."
-        )
+        raise ValueError("Both X_train and y_train must be provided, or neither must be.")
 
     n_samples, n_features = X_predict.shape
-
     if chunksize is not None:
         n_chunks = int(np.ceil(n_samples / chunksize))
         chunks = np.array_split(X_predict, n_chunks)
@@ -169,40 +163,86 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     )
 
     engine = Parallel()
+    
+    # Compute predictions on X_train to estimate member performance
+    if X_train is not None and y_train is not None:
+        if hasattr(model, "get_booster"):
+            booster = model.get_booster()
+            train_pred_jobs = (
+                delayed(u._predict_one_member)(i, member=booster, chunk=X_train)
+                for i in range(model.n_estimators)
+            )
+        else:
+            members, features_for_members = _flatten_metaensemble(model)
+            train_pred_jobs = (
+                delayed(u._predict_one_member)(
+                    _,
+                    member=member,
+                    chunk=X_train.iloc[:, features_for_member]
+                )
+                for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
+            )
+        
+        train_results = engine(train_pred_jobs)
+        # try to infer if model is a regressor or classifier:
+        if pd.api.types.is_bool_dtype(y_train):
+            print("model is a classifier") # for debug
+            # [print(pred) for pred in train_results] #for debug
+            losses = np.array([balanced_accuracy_score(y_train, pred>threshold) for pred in train_results])
+        elif pd.api.types.is_float_dtype(y_train):
+            print("model is a regressor") # for debug
+            losses = np.array([mean_squared_error(y_train, pred) for pred in train_results])
+        else:
+            raise ValueError("y_train not bool, int or numeric")
+
+        weights = 1 / (losses + 1e-99)  # Avoid division by zero
+        weights /= weights.sum()  # Normalize weights
+    else:
+        weights = None  # Use equal weights if no X_train/y_train
+    
+    # Compute predictions on X_predict
     for chunk in chunks:
         if hasattr(model, "get_booster"):
             booster = model.get_booster()
             pred_jobs = (
-                delayed(u._predict_one_member)(i, member=booster, chunk=chunk) for i in range(model.n_estimators)
+                delayed(u._predict_one_member)(i, member=booster, chunk=chunk)
+                for i in range(model.n_estimators)
             )
         else:
             members, features_for_members = _flatten_metaensemble(model)
             pred_jobs = (
                 delayed(u._predict_one_member)(
                     _,
-                    member=member, 
-                    chunk=chunk.iloc[:,features_for_member]
+                    member=member,
+                    chunk=chunk.iloc[:, features_for_member]
                 )
                 for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
             )
+        
         results = engine(pred_jobs)
         chunk_preds = pd.DataFrame(
             inverse_transform(np.column_stack(results)),
             index=getattr(chunk, "index", None),
         )
+        
+        if weights is not None:
+            weighted_quantiles = chunk_preds.apply(lambda x: np.average(np.sort(x), weights=weights), axis=1)
+        else:
+            weighted_quantiles = chunk_preds.quantile(q=[0.025, 0.975], axis=1)
 
         chunk_stats = pd.DataFrame.from_dict(
             dict(
-                mean=chunk_preds.mean(axis=1),              
+                mean=chunk_preds.mean(axis=1),
                 **dict(
                     zip(
                         ["ci95_LL", "ci95_UL"],
-                        chunk_preds.quantile(q=(0.025, 0.975), axis=1).values,
+                        weighted_quantiles if weights is not None else weighted_quantiles.values,
                     )
                 ),
             )
         )
         stats.append(chunk_stats)
+    
     output = pd.concat(stats, axis=0, ignore_index=False)
     return output
 
