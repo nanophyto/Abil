@@ -21,17 +21,18 @@ from sklearn import base
 from joblib import delayed, Parallel
 
 
-from .functions import ZeroInflatedRegressor
+from .zir import ZeroInflatedRegressor
+from . import utils as u
 
 def process_data_with_model(
-    model, X_predict, X_train, y_train, cv=None, chunksize=None
+    model, X_predict, X_train, y_train, cv=None, chunksize=20_000
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
     and predict on X_predict with summary stats.
 
     Parameters:
-    ----------
+    -----------
     X_train : DataFrame
         Training feature set with MultiIndex for coordinates.
 
@@ -53,7 +54,7 @@ def process_data_with_model(
         "xgb" for XGBRegressor.
 
     Returns:
-    -------
+    --------
     dict
         Dictionary containing summary statistics for both training and prediction datasets.
         Keys: "train_stats", "predict_stats".
@@ -154,7 +155,6 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             "Both X_train and y_train must be provided, or neither must be."
         )
 
-    engine = Parallel()
     n_samples, n_features = X_predict.shape
 
     if chunksize is not None:
@@ -167,27 +167,23 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     inverse_transform = getattr(
         model, "inverse_transform", FunctionTransformer().inverse_transform
     )
+
+    engine = Parallel()
     for chunk in chunks:
-        try:
+        if hasattr(model, "get_booster"):
             booster = model.get_booster()
-            @delayed
-            def pred_job(i, booster=booster, chunk=chunk):
-                dm = DMatrix(chunk)
-                return booster.predict(dm, iteration_range=(i, i+1))
             pred_jobs = (
-                pred_job(i, booster=booster, chunk=chunk)
-                for i in range(model.n_estimators)
+                delayed(u._predict_one_member)(i, member=booster, chunk=chunk) for i in range(model.n_estimators)
             )
-        except AttributeError:
+        else:
             members, features_for_members = _flatten_metaensemble(model)
-            @delayed
-            def pred_job(member, features):
-                with warnings.catch_warnings(action='ignore', category=UserWarning):
-                    out = member.predict(features)
-                return out
             pred_jobs = (
-                pred_job(member, chunk.iloc[:,features_for_member])
-                for features_for_member, member in zip(features_for_members, members)
+                delayed(u._predict_one_member)(
+                    _,
+                    member=member, 
+                    chunk=chunk.iloc[:,features_for_member]
+                )
+                for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
             )
         results = engine(pred_jobs)
         chunk_preds = pd.DataFrame(
@@ -198,7 +194,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             dict(
                 mean=chunk_preds.mean(axis=1),
                 sd=chunk_preds.std(axis=1),
-                median=chunk_preds.std(axis=1),
+                median=np.median(chunk_preds, axis=1),
                 **dict(
                     zip(
                         ["ci95_LL", "ci95_UL"],
@@ -232,17 +228,13 @@ def _flatten_metaensemble(me):
             estimators_and_feature_indices.append((member, member_features))
     estimators, features = zip(*estimators_and_feature_indices)
     return estimators, features
-        
-        
-
-
 
 # Example Usage
 if __name__ == "__main__":
     # Generate sample data
     from sklearn.datasets import make_regression
     from joblib import parallel_backend  # this is user-facing
-    from abil.functions import ZeroInflatedRegressor, ZeroStratifiedKFold
+    from abil.utils import ZeroInflatedRegressor, ZeroStratifiedKFold
 
     X, y = make_regression(n_samples=100, n_features=10, noise=0.1)
     X_train = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])

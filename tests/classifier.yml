@@ -3,7 +3,6 @@
 
   run_name: classifier #update for specific run name
   path_out:  /tests/ModelOutput/ #root + folder  
-  path_in:  /predictions/cross_validation/ #root + folder
 
   prediction:  /examples/data/prediction.csv #root + folder
   targets:  /examples/data/targets.csv #root + folder
@@ -27,9 +26,6 @@
      
   upsample: True
   stratify: True
-
-  clf_scoring:
-   accuracy: balanced_accuracy
 
   param_grid:
     rf_param_grid:

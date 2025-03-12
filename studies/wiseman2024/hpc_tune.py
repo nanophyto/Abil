@@ -1,46 +1,33 @@
 # import required packages
 import pandas as pd
-import numpy as np
-import sys
+import sys, os
 from yaml import load
 from yaml import CLoader as Loader
-from abil.tune import tune 
-from sklearn.preprocessing import OneHotEncoder
+from abil.tune import tune
 
-try:
-    print(sys.argv[1])
-    with open('/user/work/mv23682/Abil/studies/wiseman2024/ensemble_regressor.yml', 'r') as f:
-        model_config = load(f, Loader=Loader)
+#define directories
+print(sys.argv[1])
+dirpath = os.path.dirname(os.path.abspath(__file__))
+conffile = os.path.abspath(os.path.join(dirpath,'ensemble_regressor.yml'))
+root = os.path.abspath(os.path.join(dirpath,'..','..'))
 
-    model_config['hpc'] = True
-    n_jobs = pd.to_numeric(sys.argv[1])
-    n_spp = pd.to_numeric(sys.argv[2])
-    root = model_config['hpc_root']
-    model_config['cv'] = 10
-    model = sys.argv[3]
-    predictors = model_config['predictors']
-
-except:
-    with open('/home/mv23682/Documents/Abil/studies/wiseman2024/ensemble_regressor.yml', 'r') as f:
-        model_config = load(f, Loader=Loader)
-    model_config['hpc'] = False
-    n_jobs = 8
-    n_spp = 1
-    root = model_config['local_root']
-    model_config['cv'] = 3
-    
-    with open('/home/mv23682/Documents/Abil/studies/wiseman2024/ensemble_regressor.yml', 'r') as f:
-        model_config_local = load(f, Loader=Loader)    
-    
-    model_config['param_grid'] = model_config_local['param_grid'] 
-    model = "rf"
-
+#load model arguments
+with open(conffile, 'r') as f:
+    model_config = load(f, Loader=Loader)
 
 #define model config:
+model_config['hpc'] = True
+n_jobs = pd.to_numeric(sys.argv[1])
+n_spp = pd.to_numeric(sys.argv[2])
+model = sys.argv[3]
 model_config['n_threads'] = n_jobs
-targets = pd.read_csv(root + model_config['targets'])
-d = pd.read_csv(root + model_config['training'])
+model_config['cv'] = 10
+
+#load data
+targets = pd.read_csv(os.path.join(root,model_config['targets']))
+d = pd.read_csv(os.path.join(root,model_config['training']))
 target =  targets['Target'][n_spp]
+predictors = model_config['predictors']
 d = d.dropna(subset=[target])
 d = d.dropna(subset=predictors)
 
@@ -48,6 +35,7 @@ y = d[target]
 X_train = d[predictors]
 
 #setup model:
-m = tune(X_train, y, model_config, regions=None)
+m = tune(X_train, y, model_config)
+
 #run model:
 m.train(model=model, regressor=True)

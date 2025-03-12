@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 import numpy as np
 import pickle
@@ -11,8 +9,18 @@ from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed, parallel_backend  
 
-from .functions import inverse_weighting, ZeroInflatedRegressor, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold, find_optimal_threshold
-from .unified_tree_or_bag import process_data_with_model   
+from .utils import inverse_weighting, find_optimal_threshold
+import shutil
+
+# Set the custom temporary folder for loky
+temp_folder = os.path.join(".","tmp") 
+os.environ["LOKY_TEMP_FOLDER"] = temp_folder
+# Ensure the directory exists
+os.makedirs(temp_folder, exist_ok=True)
+
+from . import unified_tree_or_bag as pp
+from .zir import ZeroInflatedRegressor
+from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 
 def load_model_and_scores(path_out, ensemble_config, n, target):
     """
@@ -71,44 +79,7 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
     return(m, scores)
 
 
-def parallel_predict(prediction_function, X_predict, n_threads=1):
-    """
-    Splits the prediction task across multiple threads to predict on large datasets.
-
-    Parameters
-    ----------
-    prediction_function : callable
-        The model's prediction function to be applied to each chunk of data.
-    X_predict : DataFrame
-        The features (input data) on which to make predictions.
-    n_threads : int, optional, default=1
-        The number of threads to use for parallel processing.
-
-    Returns
-    -------
-    np.ndarray
-        The combined predictions from all threads.
-    """    
-
-    # Split the indices of X_predict into chunks
-    chunk_indices = np.array_split(X_predict.index, n_threads)
-
-
-    # Create a list of DataFrame chunks based on the split indices
-    df_sections = [X_predict.loc[chunk_idx] for chunk_idx in chunk_indices]
-
-    # Use joblib to process each chunk in parallel
-    predictions = Parallel(n_jobs=n_threads)(
-        delayed(prediction_function)(df_section) for df_section in df_sections
-    )
-
-    # Combine the predictions from all threads
-    combined_predictions = np.concatenate(predictions)
-
-    return combined_predictions
-
-
-def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=1):
+def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=8):
     """
     Exports model predictions to a NetCDF file.
 
@@ -130,14 +101,12 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         The number of threads to use for parallel prediction.
     """
 
-
-
     if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         with parallel_backend("loky", n_jobs=n_threads):
-            d = process_data_with_model(
+            d = pp.process_data_with_model(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
-        
+
         d = d.to_xarray()
         d['target'] = target
         export_path = os.path.join(model_out, target_no_space + ".nc")
@@ -151,15 +120,14 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
 
         with parallel_backend("loky", n_jobs=n_threads):
+            d_both = pp.process_data_with_model(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train>0, cv=cv
+            )
             # Generate classifier and regressor stats
-            d_clf = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["classifier_predict_stats"]
+            d_clf = d_both['classifier_predict_stats']
+            d_reg = d_both['regressor_predict_stats']
 
-        with parallel_backend("loky", n_jobs=n_threads):
-            d_reg = process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["regressor_predict_stats"]
+
 
         columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
         d = pd.DataFrame(d_reg)
@@ -196,6 +164,8 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
     else:
         raise ValueError("classifiers are not supported")
 
+    #remove loky tmp data:
+    shutil.rmtree(temp_folder, ignore_errors=True)
 
 class predict:
     """
@@ -218,8 +188,6 @@ class predict:
                 Path to the root folder.
             - path_out : str
                 Directory where predictions are saved.
-            - path_in : str
-                Directory containing tuned models.
             - target : str
                 File name of the target list.
             - verbose : int
@@ -236,10 +204,6 @@ class predict:
                         Whether to train a regression model.
                     - m{n} : str
                         Model names (e.g., "m1: 'rf'", "m2: 'xgb'").
-            - clf_scoring : list of str
-                Metrics for classification scoring.
-            - reg_scoring : list of str
-                Metrics for regression scoring (e.g., "r2", "neg_mean_absolute_error").
     n_jobs : int, optional, default=1
         Number of threads to use for parallel processing.
 
@@ -318,7 +282,12 @@ class predict:
         elif (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == False):
             raise ValueError("classifier and regressor can't both be False")
         else:
-            self.scoring = self.model_config['reg_scoring']
+            self.scoring = {
+                'R2': 'r2',
+                'MAE': 'neg_mean_absolute_error',
+                'RMSE': 'neg_root_mean_squared_error'
+            }
+
 
         if (self.ensemble_config["regressor"] !=True) and (self.ensemble_config["regressor"] !=False):
             raise ValueError("regressor should be True or False")
@@ -392,7 +361,6 @@ class predict:
                                     model_out, n_threads=self.n_jobs)
                     print("exporting " + model_name + " prediction to: " + model_out)
                 if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
-                    #warnings.warn('prediction of individual ZIR models broken')
 
                     export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
                                      model_out, n_threads=self.n_jobs)

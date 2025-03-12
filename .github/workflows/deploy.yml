@@ -3,7 +3,7 @@ name: Deploy Sphinx Docs
 on:
   push:
     branches:
-      - docs  # or your default branch
+      - main  
 
 jobs:
   build:
@@ -28,6 +28,10 @@ jobs:
           pip install sphinx
           pip install pydata-sphinx-theme
           pip install sphinx-design
+
+      - name: Install Abil
+        run: |
+          pip install .
 
       - name: Build Sphinx documentation
         run: |

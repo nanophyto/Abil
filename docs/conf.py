@@ -9,13 +9,7 @@
 project = 'Abil'
 copyright = '2024, Abil developers'
 author = 'nanophyto'
-release = '0.0.9'
-
-import os
-import sys
-sys.path.insert(0, os.path.abspath('../abil/'))
-import functions
-
+release = '25.03.12'
 
 
 # -- General configuration ---------------------------------------------------
@@ -39,4 +33,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'pydata_sphinx_theme'
 
+html_theme_options = {
+    "navbar_end": ["theme-switcher", "version-switcher"],  # Remove "this-page" from navbar
+    "secondary_sidebar_items": []  # This removes the "This Page" section
+}
 

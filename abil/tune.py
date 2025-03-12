@@ -18,7 +18,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder,  StandardScaler
 from sklearn.gaussian_process import GaussianProcessClassifier, GaussianProcessRegressor
 
-from .functions import ZeroInflatedRegressor, LogGridSearch, ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
+from .zir import ZeroInflatedRegressor
+from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+from .log_grid_search import LogGridSearch
 
 class tune:
     """
@@ -56,7 +58,6 @@ class tune:
                 - seed: int, random seed for reproducibility
                 - root : str, path to Abil root folder
                 - path_out : str, where predictions are saved
-                - path_in : str, where to find tuned models
                 - target : str, file name of your target list
                 - verbose : int, to set verbosity (0-3)
                 - n_threads : int, number of threads to use
@@ -68,8 +69,6 @@ class tune:
                         - regressor: bool
                             Whether to train a regression model.
                         - m{n}: str, model name (ex. m1: "rf", m2: "xgb" etc.)
-                - clf_scoring : list of str
-                - reg_scoring : list of str, (ex. R2: r2, MAE: neg_mean_absolute_error)
         regions : str or None, optional
             Column name for regions to be used in preprocessing and stratification.
 
@@ -220,7 +219,11 @@ class tune:
 
             print("training regressor")
 
-            reg_scoring = self.model_config['reg_scoring']
+            reg_scoring = {
+                'R2': 'r2',
+                'MAE': 'neg_mean_absolute_error',
+                'RMSE': 'neg_root_mean_squared_error'
+            }
 
             user_reg_param_grid = self.model_config['param_grid'][model + '_param_grid']['reg_param_grid']
 
@@ -298,7 +301,7 @@ class tune:
                 for key, value in user_clf_param_grid.items()
             }
             
-            clf_scoring = self.model_config['clf_scoring']
+            clf_scoring = {'accuracy': 'balanced_accuracy'}
 
             clf_sav_out_scores = os.path.join(self.path_out, "scoring/", model)
             clf_sav_out_model = os.path.join(self.path_out, "model/", model)
