@@ -106,7 +106,8 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
             d = pp.estimate_prediction_quantiles(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
-
+            d['mean'] = m.predict(X_predict)
+        
         d = d.to_xarray()
         d['target'] = target
         export_path = os.path.join(model_out, target_no_space + ".nc")
@@ -128,14 +129,16 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
             d_reg = d_both['regressor_predict_stats']
 
 
-
-        columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
+        columns = ["ci95_LL", "ci95_UL"]
         d = pd.DataFrame(d_reg)
         y_clf = y_train.copy()
         y_clf[y_clf > 0] = 1
         optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
         for col in columns:
             d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            d['mean'] = m.predict(X_predict)
 
         d_clf = d_clf.to_xarray()
         d_reg = d_reg.to_xarray()
