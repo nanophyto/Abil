@@ -190,11 +190,10 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             inverse_transform(np.column_stack(results)),
             index=getattr(chunk, "index", None),
         )
+
         chunk_stats = pd.DataFrame.from_dict(
             dict(
-                mean=chunk_preds.mean(axis=1),
-                sd=chunk_preds.std(axis=1),
-                median=np.median(chunk_preds, axis=1),
+                mean=chunk_preds.mean(axis=1),              
                 **dict(
                     zip(
                         ["ci95_LL", "ci95_UL"],

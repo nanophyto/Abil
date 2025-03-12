@@ -59,8 +59,6 @@ class TestRegressors(unittest.TestCase):
             integ.integrated_totals(targets, monthly=True)
 
         do_post(statistic="mean")
-        do_post(statistic="median")
-        do_post(statistic="sd")
         do_post(statistic="ci95_UL")
         do_post(statistic="ci95_LL")
 
@@ -115,8 +113,6 @@ class Test2Phase(unittest.TestCase):
             integ.integrated_totals(targets)
 
         do_post(statistic="mean")
-        do_post(statistic="median")
-        do_post(statistic="sd")
         do_post(statistic="ci95_UL")
         do_post(statistic="ci95_LL")
 
