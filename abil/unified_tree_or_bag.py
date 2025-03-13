@@ -187,10 +187,18 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
                 for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
             )
         results = engine(pred_jobs)
-        chunk_preds = pd.DataFrame(
-            inverse_transform(np.column_stack(results)),
-            index=getattr(chunk, "index", None),
-        )
+        try:
+            print("model uses log") 
+            chunk_preds = pd.DataFrame(
+                inverse_transform(np.column_stack(results)),
+                index=getattr(chunk, "index", None),
+            )
+        except:
+            print("model does not use log")
+            chunk_preds = pd.DataFrame(
+                np.column_stack(results),
+                index=getattr(chunk, "index", None),
+            )
         chunk_stats = pd.DataFrame.from_dict(
             dict(
                 mean=chunk_preds.mean(axis=1),
