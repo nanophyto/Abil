@@ -165,8 +165,9 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
 
     stats = []
     inverse_transform = getattr(
-        model, "inverse_transform", FunctionTransformer().inverse_transform
+        model, "inverse_func", FunctionTransformer().inverse_func
     )
+
 
     engine = Parallel()
     for chunk in chunks:
