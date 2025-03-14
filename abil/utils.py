@@ -279,3 +279,52 @@ def find_optimal_threshold(model, X, y_test):
     optimal_threshold = thresholds[optimal_idx]
 
     return optimal_threshold
+
+
+def weighted_quantile(x, weights, q=.5):
+    """
+    Computes the weighted quantile(s) of a dataset.
+
+    Parameters:
+    -----------
+    x : array-like of shape (n_samples,)
+        The data for which to compute the quantile(s).
+    weights : array-like of shape (n_samples,)
+        The weights corresponding to each data point in `x`.
+    q : float or array-like of floats, default=0.5
+        The quantile(s) to compute. Must be between 0 and 1. If an array is provided, 
+        the function will return the weighted quantiles for each value in `q`.
+
+    Returns:
+    --------
+    result : float or list of floats
+        The weighted quantile(s) corresponding to the input `q`. If `q` is a single float, 
+        the result is a single value. If `q` is an array-like, the result is a list of quantiles."
+    """
+    # build a dataframe with two columns, "weight" and "data"
+    df = pd.DataFrame.from_dict(dict(data=x, weight=weights))
+    # sort values ascending based on the "data"
+    df.sort_values("data", inplace=True)
+    # the cumulative sum of the weight column tells you how much 
+    # of the weight in the dataframe is less than or equal to
+    # this row. 
+    weight_sums = df.weight.cumsum()
+    # the sum of all weight is the last value of that cumulative sum    
+    total_weight = weight_sums[-1]
+    # then, the quantile value at each row is equal to the weight
+    # at or below that row divided by the total weight. 
+    observed_quantiles = (weight_sums/total_weight)
+    if isinstance(q, float):
+        assert (0 <= q) & (q <= 1), "quantile must be between zero and one"
+        # Give me all rows in the data where the fraction of weight
+        # smaller than that row is at least the quantile we're looking for. 
+        at_or_above_q = df.data[observed_quantiles >= q]
+        # and use the first row that is greater than q% of the weight. 
+        result = at_or_above_q.iloc[0]
+    else:
+        result = []
+        for q_ in q:
+            assert (0 <= q_) & (q_ <= 1), "all quantiles must be between zero and one"
+            at_or_above_q = df.data[observed_quantiles >= q_]
+            result.append(at_or_above_q.iloc[0])
+    return result
