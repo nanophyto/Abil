@@ -21,6 +21,7 @@ from sklearn.pipeline import Pipeline
 from sklearn import base
 from joblib import delayed, Parallel
 
+from sklearn.base import is_regressor
 
 from .zir import ZeroInflatedRegressor
 from . import utils as u
@@ -185,15 +186,12 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         
         train_results = engine(train_pred_jobs)
         # try to infer if model is a regressor or classifier:
-        if pd.api.types.is_bool_dtype(y_train):
-            print("model is a classifier") # for debug
-            # [print(pred) for pred in train_results] #for debug
-            losses = np.array([balanced_accuracy_score(y_train, pred>threshold) for pred in train_results])
-        elif pd.api.types.is_float_dtype(y_train):
-            print("model is a regressor") # for debug
+        if is_regressor(model):
+            print("model is a regressor")  # for debug
             losses = np.array([mean_squared_error(y_train, pred) for pred in train_results])
         else:
-            raise ValueError("y_train not bool, int or numeric")
+            print("model is a classifier")  # for debug
+            losses = np.array([balanced_accuracy_score(y_train, pred > threshold) for pred in train_results])
 
         weights = 1 / (losses + 1e-99)  # Avoid division by zero
         weights /= weights.sum()  # Normalize weights
