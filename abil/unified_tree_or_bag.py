@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import warnings
-from sklearn.metrics import mean_squared_error, balanced_accuracy_score
+from sklearn.metrics import mean_absolute_error, balanced_accuracy_score
 
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import FunctionTransformer
@@ -202,7 +202,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
 
         else:
             print("model is a regressor")  # for debug
-            losses = np.array([mean_squared_error(y_train, pred) for pred in train_results])
+            losses = np.array([mean_absolute_error(y_train, pred) for pred in train_results])
 
         weights = 1 / (losses + 1e-99)  # Avoid division by zero
         weights /= weights.sum()  # Normalize weights
