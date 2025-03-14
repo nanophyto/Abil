@@ -224,20 +224,18 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         )
         
         if weights is not None:
-            weighted_quantiles = chunk_preds.apply(u.weighted_quantile, weights=weights, axis=1)
+            lower = weighted_quantiles = chunk_preds.apply(u.weighted_quantile, q=0.025, weights=weights, axis=1)
+            upper = weighted_quantiles = chunk_preds.apply(u.weighted_quantile, q=0.975, weights=weights, axis=1)
         else:
-            weighted_quantiles = chunk_preds.quantile(q=[0.025, 0.975], axis=1)
+            lower = weighted_quantiles = chunk_preds.quantile(q=0.025, axis=1)
+            upper = weighted_quantiles = chunk_preds.quantile(q=0.975, axis=1)
 
-        chunk_stats = pd.DataFrame.from_dict(
-            dict(
-                mean=chunk_preds.mean(axis=1),
-                **dict(
-                    zip(
-                        ["ci95_LL", "ci95_UL"],
-                        weighted_quantiles if weights is not None else weighted_quantiles.values,
-                    )
-                ),
-            )
+        print(weighted_quantiles)
+
+        chunk_stats = pd.DataFrame(
+            np.column_stack((lower, upper)), # stats we've calculated by chunk
+            columns=['ci95_LL', 'ci95_UL'], # column names for the stats
+            index = chunk.index # the index of the chunk, so we can align the results back to X_predict
         )
         stats.append(chunk_stats)
     
