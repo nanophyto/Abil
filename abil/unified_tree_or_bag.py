@@ -27,7 +27,7 @@ from .zir import ZeroInflatedRegressor
 from . import utils as u
 
 def estimate_prediction_quantiles(
-    model, X_predict, X_train, y_train, cv=None, chunksize=20_000
+    model, X_predict, X_train, y_train, cv=None, chunksize=20_000, threshold=0.5
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
@@ -101,9 +101,10 @@ def estimate_prediction_quantiles(
             y_train = y_train > 0,
             cv=cv,
             chunksize=chunksize,
+            threshold=threshold
         )
         regressor_stats = estimate_prediction_quantiles(
-            model.regressor_, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, chunksize=chunksize
+            model.regressor_, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, chunksize=chunksize, threshold=threshold
         )
         return {
             **{f"classifier_{k}": v for k, v in classifier_stats.items()},
@@ -118,6 +119,7 @@ def estimate_prediction_quantiles(
                 X_train=X_train.iloc[train_idx],
                 y_train=y_train.iloc[train_idx],
                 chunksize=chunksize,
+                threshold=threshold
             )
             for train_idx, test_idx in cv.split(X_train, y_train)
         ]
@@ -132,10 +134,11 @@ def estimate_prediction_quantiles(
             X_predict=X_train,
             y_train=y_train,
             chunksize=chunksize,
+            threshold=threshold
         )
 
     predict_summary_stats = _summarize_predictions(
-        model, X_predict=X_predict, chunksize=chunksize
+        model, X_predict=X_predict, chunksize=chunksize, threshold=threshold
     )
 
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
@@ -252,7 +255,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
 
 def _flatten_metaensemble(me):
     """
-    Memoized verison of the recursive meta-ensemble unpacking
+    Memoized version of the recursive meta-ensemble unpacking
     """
     estimators = [(me,None)]
     estimators_and_feature_indices = []

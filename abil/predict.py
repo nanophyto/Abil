@@ -119,10 +119,14 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         print("finished exporting summary stats to: ",  export_path)
         
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+        y_clf = y_train.copy()
+        y_clf[y_clf > 0] = 1
+        
+        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
 
         with parallel_backend("loky", n_jobs=n_threads):
             d_both = pp.estimate_prediction_quantiles(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train>0, cv=cv
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train>0, cv=cv, threshold=optimal_threshold
             )
             # Generate classifier and regressor stats
             d_clf = d_both['classifier_predict_stats']
@@ -131,9 +135,7 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
         columns = ["ci95_LL", "ci95_UL"]
         d = pd.DataFrame(d_reg)
-        y_clf = y_train.copy()
-        y_clf[y_clf > 0] = 1
-        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
+
         for col in columns:
             d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
 
