@@ -224,7 +224,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         )
         
         if weights is not None:
-            weighted_quantiles = chunk_preds.apply(lambda x: np.average(np.sort(x), weights=weights), axis=1)
+            weighted_quantiles = chunk_preds.apply(u.weighted_quantile, weights=weights, axis=1)
         else:
             weighted_quantiles = chunk_preds.quantile(q=[0.025, 0.975], axis=1)
 
