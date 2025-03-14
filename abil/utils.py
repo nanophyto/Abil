@@ -310,7 +310,7 @@ def weighted_quantile(x, weights, q=.5):
     # this row. 
     weight_sums = df.weight.cumsum()
     # the sum of all weight is the last value of that cumulative sum    
-    total_weight = weight_sums[-1]
+    total_weight = weight_sums.iloc[-1]
     # then, the quantile value at each row is equal to the weight
     # at or below that row divided by the total weight. 
     observed_quantiles = (weight_sums/total_weight)
