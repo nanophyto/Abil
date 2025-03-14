@@ -8,18 +8,33 @@ from sklearn.metrics import roc_curve, roc_auc_score
 
 from joblib import delayed
 import warnings
-from xgboost import DMatrix
+from xgboost import DMatrix, Booster
 
-def _predict_one_member(i, member, chunk):
+def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
     """
     """
-    with warnings.catch_warnings(
-        action='ignore', category=UserWarning
-    ):
-        try:
-            return member.predict(DMatrix(chunk), iteration_range=(i, i+1))
-        except TypeError:
-            return member.predict(chunk)
+    with warnings.catch_warnings(action='ignore', category=UserWarning):
+        if proba:
+            if isinstance(member, Booster):
+                # For XGBoost Booster, use predict() to get probabilities
+                proba_preds = member.predict(DMatrix(chunk), iteration_range=(i, i+1))
+
+                # For binary classification, proba_preds is already the probability of the positive class
+                positive_proba = proba_preds
+            else:
+                # For other models, use predict_proba()
+                proba_preds = member.predict_proba(chunk)
+                
+                # Extract probabilities for the positive class (second column)
+                positive_proba = proba_preds[:, 1]
+            
+            # Convert probabilities to binary predictions based on the threshold
+            return (positive_proba > threshold).astype(int)
+        else:
+            try:
+                return member.predict(DMatrix(chunk), iteration_range=(i, i+1))
+            except TypeError:
+                return member.predict(chunk)
 
 
 def upsample(d, target, ratio=10):

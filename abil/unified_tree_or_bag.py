@@ -164,13 +164,18 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     )
 
     engine = Parallel()
-    
+
+    if is_regressor(model):
+        proba = False
+    else:
+        proba = True
+
     # Compute predictions on X_train to estimate member performance
     if X_train is not None and y_train is not None:
         if hasattr(model, "get_booster"):
             booster = model.get_booster()
             train_pred_jobs = (
-                delayed(u._predict_one_member)(i, member=booster, chunk=X_train)
+                delayed(u._predict_one_member)(i, member=booster, chunk=X_train, proba=proba, threshold=threshold)
                 for i in range(model.n_estimators)
             )
         else:
@@ -179,19 +184,22 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
                 delayed(u._predict_one_member)(
                     _,
                     member=member,
-                    chunk=X_train.iloc[:, features_for_member]
+                    chunk=X_train.iloc[:, features_for_member],
+                    proba=proba, 
+                    threshold=threshold
                 )
                 for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
             )
         
         train_results = engine(train_pred_jobs)
-        # try to infer if model is a regressor or classifier:
-        if is_regressor(model):
+
+        if proba:
+            print("model is a classifier")  # for debug
+            losses = np.array([balanced_accuracy_score(y_train.astype(int), pred.astype(int)) for pred in train_results])
+
+        else:
             print("model is a regressor")  # for debug
             losses = np.array([mean_squared_error(y_train, pred) for pred in train_results])
-        else:
-            print("model is a classifier")  # for debug
-            losses = np.array([balanced_accuracy_score(y_train, pred > threshold) for pred in train_results])
 
         weights = 1 / (losses + 1e-99)  # Avoid division by zero
         weights /= weights.sum()  # Normalize weights
@@ -203,7 +211,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         if hasattr(model, "get_booster"):
             booster = model.get_booster()
             pred_jobs = (
-                delayed(u._predict_one_member)(i, member=booster, chunk=chunk)
+                delayed(u._predict_one_member)(i, member=booster, chunk=chunk, proba=proba, threshold=threshold)
                 for i in range(model.n_estimators)
             )
         else:
@@ -212,7 +220,9 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
                 delayed(u._predict_one_member)(
                     _,
                     member=member,
-                    chunk=chunk.iloc[:, features_for_member]
+                    chunk=chunk.iloc[:, features_for_member], 
+                    proba=proba, 
+                    threshold=threshold
                 )
                 for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
             )
@@ -224,13 +234,11 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         )
         
         if weights is not None:
-            lower = weighted_quantiles = chunk_preds.apply(u.weighted_quantile, q=0.025, weights=weights, axis=1)
-            upper = weighted_quantiles = chunk_preds.apply(u.weighted_quantile, q=0.975, weights=weights, axis=1)
+            lower = chunk_preds.apply(u.weighted_quantile, q=0.025, weights=weights, axis=1)
+            upper =  chunk_preds.apply(u.weighted_quantile, q=0.975, weights=weights, axis=1)
         else:
-            lower = weighted_quantiles = chunk_preds.quantile(q=0.025, axis=1)
-            upper = weighted_quantiles = chunk_preds.quantile(q=0.975, axis=1)
-
-        print(weighted_quantiles)
+            lower = chunk_preds.quantile(q=0.025, axis=1)
+            upper =  chunk_preds.quantile(q=0.975, axis=1)
 
         chunk_stats = pd.DataFrame(
             np.column_stack((lower, upper)), # stats we've calculated by chunk
