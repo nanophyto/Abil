@@ -163,7 +163,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
 
     stats = []
     inverse_transform = getattr(
-        model, "inverse_transform", FunctionTransformer().inverse_transform
+        model, "inverse_func", FunctionTransformer().inverse_func
     )
 
     engine = Parallel()
@@ -231,11 +231,19 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             )
         
         results = engine(pred_jobs)
-        chunk_preds = pd.DataFrame(
-            inverse_transform(np.column_stack(results)),
-            index=getattr(chunk, "index", None),
-        )
-        
+        try:
+            chunk_preds = pd.DataFrame(
+                inverse_transform(np.column_stack(results)),
+                index=getattr(chunk, "index", None),
+            )
+            print("model uses log") 
+        except:
+            chunk_preds = pd.DataFrame(
+                np.column_stack(results),
+                index=getattr(chunk, "index", None),
+            )
+            print("model does not use log")
+
         if weights is not None:
             lower = chunk_preds.apply(u.weighted_quantile, q=0.025, weights=weights, axis=1)
             upper =  chunk_preds.apply(u.weighted_quantile, q=0.975, weights=weights, axis=1)
