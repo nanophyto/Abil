@@ -21,41 +21,23 @@ X_predict = pd.read_csv(root + model_config['prediction'])
 X_predict.set_index(['time','depth','lat','lon'],inplace=True)
 X_predict = X_predict[model_config['predictors']]
 
-d = pd.read_csv(root + model_config['training'])
-predictors = model_config['predictors']
-
-y = d[targets]
-X_train = d[predictors]
-
-def do_post(statistic, datatype, diversity=False):
-    m = post(X_train,y, X_predict, model_config, statistic, datatype="poc")
-
-    m.estimate_applicability()
-
+def do_post(pi, datatype, diversity=False):
+    m = post(model_config, pi=pi, datatype=datatype)
     m.estimate_carbon(datatype)
-
     if diversity:
         m.diversity()
 
     m.total()
-    m.merge_env()
-    m.merge_obs("test",targets)
+    m.merge_env(X_predict)
+    m.merge_obs(file_name, targets)
 
-    m.export_ds("test")
+    m.export_ds(file_name)
 
     vol_conversion = 1e3 #L-1 to m-3
     integ = m.integration(m, vol_conversion=vol_conversion)
     integ.integrated_totals(targets, monthly=True)
+    integ.integrated_totals(targets)
+    integ.integrated_totals(targets, subset_depth=100)
 
-
-do_post(statistic="mean", datatype="pg poc", diversity=True)
-do_post(statistic="median", datatype="pg poc", diversity=True)
-do_post(statistic="sd", datatype="pg poc", diversity=True)
-do_post(statistic="ci95_UL", datatype="pg poc", diversity=True)
-do_post(statistic="ci95_LL", datatype="pg poc", diversity=True)
-    
-do_post(statistic="mean", datatype="pg pic")
-do_post(statistic="median", datatype="pg pic")
-do_post(statistic="sd", datatype="pg pic")
-do_post(statistic="ci95_UL", datatype="pg pic")
-do_post(statistic="ci95_LL", datatype="pg pic")
+do_post(pi="50", datatype="pg poc", diversity=True)
+do_post(pi="50", datatype="pg pic")

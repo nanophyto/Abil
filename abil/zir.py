@@ -26,7 +26,6 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
         self.classifier = classifier
         self.regressor = regressor
         self.threshold = threshold
-        self.inverse_func = getattr(regressor, "inverse_func", None)
 
     def fit(self, X, y, sample_weight=None):
         """
