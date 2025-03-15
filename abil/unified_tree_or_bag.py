@@ -166,6 +166,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         model, "inverse_func", FunctionTransformer().inverse_func
     )
 
+
     engine = Parallel()
 
     if is_regressor(model):
