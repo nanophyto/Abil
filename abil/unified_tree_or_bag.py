@@ -145,9 +145,8 @@ def estimate_prediction_quantiles(
 
 
 def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksize=2e4, threshold=0.5):
-    if (X_train is not None) & (y_train is not None):
-        model = base.clone(model).fit(X_train, y_train)
-    elif not all([(X_train is None), (y_train is None)]):
+    
+    if not all([(X_train is None), (y_train is None)]):
         if not base.check_is_fitted(model):
             raise ValueError(
                 "model provided is not fit, and no data is provided to fit the model on. Fit the model on the data first."
