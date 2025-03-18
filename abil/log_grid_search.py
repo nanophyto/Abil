@@ -103,14 +103,14 @@ class LogGridSearch:
 
         if log=="yes":
 
-            model = TransformedTargetRegressor(self.m, func = self.do_log, inverse_func=self.do_exp, check_inverse=False)
+            model = TransformedTargetRegressor(self.m, func = self.do_log, inverse_func=self.do_exp)
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
         
         elif log=="no":
 
-            model = TransformedTargetRegressor(self.m, func = None, inverse_func=None, check_inverse=False)
+            model = TransformedTargetRegressor(self.m, func = None, inverse_func=None)
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
