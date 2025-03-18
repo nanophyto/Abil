@@ -198,7 +198,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
 
         if proba:
             print("model is a classifier")  # for debug
-            losses = np.array([balanced_accuracy_score(y_train.astype(int), pred.astype(int)) for pred in train_results])
+            losses = 1 - np.array([balanced_accuracy_score(y_train.astype(int), pred.astype(int)) for pred in train_results])
 
         else:
             print("model is a regressor")  # for debug
