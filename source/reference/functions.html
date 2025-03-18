@@ -514,6 +514,32 @@ y (pd.Series): Target variable for training dataset.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="abil.utils.weighted_quantile">
+<span class="sig-prename descclassname"><span class="pre">abil.utils.</span></span><span class="sig-name descname"><span class="pre">weighted_quantile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.utils.weighted_quantile" title="Link to this definition">#</a></dt>
+<dd><p>Computes the weighted quantile(s) of a dataset.</p>
+<section id="id1">
+<h2>Parameters:<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">array-like of shape (n_samples,)</span></dt><dd><p>The data for which to compute the quantile(s).</p>
+</dd>
+<dt>weights<span class="classifier">array-like of shape (n_samples,)</span></dt><dd><p>The weights corresponding to each data point in <cite>x</cite>.</p>
+</dd>
+<dt>q<span class="classifier">float or array-like of floats, default=0.5</span></dt><dd><p>The quantile(s) to compute. Must be between 0 and 1. If an array is provided,
+the function will return the weighted quantiles for each value in <cite>q</cite>.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Returns:<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<dl class="simple">
+<dt>result<span class="classifier">float or list of floats</span></dt><dd><p>The weighted quantile(s) corresponding to the input <cite>q</cite>. If <cite>q</cite> is a single float,
+the result is a single value. If <cite>q</cite> is an array-like, the result is a list of quantiles.”</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
 </section>
 
 
