@@ -3,6 +3,7 @@ ModelOutput/
 plotting/
 /data/
 _build/
+studies/wiseman2024/data
 studies/wiseman2024/preprocessing
 studies/wiseman2024/env_data_processing/raw_data
 studies/wiseman2024/env_data_processing/regridded_data
