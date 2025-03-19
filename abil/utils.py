@@ -17,10 +17,15 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
         if proba:
             if isinstance(member, Booster):
                 # For XGBoost Booster, use predict() to get probabilities
-                proba_preds = member.predict(DMatrix(chunk), iteration_range=(i, i+1))
-
+                print("feature names: ", chunk.columns.tolist())
+                proba_preds = member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(i, i+1))
+                print("DMatrix feature names: ", DMatrix(chunk, feature_names=chunk.columns.tolist()).feature_names)
                 # For binary classification, proba_preds is already the probability of the positive class
                 positive_proba = proba_preds
+
+                if (positive_proba < 0).any() or (positive_proba > 1).any():
+                    raise ValueError("Probabilities are outside the valid range [0, 1]")
+                
             else:
                 # For other models, use predict_proba()
                 proba_preds = member.predict_proba(chunk)
@@ -33,6 +38,7 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
         else:
             try:
                 return member.predict(DMatrix(chunk), iteration_range=(i, i+1))
+                print("DMatrix feature names: ", DMatrix(chunk).feature_names)
             except TypeError:
                 return member.predict(chunk)
 
