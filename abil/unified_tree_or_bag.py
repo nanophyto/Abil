@@ -234,6 +234,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             )
         
         results = engine(pred_jobs)
+        print("results.shape: ", np.column_stack(results).shape)
         try:
             chunk_preds = pd.DataFrame(
                 inverse_transform(np.column_stack(results)),
