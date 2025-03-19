@@ -73,12 +73,14 @@ def estimate_prediction_quantiles(
     if X_train is not None:
         X_train = pd.DataFrame(
             preprocessor.transform(X_train),
-            index = getattr(X_train, "index", np.arange(X_train.shape[0]))
+            index = getattr(X_train, "index", np.arange(X_train.shape[0])),
+            columns=X_train.columns  
         )
     if X_predict is not None:
         X_predict = pd.DataFrame(
             preprocessor.transform(X_predict),
-            index = getattr(X_predict, "index", np.arange(X_train.shape[0]))
+            index = getattr(X_predict, "index", np.arange(X_train.shape[0])),
+            columns=X_predict.columns  
         )
     if y_train is not None:
         y_train = pd.Series(
@@ -136,7 +138,6 @@ def estimate_prediction_quantiles(
             chunksize=chunksize,
             threshold=threshold
         )
-
     predict_summary_stats = _summarize_predictions(
         model, X_predict=X_predict, chunksize=chunksize, threshold=threshold
     )
@@ -158,6 +159,8 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     if chunksize is not None:
         n_chunks = int(np.ceil(n_samples / chunksize))
         chunks = np.array_split(X_predict, n_chunks)
+        # Convert each chunk to pandas DataFrame
+        chunks = [pd.DataFrame(chunk, columns=X_predict.columns) for chunk in chunks]
     else:
         chunks = [X_predict]
 
