@@ -758,6 +758,14 @@ class post:
                 targets = self.targets
             if "total" in ds:
                 targets = np.append(targets, 'total')
+            if "mean" in ds:
+                targets = np.append(targets, 'mean')
+            if "stdev" in ds:
+                targets = np.append(targets, 'stdev')
+            if "prctile_2.5" in ds:
+                targets = np.append(targets, 'prctile_2.5')
+            if "prctile_97.5" in ds:
+                targets = np.append(targets, 'prctile_97.5')
             totals = []
 
             for target in targets:
