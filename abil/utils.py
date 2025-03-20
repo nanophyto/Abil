@@ -9,6 +9,105 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from joblib import delayed
 import warnings
 from xgboost import DMatrix, Booster
+from sklearn.exceptions import NotFittedError
+from xgboost import XGBClassifier, XGBRegressor, DMatrix
+from sklearn.pipeline import Pipeline
+from sklearn.compose import TransformedTargetRegressor
+
+
+def is_xgboost_model(model):
+    """
+    Recursively check if the model is an XGBoost model,
+    even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+    Uses `getattr` to check for XGBoost-specific attributes.
+    """
+    # Base case: Check if the model is directly an XGBoost model
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        return True
+    # Check for XGBoost-specific attributes using `getattr`
+    elif getattr(model, "get_booster", None) is not None or getattr(model, "booster", None) is not None:
+        return True
+
+    # Recursive case: Unwrap the model if it's a wrapper
+    if isinstance(model, Pipeline):
+        # Get the final estimator in the pipeline
+        return is_xgboost_model(model.steps[-1][1])
+    elif isinstance(model, TransformedTargetRegressor):
+        # Get the regressor inside the TransformedTargetRegressor
+        return is_xgboost_model(model.regressor)
+    elif getattr(model, "estimator", None) is not None:
+        # Handle other meta-estimators (e.g., GridSearchCV, BaggingRegressor)
+        return is_xgboost_model(model.estimator)
+    elif getattr(model, "base_estimator", None) is not None:
+        # Handle ensemble models (e.g., AdaBoost, Bagging)
+        return is_xgboost_model(model.base_estimator)
+
+    # If none of the above, it's not an XGBoost model
+    return False
+
+def xgboost_get_n_estimators(model):
+    """
+    Recursively extract the `n_estimators` parameter from an XGBoost model,
+    even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+    """
+    # Unwrap TransformedTargetRegressor
+    if isinstance(model, TransformedTargetRegressor):
+        model = model.regressor
+
+    # Unwrap Pipeline
+    if isinstance(model, Pipeline):
+        model = model.steps[-1][1]  # Get the final estimator
+
+    # Check if the model is an XGBoost model and has `n_estimators`
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        return model.n_estimators
+    elif hasattr(model, "n_estimators"):
+        return model.n_estimators
+
+    # If no `n_estimators` is found, raise an error or return a default value
+    raise ValueError("Could not extract `n_estimators` from the model.")
+
+def get_booster_from_model(model, X_train=None, y_train=None):
+    """
+    Recursively extract the `get_booster` method from an XGBoost model,
+    even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+    """
+    # Unwrap TransformedTargetRegressor
+    if isinstance(model, TransformedTargetRegressor):
+        transformer = model.transformer_
+        if y_train is not None:
+            # Convert y_train to a NumPy array and reshape it to 2D
+            y_transformed = transformer.transform(y_train.to_numpy().reshape(-1, 1))  # Reshape y_train to 2D
+            model = model.regressor
+            if X_train is not None:
+                model.fit(X_train, y_transformed)  # Fit the regressor if X_train is provided
+        else:
+            model = model.regressor
+
+    # Unwrap Pipeline
+    if isinstance(model, Pipeline):
+        model = model.steps[-1][1]  # Get the final estimator
+
+    # Check if the model is an XGBoost model and has `get_booster`
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        if not hasattr(model, "get_booster"):
+            if X_train is not None and y_train is not None:
+                model.fit(X_train, y_train)  # Fit the model if not already fitted
+            else:
+                raise NotFittedError("Model is not fitted and no training data provided.")
+        return model.get_booster()
+    elif hasattr(model, "get_booster"):
+        return model.get_booster()
+
+    # If the model is still wrapped (e.g., GridSearchCV), unwrap further
+    if hasattr(model, "estimator"):
+        return get_booster_from_model(model.estimator, X_train, y_train)
+    elif hasattr(model, "base_estimator"):
+        return get_booster_from_model(model.base_estimator, X_train, y_train)
+
+    # If no `get_booster` is found, raise an error
+    raise ValueError("Could not extract `get_booster` from the model.")
+
 
 def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
     """
@@ -17,9 +116,7 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
         if proba:
             if isinstance(member, Booster):
                 # For XGBoost Booster, use predict() to get probabilities
-                print("feature names: ", chunk.columns.tolist())
                 proba_preds = member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(i, i+1))
-                print("DMatrix feature names: ", DMatrix(chunk, feature_names=chunk.columns.tolist()).feature_names)
                 # For binary classification, proba_preds is already the probability of the positive class
                 positive_proba = proba_preds
 

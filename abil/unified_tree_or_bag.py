@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import os
 import warnings
 from sklearn.metrics import mean_absolute_error, balanced_accuracy_score
 
@@ -16,7 +15,6 @@ from sklearn.ensemble import (
 )
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
-from xgboost import XGBRegressor, DMatrix
 from sklearn.pipeline import Pipeline
 from sklearn import base
 from joblib import delayed, Parallel
@@ -176,13 +174,20 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     else:
         proba = True
 
+
     # Compute predictions on X_train to estimate member performance
     if X_train is not None and y_train is not None:
-        if hasattr(model, "get_booster"):
-            booster = model.get_booster()
+        if u.is_xgboost_model(model):
+            print("model is XGBoost")
+            n_estimators = u.xgboost_get_n_estimators(model)
+            print("n_estimators: ", n_estimators)
+            if n_estimators==None:
+                raise ValueError("n_estimators not inferred correctly!")
+
+            booster = u.get_booster_from_model(model, X_train, y_train)
             train_pred_jobs = (
                 delayed(u._predict_one_member)(i, member=booster, chunk=X_train, proba=proba, threshold=threshold)
-                for i in range(model.n_estimators)
+                for i in range(n_estimators)
             )
         else:
             members, features_for_members = _flatten_metaensemble(model)
@@ -212,16 +217,26 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     else:
         weights = None  # Use equal weights if no X_train/y_train
     
+
     # Compute predictions on X_predict
     for chunk in chunks:
-        if hasattr(model, "get_booster"):
-            booster = model.get_booster()
+        if u.is_xgboost_model(model):
+            print("model is XGBoost")
+            n_estimators = u.xgboost_get_n_estimators(model)
+            print("n_estimators: ", n_estimators)
+
+            if n_estimators==None:
+                raise ValueError("n_estimators not inferred correctly!")
+
+            booster = u.get_booster_from_model(model, X_train, y_train)
             pred_jobs = (
                 delayed(u._predict_one_member)(i, member=booster, chunk=chunk, proba=proba, threshold=threshold)
-                for i in range(model.n_estimators)
+                for i in range(n_estimators)
             )
         else:
+            print("model not Booster")
             members, features_for_members = _flatten_metaensemble(model)
+            print("members: ", len(members))
             pred_jobs = (
                 delayed(u._predict_one_member)(
                     _,
