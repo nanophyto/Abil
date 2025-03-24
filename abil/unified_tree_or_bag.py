@@ -184,7 +184,8 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
             if n_estimators==None:
                 raise ValueError("n_estimators not inferred correctly!")
 
-            booster = u.get_booster_from_model(model, X_train, y_train)
+            booster = u.get_booster_from_model(model, X_train, y_train, proba)
+            print(booster)
             train_pred_jobs = (
                 delayed(u._predict_one_member)(i, member=booster, chunk=X_train, proba=proba, threshold=threshold)
                 for i in range(n_estimators)
@@ -223,12 +224,12 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         if u.is_xgboost_model(model):
             print("model is XGBoost")
             n_estimators = u.xgboost_get_n_estimators(model)
-            print("n_estimators: ", n_estimators)
+        #    print("n_estimators: ", n_estimators)
 
             if n_estimators==None:
                 raise ValueError("n_estimators not inferred correctly!")
 
-            booster = u.get_booster_from_model(model, X_train, y_train)
+            booster = u.get_booster_from_model(model, X_train, y_train, proba)
             pred_jobs = (
                 delayed(u._predict_one_member)(i, member=booster, chunk=chunk, proba=proba, threshold=threshold)
                 for i in range(n_estimators)
@@ -236,7 +237,7 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         else:
             print("model not Booster")
             members, features_for_members = _flatten_metaensemble(model)
-            print("members: ", len(members))
+        #    print("members: ", len(members))
             pred_jobs = (
                 delayed(u._predict_one_member)(
                     _,
@@ -255,13 +256,13 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
                 inverse_transform(np.column_stack(results)),
                 index=getattr(chunk, "index", None),
             )
-            print("model uses log") 
+        #    print("model uses log") 
         except:
             chunk_preds = pd.DataFrame(
                 np.column_stack(results),
                 index=getattr(chunk, "index", None),
             )
-            print("model does not use log")
+        #    print("model does not use log")
 
         if weights is not None:
             lower = chunk_preds.apply(u.weighted_quantile, q=0.025, weights=weights, axis=1)

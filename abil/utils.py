@@ -66,11 +66,38 @@ def xgboost_get_n_estimators(model):
 
     # If no `n_estimators` is found, raise an error or return a default value
     raise ValueError("Could not extract `n_estimators` from the model.")
+from sklearn.pipeline import Pipeline
+from sklearn.compose import TransformedTargetRegressor
+from xgboost import XGBClassifier, XGBRegressor
+from sklearn.exceptions import NotFittedError
 
-def get_booster_from_model(model, X_train=None, y_train=None):
+def get_booster_from_model(model, X_train=None, y_train=None, proba=False):
     """
     Recursively extract the `get_booster` method from an XGBoost model,
     even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+
+    Parameters:
+    -----------
+    model : object
+        The model from which to extract the booster.
+    X_train : array-like, optional
+        Training data features.
+    y_train : array-like, optional
+        Training data target.
+    proba : bool, default=False
+        If True, use `y_train > 0` for training.
+
+    Returns:
+    --------
+    booster : Booster
+        The booster object from the XGBoost model.
+
+    Raises:
+    -------
+    NotFittedError
+        If the model is not fitted and no training data is provided.
+    ValueError
+        If the `get_booster` method cannot be extracted from the model.
     """
     # Unwrap TransformedTargetRegressor
     if isinstance(model, TransformedTargetRegressor):
@@ -92,6 +119,8 @@ def get_booster_from_model(model, X_train=None, y_train=None):
     if isinstance(model, (XGBClassifier, XGBRegressor)):
         if not hasattr(model, "get_booster"):
             if X_train is not None and y_train is not None:
+                if proba:
+                    y_train = (y_train > 0).astype(int)  # Convert y_train to binary if proba is True
                 model.fit(X_train, y_train)  # Fit the model if not already fitted
             else:
                 raise NotFittedError("Model is not fitted and no training data provided.")
@@ -101,13 +130,12 @@ def get_booster_from_model(model, X_train=None, y_train=None):
 
     # If the model is still wrapped (e.g., GridSearchCV), unwrap further
     if hasattr(model, "estimator"):
-        return get_booster_from_model(model.estimator, X_train, y_train)
+        return get_booster_from_model(model.estimator, X_train, y_train, proba)
     elif hasattr(model, "base_estimator"):
-        return get_booster_from_model(model.base_estimator, X_train, y_train)
+        return get_booster_from_model(model.base_estimator, X_train, y_train, proba)
 
     # If no `get_booster` is found, raise an error
     raise ValueError("Could not extract `get_booster` from the model.")
-
 
 def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
     """
@@ -133,10 +161,10 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
             # Convert probabilities to binary predictions based on the threshold
             return (positive_proba > threshold).astype(int)
         else:
-            try:
-                return member.predict(DMatrix(chunk), iteration_range=(i, i+1))
-                print("DMatrix feature names: ", DMatrix(chunk).feature_names)
-            except TypeError:
+            if isinstance(member, Booster):
+                print("during predict member is still XGBooster")
+                return member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(i, i+1))
+            else:
                 return member.predict(chunk)
 
 
