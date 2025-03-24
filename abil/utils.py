@@ -162,7 +162,6 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
             return (positive_proba > threshold).astype(int)
         else:
             if isinstance(member, Booster):
-                print("during predict member is still XGBooster")
                 return member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(i, i+1))
             else:
                 return member.predict(chunk)
