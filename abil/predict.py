@@ -126,7 +126,7 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
         with parallel_backend("loky", n_jobs=n_threads):
             d_both = pp.estimate_prediction_quantiles(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train>0, cv=cv, threshold=optimal_threshold
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, threshold=optimal_threshold
             )
             # Generate classifier and regressor stats
             d_clf = d_both['classifier_predict_stats']
