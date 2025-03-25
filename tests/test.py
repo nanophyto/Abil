@@ -37,6 +37,31 @@ class TestRegressors(unittest.TestCase):
         m = predict(self.X_train, self.y, self.X_predict, self.model_config, n_jobs=self.model_config['n_threads'])
         m.make_prediction()
 
+        # Load datasets
+        rf = xr.open_dataset("./tests/ModelOutput/regressor/predictions/rf/Emiliania_huxleyi.nc")
+        xgb = xr.open_dataset("./tests/ModelOutput/regressor/predictions/xgb/Emiliania_huxleyi.nc")  # Note: same path as rf?
+
+        # Calculate sums
+        rf_mean_sum = np.sum(rf['mean'])
+        rf_ci95_UL_sum = np.sum(rf['ci95_UL'])
+        xgb_mean_sum = np.sum(xgb['mean'])
+        xgb_ci95_UL_sum = np.sum(xgb['ci95_UL'])
+
+        print("======================")
+        print("DEBUG OF PREDICT SUMS")
+        print("======================")
+
+        print(f"RF mean sum: {rf_mean_sum}")
+        print(f"XGB mean sum: {xgb_mean_sum}")
+        # Check if values are within same order of magnitude
+        if not np.isclose(rf_mean_sum, xgb_mean_sum, rtol=9):
+            raise AssertionError("Mean sums are not within an order of magnitude")
+        
+        print(f"RF ci95_UL sum: {rf_ci95_UL_sum}")
+        print(f"XGB ci95_UL sum: {xgb_ci95_UL_sum}")
+        if not np.isclose(rf_ci95_UL_sum, xgb_ci95_UL_sum, rtol=9):
+            raise AssertionError("CI95 UL sums are not within an order of magnitude")
+
         targets = np.array([self.target_name])
         def do_post(statistic):
             m = post(self.X_train, self.y, self.X_predict, self.model_config, statistic, datatype="poc")
@@ -79,7 +104,7 @@ class Test2Phase(unittest.TestCase):
         self.target_name =  "Emiliania huxleyi"
 
         self.X_train, self.X_predict, self.y = example_data(self.target_name, n_samples=1000, n_features=3, noise=0.1, train_to_predict_ratio=0.7, random_state=59)
-
+        
 
     def test_post_ensemble(self):
 
@@ -92,7 +117,9 @@ class Test2Phase(unittest.TestCase):
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config, n_jobs=self.model_config['n_threads'])
         m.make_prediction()
-
+        print("======================")
+        print("DEBUG OF PREDICT SUMS")
+        print("======================")
         # Load datasets
         rf = xr.open_dataset("./tests/ModelOutput/2-phase/predictions/rf/Emiliania_huxleyi.nc")
         xgb = xr.open_dataset("./tests/ModelOutput/2-phase/predictions/xgb/Emiliania_huxleyi.nc")  # Note: same path as rf?
@@ -103,15 +130,16 @@ class Test2Phase(unittest.TestCase):
         xgb_mean_sum = np.sum(xgb['mean'])
         xgb_ci95_UL_sum = np.sum(xgb['ci95_UL'])
 
+        print(f"RF mean sum: {rf_mean_sum}")
+        print(f"XGB mean sum: {xgb_mean_sum}")
+        
         # Check if values are within same order of magnitude
         if not np.isclose(rf_mean_sum, xgb_mean_sum, rtol=9):
-            print(f"RF mean sum: {rf_mean_sum}")
-            print(f"XGB mean sum: {xgb_mean_sum}")
             raise AssertionError("Mean sums are not within an order of magnitude")
-
+        
+        print(f"RF ci95_UL sum: {rf_ci95_UL_sum}")
+        print(f"XGB ci95_UL sum: {xgb_ci95_UL_sum}")
         if not np.isclose(rf_ci95_UL_sum, xgb_ci95_UL_sum, rtol=9):
-            print(f"RF ci95_UL sum: {rf_ci95_UL_sum}")
-            print(f"XGB ci95_UL sum: {xgb_ci95_UL_sum}")
             raise AssertionError("CI95 UL sums are not within an order of magnitude")
 
         targets = np.array([self.target_name])
@@ -141,7 +169,7 @@ class Test2Phase(unittest.TestCase):
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
-#    suite.addTest(TestRegressors('test_post_ensemble'))
+    suite.addTest(TestRegressors('test_post_ensemble'))
     suite.addTest(Test2Phase('test_post_ensemble'))
     runner = unittest.TextTestRunner()
     runner.run(suite)
