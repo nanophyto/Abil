@@ -113,7 +113,6 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
         else:
             if isinstance(member, Booster):
                 prediction = member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(0, i+1))
-                print(chunk.columns.tolist())
             #    if (prediction > 1).any():
             #        raise ValueError("prediction >1 was made :)")
             else:
