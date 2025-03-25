@@ -23,6 +23,9 @@ from sklearn.base import is_regressor
 
 from .zir import ZeroInflatedRegressor
 from . import utils as u
+from sklearn.base import _is_fitted
+from xgboost import XGBClassifier, XGBRegressor, DMatrix
+
 
 def estimate_prediction_quantiles(
     model, X_predict, X_train, y_train, cv=None, chunksize=20_000, threshold=0.5
@@ -59,14 +62,76 @@ def estimate_prediction_quantiles(
         Dictionary containing summary statistics for both training and prediction datasets.
         Keys: "train_stats", "predict_stats".
     """
+
+    if isinstance(model, ZeroInflatedRegressor):
+        original_y_train = y_train.copy()
+
+        classifier_stats = estimate_prediction_quantiles(
+            model.classifier_,
+            X_predict = X_predict,
+            X_train = X_train,
+            y_train = (y_train > 0).copy(),
+            cv=cv,
+            chunksize=chunksize,
+            threshold=threshold
+        )
+        regressor_stats = estimate_prediction_quantiles(
+            model.regressor_, 
+            X_predict=X_predict, 
+            X_train=X_train, 
+            y_train=original_y_train, 
+            cv=cv, 
+            chunksize=chunksize, 
+            threshold=threshold
+        )
+        return {
+            **{f"classifier_{k}": v for k, v in classifier_stats.items()},
+            **{f"regressor_{k}": v for k, v in regressor_stats.items()},
+        }
+
+
     if isinstance(model, Pipeline):
+        print("model is classifier")
         pipeline = model
         model = pipeline.named_steps["estimator"]
+        y_inverse_transformer = u.do_nothing
+        y_transformer = u.do_nothing
+    elif isinstance(model, TransformedTargetRegressor):
+        pipeline = model.regressor
+        y_transformer = getattr(
+            model, "func", FunctionTransformer().func
+        )
+        print("y transformer is :", y_transformer)
+        print("if log should be ~6.9: ", y_transformer(np.array([[1000]])))
+
+        y_inverse_transformer = getattr(
+            model, "inverse_func", FunctionTransformer().inverse_func
+        )       
+        print("y inverse transformer is :", y_inverse_transformer)
+        print("if exp should be ~1000: ", y_inverse_transformer(np.array([[6.9]])))
+
+        model = model.regressor.named_steps["estimator"]
     else:
+        print("model is Voting regresor")
         pipeline = Pipeline(
             [("preprocessor", FunctionTransformer()), ("estimator", model)]
         )
+        y_inverse_transformer = u.do_nothing
+        y_transformer = u.do_nothing
+
+
     preprocessor = pipeline.named_steps["preprocessor"]
+    preprocessor.fit(X_train)
+
+    test_X = pd.DataFrame({"feature_1":[10, 100], "feature_2":[10, 100], "feature_3":[10, 100] })
+    print("Preprocessor transform of 10 is :", preprocessor.transform(test_X))
+    if is_regressor(model):
+        proba = False
+        print("model is regressor")
+    else:
+        proba = True
+        print("model is classifier")
+    
 
     if X_train is not None:
         X_train = pd.DataFrame(
@@ -74,52 +139,57 @@ def estimate_prediction_quantiles(
             index = getattr(X_train, "index", np.arange(X_train.shape[0])),
             columns=X_train.columns  
         )
+    else:
+        raise ValueError("X_train cannot be None")
     if X_predict is not None:
         X_predict = pd.DataFrame(
             preprocessor.transform(X_predict),
-            index = getattr(X_predict, "index", np.arange(X_train.shape[0])),
+            index = getattr(X_predict, "index", np.arange(X_predict.shape[0])),
             columns=X_predict.columns  
         )
+    else:
+        raise ValueError("X_predict cannot be None")
+
     if y_train is not None:
-        y_train = pd.Series(
-            y_train,
-            index = getattr(y_train, "index", np.arange(y_train.shape[0]))
-        )
+        if not proba:
+            print("max of y before transform is: ", np.max(y_train))
 
-    # X_train = preprocessor.transform(X_train)
-    # X_predict = preprocessor.transform(X_predict)
-
-
+            y_train = pd.Series(                    
+                y_transformer(y_train),
+                index = getattr(y_train, "index", np.arange(y_train.shape[0]))
+            )
+    
+            print("max of y after transform is: ", np.max(y_train))
+          
+        else: 
+            print("model is classifier")
+            y_train = pd.Series(
+                y_train,
+                index = getattr(y_train, "index", np.arange(y_train.shape[0]))
+            )
+    else:
+        raise ValueError("y_train cannot be None")
+    
     # for internal, create models for each fold to mimic the
     # effect of leaving a fold out. Do this in parallel.
 
-    if isinstance(model, ZeroInflatedRegressor):
-        classifier_stats = estimate_prediction_quantiles(
-            model.classifier_,
-            X_predict = X_predict,
-            X_train = X_train,
-            y_train = y_train > 0,
-            cv=cv,
-            chunksize=chunksize,
-            threshold=threshold
-        )
-        regressor_stats = estimate_prediction_quantiles(
-            model.regressor_, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, chunksize=chunksize, threshold=threshold
-        )
-        return {
-            **{f"classifier_{k}": v for k, v in classifier_stats.items()},
-            **{f"regressor_{k}": v for k, v in regressor_stats.items()},
-        }
+    if not _is_fitted(model):
+        model.fit(X_train, y_train)
+
+        print("model is refitted with transformed data")
 
     if cv is not None:
+        print("CV is used in this model")
         train_summary_stats = [
             _summarize_predictions(
                 model,
+                y_inverse_transformer,
                 X_predict=X_train.iloc[test_idx],
                 X_train=X_train.iloc[train_idx],
                 y_train=y_train.iloc[train_idx],
                 chunksize=chunksize,
-                threshold=threshold
+                threshold=threshold,
+                proba=proba
             )
             for train_idx, test_idx in cv.split(X_train, y_train)
         ]
@@ -128,31 +198,36 @@ def estimate_prediction_quantiles(
             train_summary_stats, axis=0, ignore_index=False
         ).loc[X_train.index]
     else:
+        print("CV is not used in this model")
         train_summary_stats = _summarize_predictions(
             model,
+            y_inverse_transformer,
             X_train=X_train,
             X_predict=X_train,
             y_train=y_train,
             chunksize=chunksize,
-            threshold=threshold
+            threshold=threshold,
+            proba=proba
         )
+
+
     predict_summary_stats = _summarize_predictions(
-        model, X_predict=X_predict, chunksize=chunksize, threshold=threshold
+        model, 
+        y_inverse_transformer, 
+        X_predict=X_predict, 
+        X_train=X_train,
+        y_train=y_train,
+        chunksize=chunksize, 
+        threshold=threshold,
+        proba=proba
     )
 
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
 
 
-def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksize=2e4, threshold=0.5):
-    if (X_train is not None) & (y_train is not None):
-        print("model not cloned")
-    elif not all([(X_train is None), (y_train is None)]):
-        if not base.check_is_fitted(model):
-            raise ValueError(
-                "model provided is not fit, and no data is provided to fit the model on. Fit the model on the data first."
-            )
-        raise ValueError("Both X_train and y_train must be provided, or neither must be.")
-
+def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None, y_train=None, chunksize=2e4, threshold=0.5, proba=None):
+    if proba is None:
+        raise ValueError("proba not defined!")
     n_samples, n_features = X_predict.shape
     if chunksize is not None:
         n_chunks = int(np.ceil(n_samples / chunksize))
@@ -163,111 +238,57 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
         chunks = [X_predict]
 
     stats = []
-    inverse_transform = getattr(
-        model, "inverse_func", FunctionTransformer().inverse_func
-    )
 
     engine = Parallel()
 
-    if is_regressor(model):
-        proba = False
-    else:
-        proba = True
-
-
     # Compute predictions on X_train to estimate member performance
     if X_train is not None and y_train is not None:
-        if u.is_xgboost_model(model):
-            print("model is XGBoost")
-            n_estimators = u.xgboost_get_n_estimators(model)
-            print("n_estimators: ", n_estimators)
-            if n_estimators==None:
-                raise ValueError("n_estimators not inferred correctly!")
-
-            booster = u.get_booster_from_model(model, X_train, y_train, proba)
-            print(booster)
-            train_pred_jobs = (
-                delayed(u._predict_one_member)(i, member=booster, chunk=X_train, proba=proba, threshold=threshold)
-                for i in range(n_estimators)
-            )
-        else:
-            members, features_for_members = _flatten_metaensemble(model)
-            train_pred_jobs = (
-                delayed(u._predict_one_member)(
-                    _,
-                    member=member,
-                    chunk=X_train.iloc[:, features_for_member],
-                    proba=proba, 
-                    threshold=threshold
-                )
-                for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
-            )
         
+        train_pred_jobs = _setup_pred_jobs(
+            model, 
+            X_train, 
+            proba, 
+            threshold
+        )
         train_results = engine(train_pred_jobs)
 
         if proba:
             print("model is a classifier")  # for debug
-            losses = 1 - np.array([balanced_accuracy_score(y_train.astype(int), pred.astype(int)) for pred in train_results])
+            losses = 1 - np.array(
+                [balanced_accuracy_score(y_train.astype(int), 
+                pred.astype(int)) for pred in train_results]
+            )
 
         else:
             print("model is a regressor")  # for debug
-            losses = np.array([mean_absolute_error(y_train, pred) for pred in train_results])
+            losses = np.array([mean_absolute_error(y_train, y_inverse_transformer(pred)) for pred in train_results])
 
         weights = 1 / (losses + 1e-99)  # Avoid division by zero
         weights /= weights.sum()  # Normalize weights
     else:
-        weights = None  # Use equal weights if no X_train/y_train
+        raise ValueError("X_train and y_train should be defined")
     
 
     # Compute predictions on X_predict
     for chunk in chunks:
-        if u.is_xgboost_model(model):
-            print("model is XGBoost")
-            n_estimators = u.xgboost_get_n_estimators(model)
-        #    print("n_estimators: ", n_estimators)
+        predict_pred_jobs = _setup_pred_jobs(model=model, 
+                                             X=X_predict, 
+                                             proba=proba, 
+                                             threshold=threshold)
 
-            if n_estimators==None:
-                raise ValueError("n_estimators not inferred correctly!")
-
-            booster = u.get_booster_from_model(model, X_train, y_train, proba)
-            pred_jobs = (
-                delayed(u._predict_one_member)(i, member=booster, chunk=chunk, proba=proba, threshold=threshold)
-                for i in range(n_estimators)
-            )
-        else:
-            print("model not Booster")
-            members, features_for_members = _flatten_metaensemble(model)
-        #    print("members: ", len(members))
-            pred_jobs = (
-                delayed(u._predict_one_member)(
-                    _,
-                    member=member,
-                    chunk=chunk.iloc[:, features_for_member], 
-                    proba=proba, 
-                    threshold=threshold
-                )
-                for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
-            )
-        
-        results = engine(pred_jobs)
+        results = engine(predict_pred_jobs)
         print("results.shape: ", np.column_stack(results).shape)
-        try:
-            chunk_preds = pd.DataFrame(
-                inverse_transform(np.column_stack(results)),
-                index=getattr(chunk, "index", None),
-            )
-        #    print("model uses log") 
-        except:
-            chunk_preds = pd.DataFrame(
-                np.column_stack(results),
-                index=getattr(chunk, "index", None),
-            )
-        #    print("model does not use log")
+        chunk_preds = pd.DataFrame(
+            y_inverse_transformer(np.column_stack(results)),
+            index=getattr(chunk, "index", None),
+        )
 
+        weights = None
         if weights is not None:
             lower = chunk_preds.apply(u.weighted_quantile, q=0.025, weights=weights, axis=1)
             upper =  chunk_preds.apply(u.weighted_quantile, q=0.975, weights=weights, axis=1)
         else:
+            print("weights is None")
             lower = chunk_preds.quantile(q=0.025, axis=1)
             upper =  chunk_preds.quantile(q=0.975, axis=1)
 
@@ -281,27 +302,79 @@ def _summarize_predictions(model, X_predict, X_train=None, y_train=None, chunksi
     output = pd.concat(stats, axis=0, ignore_index=False)
     return output
 
+def _setup_pred_jobs(model, X, proba, threshold):
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        print("model is: ", model)
+        print("model is XGBoost")
+        n_estimators = u.xgboost_get_n_estimators(model)
+        print("n_estimators: ", n_estimators)
+        if n_estimators==None:
+            raise ValueError("n_estimators not inferred correctly!")
+
+        booster = model.get_booster()
+
+        print("booster :", booster)
+        pred_jobs = (
+            delayed(u._predict_one_member)(
+                i, 
+                member=booster, 
+                chunk=X, 
+                proba=proba, 
+                threshold=threshold    
+            )
+            for i in range(n_estimators)
+        )
+    else:
+        print("model is: ", model)
+        members, features_for_members = _flatten_metaensemble(model)
+        print("features_for_members:", features_for_members)
+        pred_jobs = (
+            delayed(u._predict_one_member)(
+                _,
+                member=member,
+                chunk=X.iloc[:, features_for_member],
+                proba=proba, 
+                threshold=threshold
+            )
+            for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
+        )
+    return pred_jobs
+        
+
+
 def _flatten_metaensemble(me):
-    """
-    Memoized version of the recursive meta-ensemble unpacking
-    """
-    estimators = [(me,None)]
-    estimators_and_feature_indices = []
-    while estimators:
-        member, member_features = estimators.pop(0)
-        if isinstance(member, ZeroInflatedRegressor):
-            raise NotImplementedError("Cannot flatten a heterogeneous ensemble of classifiers and regressors")
-        elif isinstance(member, Pipeline):
-            estimators.append((member.named_steps['estimator'], list(np.arange(member.named_steps['estimator'].n_features_in_))))
-        elif isinstance(member, TransformedTargetRegressor):
-            estimators.append((member.regressor_, list(np.arange(member.regressor_.n_features_in_))))
-        elif hasattr(member, "estimators_"):
-            submembers_features = getattr(member, "estimators_features_", [list(np.arange(member.n_features_in_))]*len(member.estimators_))
-            estimators.extend(list(zip(member.estimators_, submembers_features)))
-        else:
-            estimators_and_feature_indices.append((member, member_features))
-    estimators, features = zip(*estimators_and_feature_indices)
+    """Modified version to handle RandomForest's individual trees"""
+    estimators = []
+    features = []
+    
+    # Case 1: RandomForest - get all its trees
+    if hasattr(me, 'estimators_') and isinstance(me, (RandomForestRegressor, RandomForestClassifier)):
+        print("model inferred to be RF")
+        n_features = me.n_features_in_
+        estimators = me.estimators_
+        features = [list(range(n_features))] * len(estimators)  # All trees use all features (but possibly different subsets)
+    
+    # Case 2: Bagging estimator (like BaggingRegressor with KNN)
+    elif hasattr(me, 'estimators_') and hasattr(me, 'estimators_features_'):
+        print("model inferred to be B-KNN")
+        estimators = me.estimators_
+        features = me.estimators_features_
+    
+    # Case 3: Regular ensemble (Voting, Stacking)
+    elif hasattr(me, 'estimators_'):
+        print("Voting regressor or stacked")
+        n_features = me.n_features_in_
+        estimators = me.estimators_
+        features = [list(range(n_features))] * len(estimators)
+    
+    # Case 4: Single estimator
+    else:
+        print("something else")
+        estimators = [me]
+        features = [list(range(getattr(me, 'n_features_in_', X_train.shape[1])))]  # Fallback to X_train shape
+    
     return estimators, features
+
 
 # Example Usage
 if __name__ == "__main__":
