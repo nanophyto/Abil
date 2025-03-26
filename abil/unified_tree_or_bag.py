@@ -123,8 +123,6 @@ def estimate_prediction_quantiles(
     preprocessor = pipeline.named_steps["preprocessor"]
     preprocessor.fit(X_train)
 
-    test_X = pd.DataFrame({"feature_1":[10, 100], "feature_2":[10, 100], "feature_3":[10, 100] })
-    print("Preprocessor transform of 10 is :", preprocessor.transform(test_X))
     if is_regressor(model):
         proba = False
         print("model is regressor")
