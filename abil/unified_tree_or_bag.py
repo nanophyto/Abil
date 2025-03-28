@@ -305,7 +305,7 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
 
     for chunk in chunks:
         predict_pred_jobs = _setup_pred_jobs(model=model, 
-                                             X=X_predict, 
+                                             X=chunk, 
                                              proba=proba, 
                                              threshold=threshold)
 
