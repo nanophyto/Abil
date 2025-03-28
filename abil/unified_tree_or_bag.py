@@ -63,6 +63,10 @@ def estimate_prediction_quantiles(
         Keys: "train_stats", "predict_stats".
     """
 
+    #########################################
+    # IF ZIR ESTIMATE QUANTILES RECURSIVELY #
+    #########################################
+
     if isinstance(model, ZeroInflatedRegressor):
         original_y_train = y_train.copy()
 
@@ -89,6 +93,9 @@ def estimate_prediction_quantiles(
             **{f"regressor_{k}": v for k, v in regressor_stats.items()},
         }
 
+    #######################################
+    # EXTRACT BASE MODEL AND TRANSFORMERS #
+    #######################################
 
     if isinstance(model, Pipeline):
         print("model is classifier")
@@ -119,9 +126,12 @@ def estimate_prediction_quantiles(
         y_inverse_transformer = u.do_nothing
         y_transformer = u.do_nothing
 
-
     preprocessor = pipeline.named_steps["preprocessor"]
     preprocessor.fit(X_train)
+
+    ##################################################
+    # CHECK IF BASE MODEL IS REGRESSOR OR CLASSIFIER #
+    ##################################################
 
     if is_regressor(model):
         proba = False
@@ -130,6 +140,10 @@ def estimate_prediction_quantiles(
         proba = True
         print("model is classifier")
     
+
+    ############################################
+    # TRANSFORM Y_TRAIN, X_TRAIN AND X_PREDICT #
+    ############################################
 
     if X_train is not None:
         X_train = pd.DataFrame(
@@ -168,13 +182,18 @@ def estimate_prediction_quantiles(
     else:
         raise ValueError("y_train cannot be None")
     
-    # for internal, create models for each fold to mimic the
-    # effect of leaving a fold out. Do this in parallel.
+    ##########################################
+    # REFIT MODELS WITH TRANSFORMED Y AND Xs #
+    ##########################################
 
     if not _is_fitted(model):
         model.fit(X_train, y_train)
 
         print("model is refitted with transformed data")
+
+    ###############################################
+    # MAKE QUANTILE PREDICTIONS FOR TRAINING DATA #
+    ###############################################
 
     if cv is not None:
         print("CV is used in this model")
@@ -208,6 +227,9 @@ def estimate_prediction_quantiles(
             proba=proba
         )
 
+    #################################################
+    # MAKE QUANTILE PREDICTIONS FOR PREDICTION DATA #
+    #################################################
 
     predict_summary_stats = _summarize_predictions(
         model, 
@@ -222,11 +244,19 @@ def estimate_prediction_quantiles(
 
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
 
+#######################################
+# DEFINE QUANTILE PREDICTION PIPELINE #
+#######################################
 
 def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None, y_train=None, chunksize=2e4, threshold=0.5, proba=None):
     if proba is None:
         raise ValueError("proba not defined!")
     n_samples, n_features = X_predict.shape
+
+    ######################################
+    # DEFINE CHUNKS (FOR X_PREDICT ONLY) #
+    ######################################
+
     if chunksize is not None:
         n_chunks = int(np.ceil(n_samples / chunksize))
         chunks = np.array_split(X_predict, n_chunks)
@@ -239,7 +269,10 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
 
     engine = Parallel()
 
-    # Compute predictions on X_train to estimate member performance
+    ##############################################################
+    # ESTIMATE LOSS FOR EACH MEMBER BASED ON X_TRAIN PREDICTIONS #
+    ##############################################################
+
     if X_train is not None and y_train is not None:
         
         train_pred_jobs = _setup_pred_jobs(
@@ -266,8 +299,10 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
     else:
         raise ValueError("X_train and y_train should be defined")
     
+    ##########################################
+    # COMPUTE PREDICTIONS BASED ON X_PREDICT #
+    ##########################################
 
-    # Compute predictions on X_predict
     for chunk in chunks:
         predict_pred_jobs = _setup_pred_jobs(model=model, 
                                              X=X_predict, 
@@ -299,6 +334,10 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
     
     output = pd.concat(stats, axis=0, ignore_index=False)
     return output
+
+##################################
+# SETUP PARALLEL PREDICTION JOBS #
+##################################
 
 def _setup_pred_jobs(model, X, proba, threshold):
     if isinstance(model, (XGBClassifier, XGBRegressor)):
@@ -339,6 +378,9 @@ def _setup_pred_jobs(model, X, proba, threshold):
     return pred_jobs
         
 
+#################################################################
+# EXTRACT INDIVIDUAL MEMBERS FROM SKLEARN ENSEMBLE-BASED MODELS #
+#################################################################
 
 def _flatten_metaensemble(me):
     """Modified version to handle RandomForest's individual trees"""
