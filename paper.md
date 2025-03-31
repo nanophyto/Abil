@@ -23,6 +23,7 @@ authors:
   - name: Levi John Wolf
     orcid: 
     affiliation: 1
+
 affiliations:
  - name: School of Geographical Sciences, University of Bristol, BS8 1HB, UK
    index: 1
@@ -32,7 +33,7 @@ bibliography: paper.bib
 
 # Summary
 
-Our oceans play a critical role in regulating the Earth's climate and sustaining local economies through fisheries and tourism [@moreno:2009; @dyck:2010]. However, the vast size of the ocean means that observations are inherently sparse, posing significant challenges to contextualizing these observations on a global scale [@hauck:2023]. Ensemble-based machine learning approaches offer an exciting avenue to address this challenge. However, the complexity of implementing these algorithms, combined with the need for extensive pre-processing and post-processing, highlights the necessity for efficient, reproducible numerical tools. Here we provide a Python package for training, predicting, and post-processing a machine learning ensemble to facilitate the global interpolation of sparse observational datasets, such as those from oceanographic cruises.
+Our oceans play a critical role in regulating the Earth's climate and sustaining local economies through fisheries and tourism [@moreno:2009; @dyck:2010]. However, the vast size of the ocean means that observations are inherently sparse, posing significant challenges to contextualizing these observations on a global scale [@hauck2023]. Ensemble-based machine learning approaches offer an exciting avenue to address this challenge. However, the complexity of implementing these algorithms, combined with the need for extensive pre-processing and post-processing, highlights the necessity for efficient, reproducible numerical tools. Here we provide a Python package for training, predicting, and post-processing a machine learning ensemble to facilitate the global interpolation of sparse observational datasets, such as those from oceanographic cruises.
 
 # Statement of Need
 
