@@ -274,7 +274,12 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
     ##############################################################
 
     if X_train is not None and y_train is not None:
-        
+        if isinstance(model, (XGBRegressor)):
+            model = BaggingRegressor(estimator=model, n_estimators=40)
+            model.fit(X_train, y_train)
+        elif isinstance(model, (XGBClassifier)):
+            model = BaggingClassifier(estimator=model, n_estimators=40)
+            model.fit(X_train, y_train)
         train_pred_jobs = _setup_pred_jobs(
             model, 
             X_train, 
@@ -396,7 +401,7 @@ def _flatten_metaensemble(me):
     
     # Case 2: Bagging estimator (like BaggingRegressor with KNN)
     elif hasattr(me, 'estimators_') and hasattr(me, 'estimators_features_'):
-        print("model inferred to be B-KNN")
+        print(f"model inferred to be B-KNN and is actually {me}")
         estimators = me.estimators_
         features = me.estimators_features_
     
