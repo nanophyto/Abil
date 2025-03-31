@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abil"
-version = "25.03.12"
+version = "25.03.31"
 license = "MIT"
 license-files = ['LICENSE']
 description = "Aquatic Biogeochemical Interpolation Library"
