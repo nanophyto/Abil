@@ -38,7 +38,7 @@ X_train = d[predictors]
 
 def do_post(statistic):
     m = post(X_train, y, X_predict, model_config, statistic)
-    m.estimate_applicability()
+    #m.estimate_applicability()
     m.merge_env(X_predict)
     m.merge_obs(current_date,targets)
     
@@ -52,8 +52,6 @@ def do_post(statistic):
     integ.integrated_totals(targets)
 
 do_post(statistic="mean")
-do_post(statistic="median")
-do_post(statistic="sd")
 do_post(statistic="ci95_UL")
 do_post(statistic="ci95_LL")
 
