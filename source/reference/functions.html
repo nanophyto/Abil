@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Utility Functions &#8212; Abil 25.03.12 documentation</title>
+    <title>Utility Functions &#8212; Abil 25.03.31 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=1b0e1da5"></script>
+    <script src="../../_static/documentation_options.js?v=e5693747"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
@@ -112,7 +112,7 @@
   
   
   
-    <p class="title logo__title">Abil 25.03.12 documentation</p>
+    <p class="title logo__title">Abil 25.03.31 documentation</p>
   
 </a></div>
     
@@ -406,6 +406,23 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="abil.utils.do_nothing">
+<span class="sig-prename descclassname"><span class="pre">abil.utils.</span></span><span class="sig-name descname"><span class="pre">do_nothing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.utils.do_nothing" title="Link to this definition">#</a></dt>
+<dd><p>Apply no transformation to the input values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>array-like</em>) – Input values.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>y</strong> – Non-transformed values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array-like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="abil.utils.example_data">
 <span class="sig-prename descclassname"><span class="pre">abil.utils.</span></span><span class="sig-name descname"><span class="pre">example_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_to_predict_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_to_non_zero_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">59</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.utils.example_data" title="Link to this definition">#</a></dt>
 <dd><p>Generate training and prediction datasets with [‘lat’, ‘lon’, ‘depth’, ‘time’] indices.
@@ -475,6 +492,14 @@ y (pd.Series): Target variable for training dataset.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="abil.utils.is_xgboost_model">
+<span class="sig-prename descclassname"><span class="pre">abil.utils.</span></span><span class="sig-name descname"><span class="pre">is_xgboost_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.utils.is_xgboost_model" title="Link to this definition">#</a></dt>
+<dd><p>Recursively check if the model is an XGBoost model,
+even if it’s wrapped in a Pipeline or TransformedTargetRegressor.
+Uses <cite>getattr</cite> to check for XGBoost-specific attributes.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="abil.utils.merge_obs_env">
 <span class="sig-prename descclassname"><span class="pre">abil.utils.</span></span><span class="sig-name descname"><span class="pre">merge_obs_env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../data/gridded_abundances.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../data/env_data.nc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../data/obs_env.csv'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.utils.merge_obs_env" title="Link to this definition">#</a></dt>
 <dd><p>Merge observational and environmental datasets based on spatial and temporal indices.</p>
@@ -538,6 +563,13 @@ the result is a single value. If <cite>q</cite> is an array-like, the result is 
 </dd>
 </dl>
 </section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="abil.utils.xgboost_get_n_estimators">
+<span class="sig-prename descclassname"><span class="pre">abil.utils.</span></span><span class="sig-name descname"><span class="pre">xgboost_get_n_estimators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.utils.xgboost_get_n_estimators" title="Link to this definition">#</a></dt>
+<dd><p>Recursively extract the <cite>n_estimators</cite> parameter from an XGBoost model,
+even if it’s wrapped in a Pipeline or TransformedTargetRegressor.</p>
 </dd></dl>
 
 </section>
