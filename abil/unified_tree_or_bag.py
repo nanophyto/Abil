@@ -275,10 +275,10 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
 
     if X_train is not None and y_train is not None:
         if isinstance(model, (XGBRegressor)):
-            model = BaggingRegressor(estimator=model, n_estimators=40)
+            model = BaggingRegressor(estimator=model, n_estimators=160)
             model.fit(X_train, y_train)
         elif isinstance(model, (XGBClassifier)):
-            model = BaggingClassifier(estimator=model, n_estimators=40)
+            model = BaggingClassifier(estimator=model, n_estimators=160)
             model.fit(X_train, y_train)
         train_pred_jobs = _setup_pred_jobs(
             model, 
