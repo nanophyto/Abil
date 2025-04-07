@@ -9,6 +9,83 @@ from sklearn.metrics import roc_curve, roc_auc_score
 from joblib import delayed
 import warnings
 from xgboost import DMatrix, Booster
+from sklearn.exceptions import NotFittedError
+from xgboost import XGBClassifier, XGBRegressor, DMatrix
+from sklearn.pipeline import Pipeline
+from sklearn.compose import TransformedTargetRegressor
+
+def do_nothing(x):
+    """
+    Apply no transformation to the input values.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    y : array-like
+        Non-transformed values.
+    """
+    return(x)
+
+def is_xgboost_model(model):
+    """
+    Recursively check if the model is an XGBoost model,
+    even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+    Uses `getattr` to check for XGBoost-specific attributes.
+    """
+    # Base case: Check if the model is directly an XGBoost model
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        return True
+    # Check for XGBoost-specific attributes using `getattr`
+    elif getattr(model, "get_booster", None) is not None or getattr(model, "booster", None) is not None:
+        return True
+
+    # Recursive case: Unwrap the model if it's a wrapper
+    if isinstance(model, Pipeline):
+        # Get the final estimator in the pipeline
+        return is_xgboost_model(model.steps[-1][1])
+    elif isinstance(model, TransformedTargetRegressor):
+        # Get the regressor inside the TransformedTargetRegressor
+        return is_xgboost_model(model.regressor)
+    elif getattr(model, "estimator", None) is not None:
+        # Handle other meta-estimators (e.g., GridSearchCV, BaggingRegressor)
+        return is_xgboost_model(model.estimator)
+    elif getattr(model, "base_estimator", None) is not None:
+        # Handle ensemble models (e.g., AdaBoost, Bagging)
+        return is_xgboost_model(model.base_estimator)
+
+    # If none of the above, it's not an XGBoost model
+    return False
+
+def xgboost_get_n_estimators(model):
+    """
+    Recursively extract the `n_estimators` parameter from an XGBoost model,
+    even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+    """
+    # Unwrap TransformedTargetRegressor
+    if isinstance(model, TransformedTargetRegressor):
+        model = model.regressor
+
+    # Unwrap Pipeline
+    if isinstance(model, Pipeline):
+        model = model.steps[-1][1]  # Get the final estimator
+
+    # Check if the model is an XGBoost model and has `n_estimators`
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        return model.n_estimators
+    elif hasattr(model, "n_estimators"):
+        return model.n_estimators
+
+    # If no `n_estimators` is found, raise an error or return a default value
+    raise ValueError("Could not extract `n_estimators` from the model.")
+from sklearn.pipeline import Pipeline
+from sklearn.compose import TransformedTargetRegressor
+from xgboost import XGBClassifier, XGBRegressor
+from sklearn.exceptions import NotFittedError
+from sklearn.base import _is_fitted
 
 def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
     """
@@ -17,10 +94,13 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
         if proba:
             if isinstance(member, Booster):
                 # For XGBoost Booster, use predict() to get probabilities
-                proba_preds = member.predict(DMatrix(chunk), iteration_range=(i, i+1))
-
+                proba_preds = member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(i, i+1))
                 # For binary classification, proba_preds is already the probability of the positive class
                 positive_proba = proba_preds
+
+                if (positive_proba < 0).any() or (positive_proba > 1).any():
+                    raise ValueError("Probabilities are outside the valid range [0, 1]")
+                
             else:
                 # For other models, use predict_proba()
                 proba_preds = member.predict_proba(chunk)
@@ -31,10 +111,13 @@ def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
             # Convert probabilities to binary predictions based on the threshold
             return (positive_proba > threshold).astype(int)
         else:
-            try:
-                return member.predict(DMatrix(chunk), iteration_range=(i, i+1))
-            except TypeError:
-                return member.predict(chunk)
+            if isinstance(member, Booster):
+                prediction = member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(0, i+1))
+            #    if (prediction > 1).any():
+            #        raise ValueError("prediction >1 was made :)")
+            else:
+                prediction =member.predict(chunk)
+            return prediction
 
 
 def upsample(d, target, ratio=10):

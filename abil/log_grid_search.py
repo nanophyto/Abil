@@ -52,6 +52,22 @@ class LogGridSearch:
         y = np.log(x+1)
         return(y)
     
+    def do_nothing(self, x):
+        """
+        Apply no transformation to the input values.
+
+        Parameters
+        ----------
+        x : array-like
+            Input values.
+
+        Returns
+        -------
+        y : array-like
+            Non-transformed values.
+        """
+        return(x)
+
     def do_exp(self, x):
         """
         Apply exponential transformation to the input values.
@@ -110,14 +126,14 @@ class LogGridSearch:
         
         elif log=="no":
 
-            model = TransformedTargetRegressor(self.m, func = None, inverse_func=None)
+            model = TransformedTargetRegressor(self.m, func = self.do_nothing, inverse_func=self.do_nothing)
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
 
         elif log =="both":
 
-            normal_m = TransformedTargetRegressor(self.m, func = None, inverse_func=None)
+            normal_m = TransformedTargetRegressor(self.m, func = self.do_nothing, inverse_func=self.do_nothing)
             grid_search1 = GridSearchCV(normal_m, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search1.fit(X, y)
