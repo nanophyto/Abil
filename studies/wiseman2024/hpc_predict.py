@@ -33,6 +33,7 @@ d = d.dropna(subset=predictors)
 X_predict =  pd.read_csv(os.path.join(root,model_config['prediction']))
 X_predict.set_index(["time", "depth", "lat", "lon"], inplace=True)
 X_predict = X_predict.dropna()
+X_predict = X_predict[predictors]
 
 y = d[target]
 X_train = d[predictors]
