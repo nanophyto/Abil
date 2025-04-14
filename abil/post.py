@@ -251,7 +251,6 @@ class post:
                 MAE = -1*np.mean(m['test_MAE'])
                 rRMSE = -1*np.mean(m['test_RMSE'])/mean
                 rMAE = -1*np.mean(m['test_MAE'])/mean            
-                target = self.d.columns[i]
                 performance = pd.DataFrame({'target':[target], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
                                             'rRMSE':[rRMSE], 'rMAE':[rMAE]})
                 all_performance.append(performance)
