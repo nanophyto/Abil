@@ -9,7 +9,7 @@ d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calci
                  names=["PI","Expedition","OS Region","Reference_Author_Published_year","Reference_doi",
                         "Date","Sample_ID","Latitude","Longitude","Depth","Irr_Depth",
                         "Optical_Depth","Method","Incubation_Length",
-                        "Calcification","Calcification_Standard Deviation",
+                        "Calcification","Calcification_Standard_Deviation",
                         "Primary_Production","Primary_Production_Standard_Deviation",
                         "0.2-2 um Net Primary Production [µmol C m-3 d-1]","0.2-2 um Net Primary Production_Standard Deviation  [µmol C m-3 d-1]",
                         "2-10 um Net Primary Production  [µmol C m-3 d-1]","2-10 um Net Primary Production_Standard Deviation [µmol C m-3 d-1]",
@@ -55,7 +55,13 @@ d = d.drop(["PI","Expedition","OS Region","Reference_Author_Published_year","Ref
                         ],axis = 1)
 
 n = 3 # number of samples per measurement
-d['Calcification_Standard_Error_Measurement'] = d['Calcification_Standard Deviation']/np.sqrt(n)
+
+# Calculate mean CV for the dataset and use to fill missing standard deviations
+mean_CV = np.mean(d['Calcification_Standard_Deviation']/d['Calcification'])
+d['Calcification_Standard_Deviation'] = d['Calcification_Standard_Deviation'].fillna(
+    d['Calcification'] * mean_CV)
+
+d['Calcification_Standard_Error_Measurement'] = d['Calcification_Standard_Deviation']/np.sqrt(n)
 d = d.dropna()
 resamples = 5
 random_samples = np.random.normal(loc=d['Calcification'].values.reshape(-1,1),scale=d['Calcification_Standard_Error_Measurement'].values.reshape(-1,1), size=(len(d),resamples))
@@ -69,7 +75,7 @@ sample_df = pd.DataFrame(random_samples, columns=sample_columns)
 d.reset_index(inplace=True)
 sample_df.reset_index(inplace=True)
 d = pd.concat([d, sample_df], axis=1)
-d.drop(["index","Calcification_Standard Deviation","Calcification_Standard_Error_Measurement"],axis=1,inplace=True)
+d.drop(["index","Calcification_Standard_Deviation","Calcification_Standard_Error_Measurement"],axis=1,inplace=True)
 
 # Grid data to 180x360x41x12 (required for all datasets)
 depth_bins = np.linspace(0, 205, 42)
@@ -135,7 +141,7 @@ out = out.drop(['dummy'], axis = 1)
 out = out.dropna()
 ##non_zero_count = out["Calcification"].notna() &
 print((out["Calcification"].notna() & (out["Calcification"] != 0)).sum())
-out.to_csv("/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_env_presample.csv", index=True)
+out.to_csv("/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_env_presample_v2.csv", index=True)
 
 print("fin")
 # %%
