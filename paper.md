@@ -55,7 +55,7 @@ By combining a user-friendly interface, parallel processing capabilities, and a 
 
 # Documentation
 
-`Abil` documentation can be found through [github](https://nanophyto.github.io/Abil). The documentation includes instruction for installing the model locally and running on an HPC system. The model process consists of tuning the model (class: `tune`), predicting the model (class: `predict`), and postprocessing the model (class: `post`). The documentation includes usage examples for running these model steps.
+`Abil` documentation can be found through [github](https://nanophyto.github.io/Abil). The documentation includes instruction for installing the model locally and running on an High Performance Computing (HPC) system. The model process consists of tuning the model (class: `tune`), predicting the model (class: `predict`), and postprocessing the model (class: `post`). The documentation includes usage examples for running these model steps.
 
 # Acknowledgements
 
