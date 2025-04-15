@@ -1,5 +1,5 @@
 ---
-title: 'Abil: A python package for the interpolation of aquatic biogeochemical datasets'
+title: 'Abil: A Python package for the interpolation of aquatic biogeochemical datasets'
 tags:
   - Python
   - biogeochemistry
