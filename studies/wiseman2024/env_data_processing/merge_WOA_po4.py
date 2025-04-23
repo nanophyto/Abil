@@ -32,6 +32,10 @@ for i in range(0, 12):
                                                             'p_dd','p_gp','p_ma','p_mn','p_oa','p_sd','p_se',
                                                             'lat_bnds','lon_bnds','time'}
                          )
+    df = ds.to_dataframe().reset_index()
+    df = df[df["depth"] <= 200]
+    df = df.set_index(['depth', 'lat', 'lon'])
+    ds = df.to_xarray().interp(depth=np.arange(0, 205, 5))
     dr_out = regridder1(ds['p_an'],skipna=True, na_thres=0.75)
     df = dr_out.to_dataframe(name="po4")
     df.reset_index(inplace = True)
