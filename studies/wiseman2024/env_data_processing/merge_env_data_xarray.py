@@ -10,10 +10,10 @@ file_paths = [
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/po4.nc',
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/no3.nc',
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/o2.nc',
-    '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/MLD_SEANOE.nc',
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/DIC.nc',
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/TA.nc',
-    '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/par.nc',
+    '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/PAR.nc',
+    '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/MLD_SEANOE.nc',
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/chlor_a.nc',
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/Rrs_547.nc',
     '/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/Rrs_667.nc'    
@@ -28,9 +28,6 @@ aligned_datasets = xr.align(*datasets, join='inner')
 # Merge the aligned datasets
 merged_ds = xr.merge(aligned_datasets)
 
-# Drop DOI
-merged_ds = merged_ds.drop_vars(['DOI'])
-
 # Calculate CI_2
 merged_ds['CI_2'] = merged_ds['Rrs_547'] - merged_ds['Rrs_667']
 
@@ -38,19 +35,21 @@ merged_ds['CI_2'] = merged_ds['Rrs_547'] - merged_ds['Rrs_667']
 merged_ds = merged_ds.drop_vars(['Rrs_547','Rrs_667'])
 
 # List of variables of interest
-variables_of_interest = ['temperature','sio4', 'po4', 'no3','o2','mld','DIC','TA','PAR','chlor_a','CI_2']  # Add all relevant variable names
+variables_of_interest = ['temperature','sio4', 'po4', 'no3','o2','DIC','TA','PAR','mld','chlor_a','CI_2']  # Add all relevant variable names
 
 # Create a mask for where any of the variables are NaN
 variables_mask = xr.concat([merged_ds[var].isnull() for var in variables_of_interest], dim='var').any(dim='var')
 
 # Create a mask that identifies where any of the variables are NaN across the depth dimension
-depth_nan_mask = xr.concat([merged_ds[var].isnull().any(dim='depth') for var in variables_of_interest], dim='var').any(dim='var')
+#depth_nan_mask = xr.concat([merged_ds[var].isnull().any(dim='depth') for var in variables_of_interest], dim='var').any(dim='var')
 
 # Expand the mask along the depth dimension to cover the entire column for each (lat, lon, time) slice
-depth_mask = depth_nan_mask.broadcast_like(merged_ds[variables_of_interest[0]])
+#depth_mask = depth_nan_mask.broadcast_like(merged_ds[variables_of_interest[0]])
 
 # Combine both masks (any variable or depth missing) to set all data to NaN where either condition is true
-combined_mask = variables_mask | depth_mask
+#combined_mask = variables_mask | depth_mask
+#combined_mask = depth_mask
+combined_mask = variables_mask
 
 # Apply the mask to all variables, setting values to NaN where any variable is missing
 for var in variables_of_interest:
