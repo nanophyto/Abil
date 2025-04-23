@@ -25,11 +25,11 @@ def preprocess(path, name):
                         'time': (['time'], np.arange(1, 13, 1)),
                       })
 
-  regridder1 = xe.Regridder(ds1, ds_out, 'bilinear', periodic=True)
+  regridder1 = xe.Regridder(ds1, ds_out, 'conservative', periodic=True)
   if (name=="DIC"):
-    dr1_out = regridder1(ds1['TCO2_NNGv2LDEO'])
+    dr1_out = regridder1(ds1['TCO2_NNGv2LDEO'],skipna=True, na_thres=0.75)
   elif (name=="TA"):
-      dr1_out = regridder1(ds1['AT_NNGv2'])
+    dr1_out = regridder1(ds1['AT_NNGv2'],skipna=True, na_thres=0.75)
 
 
   df1 = dr1_out.to_dataframe(name=name)
