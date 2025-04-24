@@ -40,7 +40,7 @@ print(d["Calcification"].notna().sum())
 
 # Drop data unnecessary for Abil.py
 d = d.convert_dtypes()
-d = d.drop(["PI","Expedition","OS Region","Reference_Author_Published_year","Reference_doi",
+d = d.drop(["PI","Expedition","Reference_Author_Published_year","Reference_doi",
                         "Sample_ID","Irr_Depth",
                         "Optical_Depth","Method","Incubation_Length",
                         "Primary_Production",
@@ -55,11 +55,28 @@ d = d.drop(["PI","Expedition","OS Region","Reference_Author_Published_year","Ref
                         ],axis = 1)
 
 n = 3 # number of samples per measurement
+d['CV'] = d['Calcification_Standard_Deviation']/d["Calcification"]
 
-# Calculate mean CV for the dataset and use to fill missing standard deviations
-mean_CV = np.mean(d['Calcification_Standard_Deviation']/d['Calcification'])
-d['Calcification_Standard_Deviation'] = d['Calcification_Standard_Deviation'].fillna(
-    d['Calcification'] * mean_CV)
+#%%
+# Step 2: Calculate mean CV per OS Region
+region_cv = d.groupby("OS Region")['CV'].mean()
+global_cv = d['CV'].mean()
+
+# Step 4: Merge region-specific CV into DataFrame
+d = d.merge(region_cv.rename("mean_region_cv"), how='left', left_on="OS Region", right_index=True)
+
+# Step 5: Use global CV where region CV is NaN
+d['mean_region_cv'] = d['mean_region_cv'].fillna(global_cv)
+
+# Step 6: Fill missing standard deviations
+missing_std_mask = d['Calcification_Standard_Deviation'].isna()
+d.loc[missing_std_mask, 'Calcification_Standard_Deviation'] = (
+    d.loc[missing_std_mask, 'Calcification'] * d.loc[missing_std_mask, 'mean_region_cv']
+)
+
+# Drop the helper columns
+d.drop(columns=['CV', 'mean_region_cv'], inplace=True)
+#%%
 
 d['Calcification_Standard_Error_Measurement'] = d['Calcification_Standard_Deviation']/np.sqrt(n)
 d = d.dropna()
@@ -75,7 +92,7 @@ sample_df = pd.DataFrame(random_samples, columns=sample_columns)
 d.reset_index(inplace=True)
 sample_df.reset_index(inplace=True)
 d = pd.concat([d, sample_df], axis=1)
-d.drop(["index","Calcification_Standard_Deviation","Calcification_Standard_Error_Measurement"],axis=1,inplace=True)
+d.drop(["index","OS Region","Calcification_Standard_Deviation","Calcification_Standard_Error_Measurement"],axis=1,inplace=True)
 
 # Grid data to 180x360x41x12 (required for all datasets)
 depth_bins = np.linspace(0, 205, 42)
