@@ -4,7 +4,7 @@ import numpy as np
 import xarray as xr
 
 # Load raw dataset from Marsh et al.
-d_raw = pd.read_csv('/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_2018_v2.0.1.csv',
+d_raw = pd.read_csv('/user/work/mv23682/Abil/studies/wiseman2024/data/calcif_2018_v2.0.1.csv',
                  skiprows=1,
                  names=["PI","Expedition","OS Region","Reference_Author_Published_year","Reference_doi",
                         "Date","Sample_ID","Latitude","Longitude","Depth","Irr_Depth",
@@ -80,7 +80,7 @@ d.drop(columns=['CV', 'mean_region_cv'], inplace=True)
 
 d['Calcification_Standard_Error_Measurement'] = d['Calcification_Standard_Deviation']/np.sqrt(n)
 d = d.dropna()
-resamples = 5
+resamples = 50
 random_samples = np.random.normal(loc=d['Calcification'].values.reshape(-1,1),scale=d['Calcification_Standard_Error_Measurement'].values.reshape(-1,1), size=(len(d),resamples))
 random_samples[random_samples < 0] = 0
 
@@ -113,7 +113,7 @@ print(d["Calcification"].notna().sum())
 
 # Skip lines 79-100 if you do not want to add pseudo zeros below 0.01% Par (only applicable for CP data)
 # Load the 0.01% PAR mask from the NetCDF file
-mask_ds = xr.open_dataset('/home/mv23682/Documents/Abil/studies/wiseman2024/env_data_processing/regridded_data/PAR_01prct_mask.nc')
+mask_ds = xr.open_dataset('/user/work/mv23682/Abil/studies/wiseman2024/data/PAR_01prct_mask.nc')
 
 # Assuming the mask is binary (0s and 1s)
 mask = mask_ds['mask']
@@ -145,11 +145,11 @@ d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
 d['dummy'] = 1
 print("loading env")
 
-ds = xr.open_dataset('/home/mv23682/Documents/Abil/studies/wiseman2024/data/env_data.nc')
+ds = xr.open_dataset('/user/work/mv23682/Abil/studies/wiseman2024/data/env_data.nc')
 df = ds.to_dataframe()
 ds = None 
 df.reset_index(inplace=True)
-df = df[["temperature","sio4","po4","no3","o2","mld","DIC","TA","PAR","chlor_a","CI_2","time", "depth", "lat", "lon"]]
+df = df[["temperature","sio4","po4","no3","o2","mld","DIC","TA","PAR","time", "depth", "lat", "lon"]]
 df.set_index(['lat','lon','depth','time'],inplace=True)
 
 out = pd.concat([d,df], axis=1)
@@ -158,7 +158,7 @@ out = out.drop(['dummy'], axis = 1)
 out = out.dropna()
 ##non_zero_count = out["Calcification"].notna() &
 print((out["Calcification"].notna() & (out["Calcification"] != 0)).sum())
-out.to_csv("/home/mv23682/Documents/Abil/studies/wiseman2024/data/calcif_env_presample_v2.csv", index=True)
+out.to_csv("/user/work/mv23682/Abil/studies/wiseman2024/data/calcif_env_presample_v3.csv", index=True)
 
 print("fin")
 # %%
