@@ -1,5 +1,5 @@
 """
-Gephyrocapsa huxleyi global distribution 
+Gephyrocapsa huxleyi global distribution
 """
 # load dependencies
 import pandas as pd
@@ -18,48 +18,48 @@ from abil.utils import upsample
 import os
 os.chdir('./paper')
 
-# #load configuration yaml:
-# with open('./data/2-phase.yml', 'r') as f:
-#     model_config = load(f, Loader=Loader)
+#load configuration yaml:
+with open('./data/2-phase.yml', 'r') as f:
+    model_config = load(f, Loader=Loader)
 
-# #load training data:
-# d = pd.read_csv("./data/training.csv")
-# predictors = model_config['predictors']
+#load training data:
+d = pd.read_csv("./data/training.csv")
+predictors = model_config['predictors']
 
-# target = "Gephyrocapsa huxleyi HET"
+target = "Gephyrocapsa huxleyi HET"
 
-# print(d)
+print(d)
 
-# d = d.dropna(subset=predictors)
-# d[target] = d[target].fillna(0)
-# d = upsample(d, target, ratio=10)
-# y = d[target]
-# X_train = d[predictors]
+d = d.dropna(subset=predictors)
+d[target] = d[target].fillna(0)
+d = upsample(d, target, ratio=10)
+y = d[target]
+X_train = d[predictors]
 
-# # #train your model:
-# m = tune(X_train, y, model_config)
-# m.train(model="rf")
-# m.train(model="xgb")
-# m.train(model="knn")
+# #train your model:
+m = tune(X_train, y, model_config)
+m.train(model="rf")
+m.train(model="xgb")
+m.train(model="knn")
 
-# #predict your model:
-# X_predict = pd.read_csv("./data/env_mean_global_surface.csv")
-# X_predict.set_index(["lat", "lon"], inplace=True)
-# X_predict = X_predict[predictors]
-# X_predict = X_predict.dropna(subset=predictors)
+#predict your model:
+X_predict = pd.read_csv("./data/env_mean_global_surface.csv")
+X_predict.set_index(["lat", "lon"], inplace=True)
+X_predict = X_predict[predictors]
+X_predict = X_predict.dropna(subset=predictors)
 
-# m = predict(X_train, y, X_predict, model_config)
-# m.make_prediction()
+m = predict(X_train, y, X_predict, model_config)
+m.make_prediction()
 
-# # Posts
-# targets = np.array([target])
-# def do_post(statistic):
-#     m = post(X_train, y, X_predict, model_config, statistic, datatype="abundance")
-#     m.export_ds("my_first_2-phase_model")
+# Posts
+targets = np.array([target])
+def do_post(statistic):
+    m = post(X_train, y, X_predict, model_config, statistic, datatype="abundance")
+    m.export_ds("my_first_2-phase_model")
 
-# do_post(statistic="mean")
-# do_post(statistic="ci95_UL")
-# do_post(statistic="ci95_LL")
+do_post(statistic="mean")
+do_post(statistic="ci95_UL")
+do_post(statistic="ci95_LL")
 
 # Load the data
 ds = xr.open_dataset("./ModelOutput/ghux_example/posts/my_first_2-phase_model_mean_abundance.nc")
@@ -99,7 +99,7 @@ cbar0.set_label('log$_{10}$ abundance (cells L$^{-1}$)', size=8)
 
 # --- Plot Mean Abundance ---
 p1 = ds['Gephyrocapsa huxleyi HET'].plot(ax=axs[1], cmap='viridis', add_colorbar=False,
-                                    vmin=0) 
+                                    vmin=0)
 add_title(axs[1], titles[1], panel_labels[1])
 axs[1].set_ylim([-90, 90])
 cbar1 = plt.colorbar(p1, ax=axs[1], shrink=0.6, pad=0.1)
@@ -108,7 +108,7 @@ cbar1.set_label('log$_{10}$ abundance (cells L$^{-1}$)', size=8)
 
 # --- Plot CI Lower Limit ---
 p2 = ds_LL['Gephyrocapsa huxleyi HET'].plot(ax=axs[2], cmap='viridis', add_colorbar=False,
-                                       vmin=0) 
+                                       vmin=0)
 add_title(axs[2], titles[2], panel_labels[2])
 axs[2].set_ylim([-90, 90])
 cbar2 = plt.colorbar(p2, ax=axs[2], shrink=0.6, pad=0.1)
@@ -117,7 +117,7 @@ cbar2.set_label('log$_{10}$ abundance (cells L$^{-1}$)', size=8)
 
 # --- Plot CI Upper Limit ---
 p3 = ds_UL['Gephyrocapsa huxleyi HET'].plot(ax=axs[3], cmap='viridis', add_colorbar=False,
-                                       vmin=0) 
+                                       vmin=0)
 add_title(axs[3], titles[3], panel_labels[3])
 axs[3].set_ylim([-90, 90])
 cbar3 = plt.colorbar(p3, ax=axs[3], shrink=0.6, pad=0.1)
