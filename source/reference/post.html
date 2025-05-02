@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Post &#8212; Abil 25.04.14 documentation</title>
+    <title>Post &#8212; Abil 25.05.01 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=08adbd37"></script>
+    <script src="../../_static/documentation_options.js?v=26adcfd7"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
@@ -112,7 +112,7 @@
   
   
   
-    <p class="title logo__title">Abil 25.04.14 documentation</p>
+    <p class="title logo__title">Abil 25.05.01 documentation</p>
   
 </a></div>
     
@@ -430,11 +430,17 @@ column names to be grouped under each key.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.post.estimate_applicability">
-<span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
 <dd><p>Estimate the area of applicability for the data using a strategy similar to Meyer &amp; Pebesma 2022).</p>
 <p>This calculates the importance-weighted feature distances from test to train points,
 and then defines the “applicable” test sites as those closer than some threshold
 distance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>targets</strong> (<em>an np.array</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – An np.array of target variable names to include in the merge. If None, the default
+targets from <cite>self.targets</cite> are used (default is None).</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -556,7 +562,8 @@ defined by <cite>self.path_out</cite>, with optional metadata such as author and
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>targets</strong> (<em>str</em>) – The fields to be integrated. Default is ‘total’ from PIC or POC Abil output.</p></li>
+<li><p><strong>targets</strong> (<em>an np.array</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – An np.array of target variable names to include in the merge. If None, the default
+targets from <cite>self.targets</cite> are used (default is None).</p></li>
 <li><p><strong>monthly</strong> (<em>bool</em>) – Whether or not to calculate a monthly average value instead of an annual total. Default is False.</p></li>
 <li><p><strong>subset_depth</strong> (<em>float</em>) – Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.</p></li>
 <li><p><strong>export</strong> (<em>bool</em>) – Whether of not to export integrated totals as .csv. Default is True.</p></li>
@@ -591,7 +598,7 @@ spatial and temporal indices, calculates residuals, and exports the merged datas
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file_name</strong> (<em>str</em>) – The base name of the output file to save the merged dataset.</p></li>
-<li><p><strong>targets</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – A list of target variable names to include in the merge. If None, the default
+<li><p><strong>targets</strong> (<em>an np.array</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – An np.array of target variable names to include in the merge. If None, the default
 targets from <cite>self.targets</cite> are used (default is None).</p></li>
 </ul>
 </dd>
