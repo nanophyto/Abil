@@ -98,7 +98,6 @@ def estimate_prediction_quantiles(
     #######################################
 
     if isinstance(model, Pipeline):
-        print("model is classifier")
         pipeline = model
         model = pipeline.named_steps["estimator"]
         y_inverse_transformer = u.do_nothing
@@ -108,18 +107,13 @@ def estimate_prediction_quantiles(
         y_transformer = getattr(
             model, "func", FunctionTransformer().func
         )
-        print("y transformer is :", y_transformer)
-        print("if log should be ~6.9: ", y_transformer(np.array([[1000]])))
 
         y_inverse_transformer = getattr(
             model, "inverse_func", FunctionTransformer().inverse_func
         )       
-        print("y inverse transformer is :", y_inverse_transformer)
-        print("if exp should be ~1000: ", y_inverse_transformer(np.array([[6.9]])))
 
         model = model.regressor.named_steps["estimator"]
     else:
-        print("model is Voting regresor")
         pipeline = Pipeline(
             [("preprocessor", FunctionTransformer()), ("estimator", model)]
         )
@@ -135,10 +129,8 @@ def estimate_prediction_quantiles(
 
     if is_regressor(model):
         proba = False
-        print("model is regressor")
     else:
         proba = True
-        print("model is classifier")
     
 
     ############################################
@@ -164,17 +156,12 @@ def estimate_prediction_quantiles(
 
     if y_train is not None:
         if not proba:
-            print("max of y before transform is: ", np.max(y_train))
-
             y_train = pd.Series(                    
                 y_transformer(y_train),
                 index = getattr(y_train, "index", np.arange(y_train.shape[0]))
             )
-    
-            print("max of y after transform is: ", np.max(y_train))
           
         else: 
-            print("model is classifier")
             y_train = pd.Series(
                 y_train,
                 index = getattr(y_train, "index", np.arange(y_train.shape[0]))
@@ -189,14 +176,12 @@ def estimate_prediction_quantiles(
     if not _is_fitted(model):
         model.fit(X_train, y_train)
 
-        print("model is refitted with transformed data")
 
     ###############################################
     # MAKE QUANTILE PREDICTIONS FOR TRAINING DATA #
     ###############################################
 
     if cv is not None:
-        print("CV is used in this model")
         train_summary_stats = [
             _summarize_predictions(
                 model,
@@ -215,7 +200,6 @@ def estimate_prediction_quantiles(
             train_summary_stats, axis=0, ignore_index=False
         ).loc[X_train.index]
     else:
-        print("CV is not used in this model")
         train_summary_stats = _summarize_predictions(
             model,
             y_inverse_transformer,
@@ -289,14 +273,12 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
         train_results = engine(train_pred_jobs)
 
         if proba:
-            print("model is a classifier")  # for debug
             losses = 1 - np.array(
                 [balanced_accuracy_score(y_train.astype(int), 
                 pred.astype(int)) for pred in train_results]
             )
 
         else:
-            print("model is a regressor")  # for debug
             losses = np.array([mean_absolute_error(y_train, y_inverse_transformer(pred)) for pred in train_results])
 
         weights = 1 / (losses + 1e-99)  # Avoid division by zero
@@ -315,7 +297,6 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
                                              threshold=threshold)
 
         results = engine(predict_pred_jobs)
-        print("results.shape: ", np.column_stack(results).shape)
         chunk_preds = pd.DataFrame(
             y_inverse_transformer(np.column_stack(results)),
             index=getattr(chunk, "index", None),
@@ -326,7 +307,6 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
             lower = chunk_preds.apply(u.weighted_quantile, q=0.025, weights=weights, axis=1)
             upper =  chunk_preds.apply(u.weighted_quantile, q=0.975, weights=weights, axis=1)
         else:
-            print("weights is None")
             lower = chunk_preds.quantile(q=0.025, axis=1)
             upper =  chunk_preds.quantile(q=0.975, axis=1)
 
@@ -346,16 +326,10 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
 
 def _setup_pred_jobs(model, X, proba, threshold):
     if isinstance(model, (XGBClassifier, XGBRegressor)):
-        print("model is: ", model)
-        print("model is XGBoost")
         n_estimators = u.xgboost_get_n_estimators(model)
-        print("n_estimators: ", n_estimators)
         if n_estimators==None:
             raise ValueError("n_estimators not inferred correctly!")
-
         booster = model.get_booster()
-
-        print("booster :", booster)
         pred_jobs = (
             delayed(u._predict_one_member)(
                 i, 
@@ -367,9 +341,7 @@ def _setup_pred_jobs(model, X, proba, threshold):
             for i in range(n_estimators)
         )
     else:
-        print("model is: ", model)
         members, features_for_members = _flatten_metaensemble(model)
-        print("features_for_members:", features_for_members)
         pred_jobs = (
             delayed(u._predict_one_member)(
                 _,
@@ -394,27 +366,23 @@ def _flatten_metaensemble(me):
     
     # Case 1: RandomForest - get all its trees
     if hasattr(me, 'estimators_') and isinstance(me, (RandomForestRegressor, RandomForestClassifier)):
-        print("model inferred to be RF")
         n_features = me.n_features_in_
         estimators = me.estimators_
         features = [list(range(n_features))] * len(estimators)  # All trees use all features (but possibly different subsets)
     
     # Case 2: Bagging estimator (like BaggingRegressor with KNN)
     elif hasattr(me, 'estimators_') and hasattr(me, 'estimators_features_'):
-        print(f"model inferred to be B-KNN and is actually {me}")
         estimators = me.estimators_
         features = me.estimators_features_
     
     # Case 3: Regular ensemble (Voting, Stacking)
     elif hasattr(me, 'estimators_'):
-        print("Voting regressor or stacked")
         n_features = me.n_features_in_
         estimators = me.estimators_
         features = [list(range(n_features))] * len(estimators)
     
     # Case 4: Single estimator
     else:
-        print("something else")
         estimators = [me]
         features = [list(range(getattr(me, 'n_features_in_', X_train.shape[1])))]  # Fallback to X_train shape
     
@@ -449,7 +417,6 @@ if __name__ == "__main__":
 
     cv_splits = 5
     # Define cross-validation strategy
-    # cv = ZeroStratifiedKFold(n_splits=cv_splits)
     cv = KFold(n_splits=cv_splits)
 
     # Define model and method

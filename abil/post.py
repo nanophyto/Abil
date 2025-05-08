@@ -736,8 +736,9 @@ class post:
     
             Parameters
             ----------
-            targets : str
-                The fields to be integrated. Default is 'total' from PIC or POC Abil output.
+            targets : an np.array of str, optional
+                An np.array of target variable names to include in the merge. If None, the default 
+                targets from `self.targets` are used (default is None).
 
             monthly : bool
                 Whether or not to calculate a monthly average value instead of an annual total. Default is False.
@@ -753,7 +754,7 @@ class post:
     
             """
             ds = self.parent.d.to_xarray()
-            if targets.all == None:
+            if targets is None:
                 targets = self.targets
             if "total" in ds:
                 targets = np.append(targets, 'total')
@@ -802,22 +803,31 @@ class post:
 
                 print(f"Exported totals")
 
-    def estimate_applicability(self):
+    def estimate_applicability(self, targets=None):
         """
         Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
 
         This calculates the importance-weighted feature distances from test to train points,
         and then defines the "applicable" test sites as those closer than some threshold
         distance.
+        
+        Parameters
+        ----------
+        targets : an np.array of str, optional
+            An np.array of target variable names to include in the merge. If None, the default 
+            targets from `self.targets` are used (default is None).
+
         """
+        if targets is None:
+            targets = self.targets
 
         # create empty dataframe with the same index as X_predict
         aoa_dataset = pd.DataFrame(index=self.X_predict.index)
 
         # estimate the aoa for each target:
-        for i in range(len(self.targets)):
+        for i in range(len(targets)):
             
-            target = self.targets[i]
+            target = targets[i]
             target_no_space = target.replace(' ', '_')
 
             # load the voting regressor model object for each target:
@@ -977,8 +987,8 @@ class post:
         ----------
         file_name : str
             The base name of the output file to save the merged dataset.
-        targets : list of str, optional
-            A list of target variable names to include in the merge. If None, the default 
+        targets : an np.array of str, optional
+            An np.array of target variable names to include in the merge. If None, the default 
             targets from `self.targets` are used (default is None).
 
         Notes
@@ -998,7 +1008,7 @@ class post:
             If the observational dataset file cannot be found at the specified location.
         """
         # Select and rename the target columns for d
-        if targets.all == None:
+        if targets is None:
             targets = self.targets
         d = self.d[targets]
 
