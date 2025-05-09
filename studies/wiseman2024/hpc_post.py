@@ -52,8 +52,8 @@ def do_post(statistic):
         print('begin merge_obs')
         m.merge_obs(current_date,target_subset)
     
-    print('begin process_resampled_runs')
-    m.process_resampled_runs()
+        print('begin process_resampled_runs')
+        m.process_resampled_runs()
 
     print('begin export_ds')
     m.export_ds(current_date)
