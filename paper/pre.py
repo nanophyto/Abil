@@ -4,21 +4,21 @@ import xarray as xr
 from abil.analyze import area_of_applicability
 from sklearn.preprocessing import StandardScaler
 
-# ds = xr.open_dataset('/home/phyto-2/Abil_SDM_data/env_data.nc')
+ds = xr.open_dataset('/home/phyto-2/Abil_SDM_data/env_data.nc')
 
-# ds = ds[["temperature", 
-#     "sio4", "po4", "no3", 
-#     "o2", "DIC", "TA",
-#     "PAR"]]
+ds = ds[["temperature", 
+    "sio4", "po4", "no3", 
+    "o2", "DIC", "TA",
+    "PAR"]]
 
-# ds = ds.isel(depth=1).mean(dim=["time"]) 
+ds = ds.isel(depth=1).mean(dim=["time"]) 
 
-# d = ds.to_dataframe()
+d = ds.to_dataframe()
 
-# d.to_csv("./env_mean_global_surface.csv")
+d.to_csv("./env_mean_global_surface.csv")
 
 def generate_pseudo_absences(merged_df, missing_rows, env_vars, species_cols, 
-                             absence_ratio=1, aoa_threshold=0.951, min_presence=100):
+                             absence_ratio=3, aoa_threshold=0.99, min_presence=100):
     """
     Generate pseudo-absences for specified species at specified ratio to presences.
     
@@ -142,7 +142,6 @@ def merge_cascade_env(
     df.reset_index(inplace=True)
     df = df[env_vars]
     df.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
-
     print("Identifying rows in environmental data not present in observational data")
     missing_rows = df.loc[~df.index.isin(d.index)]
 
@@ -160,13 +159,25 @@ def merge_cascade_env(
             absence_ratio=absence_ratio
         )
 
-    merged.to_csv(out_path, index=True)
+    merged['Gephyrocapsa huxleyi HET'] = merged['Emiliania huxleyi HET']
+
+    merged.reset_index(inplace=True)
+
+    merged = merged[['Gephyrocapsa huxleyi HET', 'lat', 'lon']]
+    # Create a mask for rows to KEEP (i.e., NOT (latitude > 40 AND longitude between 120-180))
+    mask = ~((merged['lat'] > 40) & (merged['lon'] >= 120) & (merged['lon'] <= 180))
+    # Filter the DataFrame
+    merged = merged[mask]
+
+    merged = merged.dropna(subset=["Gephyrocapsa huxleyi HET"])
+
+    merged.to_csv(out_path, index=False)
     print("Finished merging and saving dataset")
 
 # Example usage with specific species:
 merge_cascade_env(
     obs_path="/home/phyto-2/CASCADE/gridded_datasets/gridded_abundances.csv",
-    env_path='/home/phyto-2/Abil/studies/devries2024/data/env_data.nc',
+    env_path='/home/phyto-2/Abil_SDM_data/env_data.nc',
     env_vars=["temperature", "sio4", "po4", "no3", "o2", "DIC", "TA", "PAR", "time", "depth", "lat", "lon"],
     species_list=["Emiliania huxleyi HET"],  # Specify species to process here
     out_path="/home/phyto-2/Abil/paper/data/training.csv",
@@ -180,7 +191,7 @@ import numpy as np
 
 d = pd.read_csv("/home/phyto-2/Abil/paper/data/training.csv")
 
-d['Emiliania huxleyi HET'] = np.log10(d['Emiliania huxleyi HET'] + 1)
+d['Gephyrocapsa huxleyi HET'] = np.log10(d['Gephyrocapsa huxleyi HET'] + 1)
 
 # --- Plot Training Data ---
 fig = plt.figure(figsize=(10, 6))
@@ -189,14 +200,14 @@ ax.set_global()  # This ensures the whole world is shown
 ax.coastlines()  # Add coastlines
 
 # Create the scatter plot
-sc = ax.scatter(d['lon'], d['lat'], c=d['Emiliania huxleyi HET'],
+sc = ax.scatter(d['lon'], d['lat'], c=d['Gephyrocapsa huxleyi HET'],
                cmap='viridis', s=10, transform=ccrs.PlateCarree(),
                vmin=0)
 
 # Add colorbar
-plt.colorbar(sc, label='Log10(Emiliania huxleyi HET + 1)')
+plt.colorbar(sc, label='Log10(Gephyrocapsa huxleyi HET + 1)')
 
 # Set title
-plt.title('Distribution of Emiliania huxleyi HET (Training Data)')
+plt.title('Distribution of Gephyrocapsa huxleyi HET (Training Data)')
 
 plt.show()
