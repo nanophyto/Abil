@@ -1,0 +1,64 @@
+---
+  hpc: False
+  local_root: /home/phyto/Abil/
+  hpc_root: /user/work/ba18321/Abil/
+
+  path_out:  examples/ModelOutput/ #root + folder
+  path_in:  examples/ModelOutput/mapie/predictions/ #root + folder
+
+  env_data_path:  examples/data/prediction.csv #root + folder
+  targets:  examples/data/targets.csv #root + folder
+  training:  examples/data/training.csv
+
+  predictors: ["temperature", "din", 
+     "irradiance"]
+    
+
+  verbose: 1
+  seed : 1 # random seed
+  n_threads : 10 # how many cpu threads to use
+  cv : 10
+  predict_probability: True
+
+  ensemble_config: 
+    classifier: True
+    regressor: False
+    m1: "rf"
+    m2: "xgb"
+    m3: "knn"
+     
+  upsample: False
+  stratify: True
+
+  clf_scoring:
+   accuracy: balanced_accuracy
+
+  param_grid:
+    rf_param_grid:
+      clf_param_grid:
+        estimator__n_estimators: [100]
+        estimator__max_features: [3, 4]
+        estimator__max_depth: [50, 100]
+        estimator__min_samples_leaf: [0.5, 1]
+        estimator__max_samples: [0.5, 1]   
+
+    xgb_param_grid:
+      clf_param_grid:  
+        estimator__learning_rate: [0.01]
+        estimator__n_estimators: [100]
+        estimator__max_depth: [4]
+        estimator__subsample: [0.6]  
+        estimator__colsample_bytree: [0.6]
+        estimator__gamma: [1] 
+        estimator__reg_alpha: [1]   
+
+    knn_param_grid:
+      clf_param_grid:  
+        estimator__max_samples: [0.5]
+        estimator__max_features: [0.5]
+        estimator__estimator__leaf_size: [30]
+        estimator__estimator__n_neighbors: [3]
+        estimator__estimator__p:  [1]           
+        estimator__estimator__weights: ["uniform"]
+
+  knn_bagging_estimators: 30

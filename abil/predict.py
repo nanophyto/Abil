@@ -1,28 +1,22 @@
+
+
 import pandas as pd
 import numpy as np
 import pickle
 import os
 import time
-import warnings
 
-from sklearn.ensemble import VotingRegressor, VotingClassifier
+from sklearn.ensemble import VotingRegressor
 from sklearn.model_selection import KFold, cross_validate
-from joblib import Parallel, delayed, parallel_backend  
+from joblib import Parallel, delayed
 
-from .utils import inverse_weighting, find_optimal_threshold
-import shutil
 
-# Set the custom temporary folder for loky
-temp_folder = os.path.join(".","tmp") 
-os.environ["LOKY_TEMP_FOLDER"] = temp_folder
-# Ensure the directory exists
-os.makedirs(temp_folder, exist_ok=True)
+if 'site-packages' in __file__ or os.getenv('TESTING') == 'true':
+    from abil.functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
+else:
+    from functions import inverse_weighting, ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 
-from . import unified_tree_or_bag as pp
-from .zir import ZeroInflatedRegressor
-from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
-
-def load_model_and_scores(path_out, ensemble_config, n, target):
+def def_prediction(path_out, ensemble_config, n, target):
     """
     Loads a trained model and scoring information, and calculates the mean absolute error (MAE) for the prediction.
 
@@ -79,7 +73,44 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
     return(m, scores)
 
 
-def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_train, y_train, cv, model_out, n_threads=8):
+def parallel_predict(prediction_function, X_predict, n_threads=1):
+    """
+    Splits the prediction task across multiple threads to predict on large datasets.
+
+    Parameters
+    ----------
+    prediction_function : callable
+        The model's prediction function to be applied to each chunk of data.
+    X_predict : DataFrame
+        The features (input data) on which to make predictions.
+    n_threads : int, optional, default=1
+        The number of threads to use for parallel processing.
+
+    Returns
+    -------
+    np.ndarray
+        The combined predictions from all threads.
+    """    
+
+    # Split the indices of X_predict into chunks
+    chunk_indices = np.array_split(X_predict.index, n_threads)
+
+
+    # Create a list of DataFrame chunks based on the split indices
+    df_sections = [X_predict.loc[chunk_idx] for chunk_idx in chunk_indices]
+
+    # Use joblib to process each chunk in parallel
+    predictions = Parallel(n_jobs=n_threads)(
+        delayed(prediction_function)(df_section) for df_section in df_sections
+    )
+
+    # Combine the predictions from all threads
+    combined_predictions = np.concatenate(predictions)
+
+    return combined_predictions
+
+
+def export_prediction(m, target, target_no_space, X_predict, model_out, n_threads=1):
     """
     Exports model predictions to a NetCDF file.
 
@@ -91,166 +122,74 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         The name of the target variable.
     target_no_space : str
         The target variable name with spaces replaced by underscores.
-    X_predict : pd.DataFrame of shape (n_points, n_features)
-        Features to predict on (e.g., environmental data), where n_points
-        is the total 1-d size of the features to predict on 
-        (ex. 31881600 for full 180x360x41x12 grid).
+    X_predict : DataFrame
+        The features on which to make predictions.
     model_out : str
         Path where the predictions should be saved.
     n_threads : int, optional, default=1
         The number of threads to use for parallel prediction.
     """
 
-    if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
-        with parallel_backend("loky", n_jobs=n_threads):
-            d = pp.estimate_prediction_quantiles(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
-            )["predict_stats"]
-            d['mean'] = m.predict(X_predict)
-        
-        d = d.to_xarray()
-        d['target'] = target
-        export_path = os.path.join(model_out, target_no_space + ".nc")
-        try: #make new dir if needed
-            os.makedirs(model_out)
-        except:
-            None
-        d.to_netcdf(export_path) 
-        print("finished exporting summary stats to: ",  export_path)
-        
-    elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
-        y_clf = y_train.copy()
-        y_clf[y_clf > 0] = 1
-        
-        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
+    d = X_predict.copy()
+    d[target] = parallel_predict(m.predict, X_predict, n_threads)
+    d = d.to_xarray()
+    
+    try: #make new dir if needed
+        os.makedirs(model_out)
+    except:
+        None
 
-        with parallel_backend("loky", n_jobs=n_threads):
-            d_both = pp.estimate_prediction_quantiles(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, threshold=optimal_threshold
-            )
-            # Generate classifier and regressor stats
-            d_clf = d_both['classifier_predict_stats']
-            d_reg = d_both['regressor_predict_stats']
+    export_path = os.path.join(model_out, target_no_space + ".nc")
 
 
-        columns = ["ci95_LL", "ci95_UL"]
-        d = pd.DataFrame(d_reg)
+    d[target].to_netcdf(export_path) 
 
-        for col in columns:
-            d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
-
-        with parallel_backend("loky", n_jobs=n_threads):
-            d['mean'] = m.predict(X_predict)
-
-        d_clf = d_clf.to_xarray()
-        d_reg = d_reg.to_xarray()
-        d = d.to_xarray()
-        d_clf['target'] = target
-        d_reg['target'] = target
-        d['target'] = target
-
-        clf_export_path = os.path.join(model_out, "clf", target_no_space + ".nc")
-        reg_export_path = os.path.join(model_out,"reg", target_no_space + ".nc")
-        zir_export_path = os.path.join(model_out, target_no_space + ".nc")
-
-        for dir_name in ["", "clf", "reg"]:
-            try:
-                os.makedirs(os.path.join(model_out, dir_name))
-            except FileExistsError:
-                pass
-
-        d_clf.to_netcdf(clf_export_path) 
-        print("finished exporting summary stats to: ",  clf_export_path)
-        d_reg.to_netcdf(reg_export_path) 
-        print("finished exporting summary stats to: ",  reg_export_path)
-        d.to_netcdf(zir_export_path) 
-        print("finished exporting summary stats to: ",  zir_export_path)
-
-    else:
-        raise ValueError("classifiers are not supported")
-
-    #remove loky tmp data:
-    shutil.rmtree(temp_folder, ignore_errors=True)
 
 class predict:
     """
-    Predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.
+    Predicts outcomes based on an ensemble of regression models and exports the predictions to a NetCDF file.
 
     Parameters
     ----------
-    X_train : pd.DataFrame of shape (n_samples, n_features)
+    X_train : {array-like, sparse matrix} of shape (n_samples, n_features)
         Training features used for model fitting.
-    y : pd.Series of shape (n_samples,) or (n_samples, n_outputs)
+    y : array-like of shape (n_samples,) or (n_samples, n_outputs)
         Target values used for model fitting.
-    X_predict : pd.DataFrame of shape (n_points, n_features)
-        Features to predict on, where `n_points` represents the total number of prediction points 
-        (e.g., 31881600 for a full 180x360x41x12 grid).
+    X_predict : {array-like, sparse matrix} of shape (n_samples, n_features)
+        Features to predict on (e.g., environmental data).
     model_config : dict
-        Dictionary containing model configuration parameters, including:
-            - seed : int
-                Random seed for reproducibility.
-            - root : str
-                Path to the root folder.
-            - path_out : str
-                Directory where predictions are saved.
-            - target : str
-                File name of the target list.
-            - verbose : int
-                Verbosity level (0-3).
-            - n_threads : int
-                Number of threads to use for parallel processing.
-            - cv : int
-                Number of cross-validation folds.
-            - ensemble_config : dict
-                Configuration for the ensemble setup, containing:
-                    - classifier : bool
-                        Whether to train a classification model.
-                    - regressor : bool
-                        Whether to train a regression model.
-                    - m{n} : str
-                        Model names (e.g., "m1: 'rf'", "m2: 'xgb'").
+        Dictionary containing model configuration parameters such as:
+        - seed: int, random seed for reproducibility
+        - path_out: str, output path for saving results
+        - path_in: str, input path to models
+        - verbose: int, verbosity level (0-3)
+        - cv: int, number of cross-validation folds
+        - ensemble_config: dict, configuration for ensemble models
     n_jobs : int, optional, default=1
-        Number of threads to use for parallel processing.
+        The number of threads to use for parallel processing.
 
     Attributes
     ----------
     path_out : str
-        Path where predictions and model outputs are saved.
+        The path where predictions and model outputs are saved.
     target : str
-        Name of the target variable.
+        The name of the target variable.
     target_no_space : str
-        Target variable name with spaces replaced by underscores.
+        The target variable name with spaces replaced by underscores.
     verbose : int
-        Verbosity level for logging.
+        Verbosity level for the model.
     n_jobs : int
-        Number of parallel threads used for prediction and cross-validation.
+        The number of parallel threads for prediction and cross-validation.
 
     Methods
     -------
     make_prediction()
-        Train the ensemble models and generate predictions, exporting them to NetCDF.
+        Fits the ensemble model(s) and makes predictions, exporting them to NetCDF.
     """
 
     def __init__(self, X_train, y, X_predict, model_config, n_jobs=1):
         """
-        Initialize the `predict` class with training data, prediction data, and model configurations.
-
-        Parameters
-        ----------
-        X_train : pd.DataFrame of shape (n_samples, n_features)
-            Training features used for model fitting.
-        y : pd.Series of shape (n_samples,) or (n_samples, n_outputs)
-            Target values used for model fitting.
-        X_predict : pd.DataFrame of shape (n_points, n_features)
-            Features for which predictions are to be made.
-        model_config : dict
-            Dictionary containing configuration parameters for the model and ensemble.
-        n_jobs : int, optional, default=1
-            Number of threads for parallel processing.
-
-        Returns
-        -------
-        None
+        Initializes the prediction process by setting up model configurations, cross-validation, and paths.
         """
                 
         self.st = time.time()
@@ -287,12 +226,7 @@ class predict:
         elif (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == False):
             raise ValueError("classifier and regressor can't both be False")
         else:
-            self.scoring = {
-                'R2': 'r2',
-                'MAE': 'neg_mean_absolute_error',
-                'RMSE': 'neg_root_mean_squared_error'
-            }
-
+            self.scoring = self.model_config['reg_scoring']
 
         if (self.ensemble_config["regressor"] !=True) and (self.ensemble_config["regressor"] !=False):
             raise ValueError("regressor should be True or False")
@@ -308,21 +242,21 @@ class predict:
         print("initialized prediction")
         
     def make_prediction(self):
+
         """
-        Fit models in the ensemble and generate predictions.
+        Fits the models in the ensemble and makes predictions. Exports the predictions and model performance metrics.
 
-        Predictions are exported to NetCDF files. If the ensemble contains multiple models, 
-        predictions are made for each individual model and the ensemble.
-
+        If multiple models are provided, predictions are made for both individual models and an ensemble of models.
+        
         Returns
         -------
         None
 
         Notes
         -----
-        - Individual model predictions and ensemble predictions are saved separately.
-        - Performance metrics (e.g., cross-validation scores) are saved for the ensemble.
-        - Only regression models are supported; classification is not implemented.
+        If more than one model is provided, predictions are made for both 
+        individual models and an ensemble of the models. 
+
         """
 
         number_of_models = len(self.ensemble_config) -2
@@ -330,7 +264,7 @@ class predict:
 
         if number_of_models==1:
 
-            m, mae1 = load_model_and_scores(self.path_out, self.ensemble_config, 0, self.target_no_space)
+            m, mae1 = def_prediction(self.path_out, self.ensemble_config, 0, self.target_no_space)
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = os.path.join(self.path_out, "predictions", model_name)
@@ -345,7 +279,7 @@ class predict:
             w = []
 
             for i in range(number_of_models):
-                m, mae = load_model_and_scores(self.path_out, self.ensemble_config, i, self.target_no_space)
+                m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = os.path.join(self.path_out, "predictions", model_name)
 
@@ -361,7 +295,8 @@ class predict:
                 mae_values.append(mae)
 
             w = inverse_weighting(mae_values) 
-            if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
+
+            if self.ensemble_config["regressor"] ==True:
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
                 model_out = os.path.join(self.path_out, "predictions", "ens")
                 export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
@@ -427,6 +362,8 @@ class predict:
 
             else:
                 raise ValueError("classifiers are not supported")
+
+            print(np.min(self.y))
 
             scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
                                     scoring=self.scoring, n_jobs=self.n_jobs)

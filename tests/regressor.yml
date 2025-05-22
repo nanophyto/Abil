@@ -3,16 +3,17 @@
 
   run_name: regressor #update for specific run name
   path_out:  tests/ModelOutput/ #root + folder
+  path_in:  predictions/ens/ #root + folder
 
-  prediction:  docs/examples/data/prediction.csv #root + folder
-  targets:  docs/examples/data/targets.csv #root + folder
-  training:  docs/examples/data/training.csv
+  prediction:  examples/data/prediction.csv #root + folder
+  targets:  examples/data/targets.csv #root + folder
+  training:  examples/data/training.csv
 
   predictors: ["feature_1", "feature_2", "feature_3"]
 
   verbose: 1
   seed : 1 # random seed
-  n_threads : 3 # how many cpu threads to use
+  n_threads : 1 # how many cpu threads to use
   cv : 10
 
   ensemble_config: 
@@ -24,6 +25,11 @@
 
   upsample: False
   stratify: False
+
+  reg_scoring:
+   R2: r2
+   MAE: neg_mean_absolute_error
+   RMSE: neg_root_mean_squared_error
 
   param_grid:
     rf_param_grid:

@@ -33,8 +33,4 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'pydata_sphinx_theme'
 
-html_theme_options = {
-    "navbar_end": ["theme-switcher", "version-switcher"],  # Remove "this-page" from navbar
-    "secondary_sidebar_items": []  # This removes the "This Page" section
-}
 
