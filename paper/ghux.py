@@ -18,31 +18,27 @@ from abil.utils import upsample
 import os
 os.chdir('./paper')
 
-#load configuration yaml:
+# Load configuration yaml:
 with open('./data/2-phase.yml', 'r') as f:
     model_config = load(f, Loader=Loader)
 
-#load training data:
+# Load training data:
 d = pd.read_csv("./data/training.csv")
 predictors = model_config['predictors']
-
 target = "Gephyrocapsa huxleyi HET"
-
-print(d)
-
 d = d.dropna(subset=predictors)
 d[target] = d[target].fillna(0)
 d = upsample(d, target, ratio=10)
 y = d[target]
 X_train = d[predictors]
 
-# #train your model:
+# Train your model:
 m = tune(X_train, y, model_config)
 m.train(model="rf")
 m.train(model="xgb")
 m.train(model="knn")
 
-#predict your model:
+# Predict your model:
 X_predict = pd.read_csv("./data/env_mean_global_surface.csv")
 X_predict.set_index(["lat", "lon"], inplace=True)
 X_predict = X_predict[predictors]
@@ -87,7 +83,7 @@ def add_title(ax, title, label, y=1.1):
     ax.set_title(f'$\mathbf{{{label}}}$  {title}', loc='left', pad=10, y=y, fontsize=10)
     return ax
 
-# --- Plot Training Data ---
+# Plot Training Data
 sc = axs[0].scatter(d['lon'], d['lat'], c=d['Gephyrocapsa huxleyi HET'],
                    cmap='viridis', s=10, transform=ccrs.PlateCarree(),
                    vmin=0)
@@ -97,7 +93,7 @@ cbar0 = plt.colorbar(sc, ax=axs[0], shrink=0.6, pad=0.1)
 cbar0.ax.tick_params(labelsize=8)
 cbar0.set_label('log$_{10}$ abundance (cells L$^{-1}$)', size=8)
 
-# --- Plot Mean Abundance ---
+# Plot Mean Abundance
 p1 = ds['Gephyrocapsa huxleyi HET'].plot(ax=axs[1], cmap='viridis', add_colorbar=False,
                                     vmin=0)
 add_title(axs[1], titles[1], panel_labels[1])
@@ -106,7 +102,7 @@ cbar1 = plt.colorbar(p1, ax=axs[1], shrink=0.6, pad=0.1)
 cbar1.ax.tick_params(labelsize=8)
 cbar1.set_label('log$_{10}$ abundance (cells L$^{-1}$)', size=8)
 
-# --- Plot CI Lower Limit ---
+# Plot CI Lower Limit
 p2 = ds_LL['Gephyrocapsa huxleyi HET'].plot(ax=axs[2], cmap='viridis', add_colorbar=False,
                                        vmin=0)
 add_title(axs[2], titles[2], panel_labels[2])
@@ -115,7 +111,7 @@ cbar2 = plt.colorbar(p2, ax=axs[2], shrink=0.6, pad=0.1)
 cbar2.ax.tick_params(labelsize=8)
 cbar2.set_label('log$_{10}$ abundance (cells L$^{-1}$)', size=8)
 
-# --- Plot CI Upper Limit ---
+# Plot CI Upper Limit
 p3 = ds_UL['Gephyrocapsa huxleyi HET'].plot(ax=axs[3], cmap='viridis', add_colorbar=False,
                                        vmin=0)
 add_title(axs[3], titles[3], panel_labels[3])
@@ -124,7 +120,7 @@ cbar3 = plt.colorbar(p3, ax=axs[3], shrink=0.6, pad=0.1)
 cbar3.ax.tick_params(labelsize=8)
 cbar3.set_label('log$_{10}$ abundance (cells L$^{-1}$)', size=8)
 
-# --- Add coastlines and gridlines ---
+# Add coastlines
 for ax in axs:
     ax.add_feature(cfeature.LAND, color='gray')
     ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
