@@ -163,7 +163,7 @@ def merge_cascade_env(
 
     merged.reset_index(inplace=True)
 
-    merged = merged[['Gephyrocapsa huxleyi HET', 'lat', 'lon']]
+    merged = merged[['Gephyrocapsa huxleyi HET', 'lat', 'lon', 'temperature', 'sio4', 'po4', 'no3', 'o2', 'DIC', 'TA', 'PAR']]
     # Create a mask for rows to KEEP (i.e., NOT (latitude > 40 AND longitude between 120-180))
     mask = ~((merged['lat'] > 40) & (merged['lon'] >= 120) & (merged['lon'] <= 180))
     # Filter the DataFrame
