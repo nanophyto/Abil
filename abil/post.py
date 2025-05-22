@@ -196,7 +196,6 @@ class post:
                 MAE = -1*np.mean(m['test_MAE'])
                 rRMSE = -1*np.mean(m['test_RMSE'])/mean
                 rMAE = -1*np.mean(m['test_MAE'])/mean            
-                target = self.d.columns[i]
                 performance = pd.DataFrame({'target':[target], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
                                             'rRMSE':[rRMSE], 'rMAE':[rMAE]})
                 all_performance.append(performance)
@@ -654,8 +653,9 @@ class post:
     
             Parameters
             ----------
-            targets : str
-                The fields to be integrated. Default is 'total' from PIC or POC Abil output.
+            targets : an np.array of str, optional
+                An np.array of target variable names to include in the merge. If None, the default 
+                targets from `self.targets` are used (default is None).
 
             monthly : bool
                 Whether or not to calculate a monthly average value instead of an annual total. Default is False.
@@ -671,7 +671,7 @@ class post:
     
             """
             ds = self.parent.d.to_xarray()
-            if targets.all == None:
+            if targets is None:
                 targets = self.targets
             if "total" in ds:
                 targets = np.append(targets, 'total')
@@ -711,8 +711,70 @@ class post:
 
                 print(f"Exported totals")
 
+    def estimate_applicability(self, targets=None):
+        """
+        Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
 
-    def merge_env(self, X_predict):
+        This calculates the importance-weighted feature distances from test to train points,
+        and then defines the "applicable" test sites as those closer than some threshold
+        distance.
+
+        A value of 0 indicates the point is within the Area of Applicability, 
+        while a value of 1 indicates the point is outside the Area of Applicability.
+        Note: if using pseudo-absences in y_train and  X_train, mask out where y_train = 0 to calculate
+        the AOA for the original dataset.
+        
+        Parameters
+        ----------
+        targets : an np.array of str, optional
+            An np.array of target variable names to include in the merge. If None, the default 
+            targets from `self.targets` are used (default is None).
+
+        """
+        if targets is None:
+            targets = self.targets
+
+        # create empty dataframe with the same index as X_predict
+        aoa_dataset = pd.DataFrame(index=self.X_predict.index)
+
+        # estimate the aoa for each target:
+        for i in range(len(targets)):
+            
+            target = targets[i]
+            target_no_space = target.replace(' ', '_')
+
+            # load the voting regressor model object for each target:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
+                m = pickle.load(file)
+            
+            aoa = area_of_applicability(
+                X_test=self.X_predict,
+                X_train=self.X_train,
+                y_train= self.y_train,
+                model=m
+            )
+
+            # update the dataframe, where each column name is the target analyzed
+            aoa_dataset[target] = aoa
+
+        # convert df to xarray ds:
+        aoa_dataset = aoa_dataset.to_xarray()
+        
+        # add metadata:
+        aoa_dataset['lat'].attrs['units'] = 'degrees_north'
+        aoa_dataset['lat'].attrs['long_name'] = 'latitude'
+
+        aoa_dataset['lon'].attrs['units'] = 'degrees_east'
+        aoa_dataset['lon'].attrs['long_name'] = 'longitude'
+
+        aoa_dataset['depth'].attrs['units'] = 'm'
+        aoa_dataset['depth'].attrs['positive'] = 'down'
+        
+        # export aoa to netcdf:
+        aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"))
+
+
+    def merge_env(self):
         """
         Merge model output with environmental data.
 
@@ -840,8 +902,8 @@ class post:
         ----------
         file_name : str
             The base name of the output file to save the merged dataset.
-        targets : list of str, optional
-            A list of target variable names to include in the merge. If None, the default 
+        targets : an np.array of str, optional
+            An np.array of target variable names to include in the merge. If None, the default 
             targets from `self.targets` are used (default is None).
 
         Notes
@@ -861,7 +923,7 @@ class post:
             If the observational dataset file cannot be found at the specified location.
         """
         # Select and rename the target columns for d
-        if targets.all == None:
+        if targets is None:
             targets = self.targets
         d = self.d[targets]
 

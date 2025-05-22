@@ -268,9 +268,8 @@ class predict:
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = os.path.join(self.path_out, "predictions", model_name)
-
-            export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
+            export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                              model_out, n_threads=self.n_jobs)
 
         elif number_of_models >=2:
                     
@@ -282,12 +281,15 @@ class predict:
             for i in range(number_of_models):
                 m, mae = def_prediction(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
-                model_out = os.path.join(self.path_out, "predictions", model_name, "50")
+                model_out = os.path.join(self.path_out, "predictions", model_name)
 
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)
+                if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
+                    export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                    model_out, n_threads=self.n_jobs)
+                if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
 
-                print("exporting " + model_name + " prediction to: " + model_out)
+                    export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                     model_out, n_threads=self.n_jobs)
 
                 models.append((model_name, m))
                 mae_values.append(mae)
@@ -296,9 +298,68 @@ class predict:
 
             if self.ensemble_config["regressor"] ==True:
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
-                model_out = os.path.join(self.path_out, "predictions", "ens", "50")
-                export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                              model_out = model_out, n_threads=self.n_jobs)                
+                model_out = os.path.join(self.path_out, "predictions", "ens")
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
+                
+                #export model object:
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
+            elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
+                clf_models = []
+                reg_models = []
+
+                for i in range(number_of_models):
+                    path_to_param  = os.path.join(self.path_out, "model", self.ensemble_config["m"+str(i+1)])
+
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_clf.sav', 'rb') as file:
+                        m_clf = pickle.load(file)       
+                    clf_models.append(('clf'+str(i+1), m_clf))  
+
+                    with open(os.path.join(path_to_param, self.target_no_space) + '_reg.sav', 'rb') as file:
+                        m_reg = pickle.load(file)
+
+                    reg_models.append(('reg'+str(i+1), m_reg))  
+
+                y = self.y.values.ravel().copy()
+
+                voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(self.X_train, y)
+                y_clf = y.copy()
+                y_clf[y_clf > 0] = 1
+
+                voting_clf = VotingClassifier(estimators=clf_models, weights=w, voting="soft").fit(self.X_train, y_clf)
+
+                optimal_threshold = find_optimal_threshold(voting_clf, self.X_train, y_clf)
+                m = ZeroInflatedRegressor(
+                    classifier=voting_clf,
+                    regressor=voting_reg,
+                    threshold=optimal_threshold
+                )
+                m.fit(self.X_train, y)
+                model_out = os.path.join(self.path_out, "predictions", "ens")
+                export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
+                                model_out, n_threads=self.n_jobs)
+                base_output_path = os.path.join(self.path_out, "model", "ens")
+
+                try: #make new dir if needed
+                    os.makedirs(base_output_path)
+                except:
+                    None
+
+                file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
+
+                with open(file_path, 'wb') as f:
+                    pickle.dump(m, f)
+
             else:
                 raise ValueError("classifiers are not supported")
 
@@ -314,9 +375,10 @@ class predict:
             except:
                 None
 
-            with open(os.path.join(model_out_scores, self.target_no_space) + self.extension, 'wb') as f:
+            scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
+
+            with open(scores_file_path, 'wb') as f:
                 pickle.dump(scores, f)
-            print("exporting ensemble scores to: " + model_out_scores + self.target_no_space + self.extension)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
