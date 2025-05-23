@@ -15,13 +15,13 @@ tags:
   - area of applicability
 authors:
   - name: Joost de Vries
-    orcid: 
+    orcid: 0000-0003-3427-6921
     affiliation: 1
   - name: Nicola A. Wiseman
     orcid: 0000-0001-9296-7566
     affiliation: 1
   - name: Levi John Wolf
-    orcid: 
+    orcid: 0000-0003-0274-599X
     affiliation: 1
 
 affiliations:
