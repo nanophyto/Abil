@@ -61,7 +61,7 @@ By combining a user-friendly interface, parallel processing capabilities, and a 
 
 # Acknowledgements
 
-This work was supported by funding from the UK Research and Innovation Natural Environment Research Council (CoccoTrait, NE/X001261/1).
+This work was supported by funding from the UK Research and Innovation Natural Environment Research Council (CoccoTrait, NE/X001261/1; NERC GW4+ DTP studentship, NE/L002434/1).
 
 # References
 
