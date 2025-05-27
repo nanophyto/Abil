@@ -577,19 +577,14 @@ predict.sh should say the following:</p>
 <span class="k">From</span>:<span class="w"> </span>continuumio/miniconda3
 
 <span class="gh">%files</span>
-<span class="w">    </span>../../dist/abil-25.03.06.tar.gz<span class="w"> </span>/root
 <span class="w">    </span>../../examples/conda/environment.yml<span class="w"> </span>/root
 
 <span class="gh">%post</span>
 <span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;. /opt/conda/etc/profile.d/conda.sh&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
 <span class="w">    </span>.<span class="w"> </span>/opt/conda/etc/profile.d/conda.sh
-<span class="w">    </span>conda<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>conda-libmamba-solver
-<span class="w">    </span>conda<span class="w"> </span>config<span class="w"> </span>--set<span class="w"> </span>solver<span class="w"> </span>libmamba
-<span class="w">    </span>conda<span class="w"> </span>config<span class="w"> </span>--set<span class="w"> </span>channel_priority<span class="w"> </span><span class="nb">true</span>
-<span class="w">    </span>conda<span class="w"> </span>config<span class="w"> </span>--add<span class="w"> </span>channels<span class="w"> </span>conda-forge
-<span class="w">    </span>conda<span class="w"> </span>env<span class="w"> </span>update<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>--file<span class="w"> </span>/root/environment.yml
-<span class="w">    </span><span class="nb">cd</span>
-<span class="w">    </span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>abil-25.03.06.tar.gz
+<span class="w">    </span>conda<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>mamba
+<span class="w">    </span>mamba<span class="w"> </span>env<span class="w"> </span>update<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>--file<span class="w"> </span>/root/environment.yml
+<span class="w">    </span>pip<span class="w"> </span>install<span class="w"> </span>abil
 
 <span class="gh">%runscript</span>
 <span class="w">    </span>.<span class="w"> </span>/opt/conda/etc/profile.d/conda.sh
