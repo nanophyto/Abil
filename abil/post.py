@@ -803,7 +803,7 @@ class post:
 
                 print(f"Exported totals")
 
-    def estimate_applicability(self, targets=None):
+    def estimate_applicability(self, targets=None, drop_zeros=False):
         """
         Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
 
@@ -821,6 +821,9 @@ class post:
         targets : an np.array of str, optional
             An np.array of target variable names to include in the merge. If None, the default 
             targets from `self.targets` are used (default is None).
+        drop_zeros : bool, optional
+            Wether or not to exclude rows where y_train values are equal to 0.
+            (default is False)
 
         """
         if targets is None:
@@ -838,12 +841,20 @@ class post:
             # load the voting regressor model object for each target:
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
                 m = pickle.load(file)
-            
+
+            # drop zeros if required:
+            if drop_zeros:
+                X_train = self.X_train[self.y_train>0]
+                y_train = self.y_train[self.y_train>0]
+            else:
+                X_train = self.X_train
+                y_train = self.y_train
+
             aoa = area_of_applicability(
-                X_test=self.X_predict,
-                X_train=self.X_train,
-                y_train= self.y_train,
-                model=m
+                X_test = self.X_predict,
+                X_train = X_train,
+                y_train = y_train,
+                model = m
             )
 
             # update the dataframe, where each column name is the target analyzed
