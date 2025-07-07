@@ -844,8 +844,15 @@ class post:
 
             # drop zeros if required:
             if drop_zeros:
-                X_train = self.X_train[self.y_train>0]
-                y_train = self.y_train[self.y_train>0]
+                # Get common indices first
+                common_idx = self.X_train.index.intersection(self.y_train.index)
+                X_train = self.X_train.loc[common_idx]
+                y_train = self.y_train.loc[common_idx]
+                
+                # Now filter zeros
+                mask = (y_train > 0)
+                X_train = X_train.loc[mask]
+                y_train = y_train.loc[mask]
             else:
                 X_train = self.X_train
                 y_train = self.y_train
