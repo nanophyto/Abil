@@ -844,15 +844,23 @@ class post:
 
             # drop zeros if required:
             if drop_zeros:
-                # Get common indices first
+                # 1. Get strict 1:1 aligned data
                 common_idx = self.X_train.index.intersection(self.y_train.index)
-                X_train = self.X_train.loc[common_idx]
-                y_train = self.y_train.loc[common_idx]
+                X_aligned = self.X_train.loc[common_idx]
+                y_aligned = self.y_train.loc[common_idx]
                 
-                # Now filter zeros
-                mask = (y_train > 0)
-                X_train = X_train.loc[mask]
-                y_train = y_train.loc[mask]
+                # 2. Filter zeros while maintaining alignment
+                mask = (y_aligned > 0).values.ravel()  # Force 1D array
+                X_train = X_aligned.iloc[mask]
+                y_train = y_aligned.iloc[mask]
+                
+                # 3. Final verification
+                if len(X_train) != len(y_train):
+                    raise ValueError(
+                        f"Final size mismatch after zero-dropping: "
+                        f"X_train {len(X_train)} vs y_train {len(y_train)}"
+                    )
+                
             else:
                 X_train = self.X_train
                 y_train = self.y_train
