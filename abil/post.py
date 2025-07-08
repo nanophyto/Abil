@@ -844,13 +844,22 @@ class post:
 
             # drop zeros if required:
             if drop_zeros:
+                # Get the y column name (handle both Series and DataFrame cases)
+                if isinstance(self.y_train, pd.Series):
+                    y_col = self.y_train.name
+                else:  # DataFrame
+                    y_col = self.y_train.columns[0]  # assuming single column
+                
                 # 1. Merge X_train and y_train into one DataFrame
                 combined = pd.concat([self.X_train, self.y_train], axis=1)
+                
+                combined = combined.dropna()
                 # 2. Drop rows where y_train == 0
-                combined = combined[combined[self.y_train.name] > 0]
+                combined = combined[combined[y_col] > 0]
+                
                 # 3. Split back into X_train and y_train
-                X_train = combined.drop(columns=[self.y_train.name])
-                y_train = combined[self.y_train.name]
+                X_train = combined.drop(columns=[y_col])
+                y_train = combined[y_col]
                 
             else:
                 X_train = self.X_train
