@@ -844,22 +844,13 @@ class post:
 
             # drop zeros if required:
             if drop_zeros:
-                # 1. Get strict 1:1 aligned data
-                common_idx = self.X_train.index.intersection(self.y_train.index)
-                X_aligned = self.X_train.loc[common_idx]
-                y_aligned = self.y_train.loc[common_idx]
-                
-                # 2. Filter zeros while maintaining alignment
-                mask = (y_aligned > 0).values.ravel()  # Force 1D array
-                X_train = X_aligned.iloc[mask]
-                y_train = y_aligned.iloc[mask]
-                
-                # 3. Final verification
-                if len(X_train) != len(y_train):
-                    raise ValueError(
-                        f"Final size mismatch after zero-dropping: "
-                        f"X_train {len(X_train)} vs y_train {len(y_train)}"
-                    )
+                # 1. Merge X_train and y_train into one DataFrame
+                combined = pd.concat([self.X_train, self.y_train], axis=1)
+                # 2. Drop rows where y_train == 0
+                combined = combined[combined[self.y_train.name] > 0]
+                # 3. Split back into X_train and y_train
+                X_train = combined.drop(columns=[self.y_train.name])
+                y_train = combined[self.y_train.name]
                 
             else:
                 X_train = self.X_train
@@ -890,7 +881,6 @@ class post:
         
         # export aoa to netcdf:
         aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"))
-
 
     def merge_env(self):
         """
