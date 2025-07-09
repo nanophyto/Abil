@@ -838,6 +838,7 @@ class post:
             target = targets[i]
             target_no_space = target.replace(' ', '_')
 
+            print("estimating AOA for: ", target)
             # load the voting regressor model object for each target:
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
                 m = pickle.load(file)
@@ -850,13 +851,19 @@ class post:
                 else:  # DataFrame
                     y_col = self.y_train.columns[0]  # assuming single column
                 
+                print("X_train is: ", print(self.X_train.head()))
+                print("y_train is: ", print(self.y_train.head()))
+
                 # 1. Merge X_train and y_train into one DataFrame
                 combined = pd.concat([self.X_train, self.y_train], axis=1)
                 
+                print("combined head: ", combined.head())
                 combined = combined.dropna()
+                print("length of combined: ", str(len(combined)))
                 # 2. Drop rows where y_train == 0
                 combined = combined[combined[y_col] > 0]
-                
+                print("length of combined after dropping zeros: ", str(len(combined)))
+
                 # 3. Split back into X_train and y_train
                 X_train = combined.drop(columns=[y_col])
                 y_train = combined[y_col]
