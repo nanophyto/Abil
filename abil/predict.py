@@ -67,9 +67,9 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
         print("predicting zero-inflated regressor")
         target_no_space = target.replace(' ', '_')
-        with open(os.path.join(path_to_param, target_no_space) + '_zir.sav', 'rb') as file:
+        with open(os.path.join(path_to_param, target_no_space) + '_reg.sav', 'rb') as file:
             m = pickle.load(file)
-        with open(os.path.join(path_to_scores, target_no_space) + '_zir.sav', 'rb') as file:
+        with open(os.path.join(path_to_scores, target_no_space) + '_reg.sav', 'rb') as file:
             scoring = pickle.load(file)
         scores = abs(np.mean(scoring['test_MAE']))
 
