@@ -67,7 +67,7 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
         print("predicting zero-inflated regressor")
         target_no_space = target.replace(' ', '_')
-        with open(os.path.join(path_to_param, target_no_space) + '_reg.sav', 'rb') as file:
+        with open(os.path.join(path_to_param, target_no_space) + '_zir.sav', 'rb') as file:
             m = pickle.load(file)
         with open(os.path.join(path_to_scores, target_no_space) + '_reg.sav', 'rb') as file:
             scoring = pickle.load(file)
@@ -287,7 +287,7 @@ class predict:
         elif (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == False):
             raise ValueError("classifier and regressor can't both be False")
         else:
-            self.scoring = {
+            self.reg_scoring = {
                 'R2': 'r2',
                 'MAE': 'neg_mean_absolute_error',
                 'RMSE': 'neg_root_mean_squared_error'
@@ -379,6 +379,21 @@ class predict:
                 with open(file_path, 'wb') as f:
                     pickle.dump(m, f)
 
+                scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
+                                scoring=self.reg_scoring, n_jobs=self.n_jobs)
+
+                model_out_scores = os.path.join(self.path_out, "scoring", "ens")
+
+                try: #make new dir if needed
+                    os.makedirs(model_out_scores)
+                except:
+                    None
+
+                scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
+
+                with open(scores_file_path, 'wb') as f:
+                                pickle.dump(scores, f)
+
             elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
                 clf_models = []
                 reg_models = []
@@ -397,7 +412,11 @@ class predict:
 
                 y = self.y.values.ravel().copy()
 
-                voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(self.X_train, y)
+                y_reg = y.copy()
+                y_reg = y[y > 0]
+                X_train_reg = self.X_train[y > 0].reset_index(drop=True)
+
+                voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(X_train_reg, y_reg)
                 y_clf = y.copy()
                 y_clf[y_clf > 0] = 1
 
@@ -423,25 +442,29 @@ class predict:
                 file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
 
                 with open(file_path, 'wb') as f:
-                    pickle.dump(m, f)
+                    pickle.dump(m, f)                
+
+                reg_scores = cross_validate(voting_reg, X_train_reg, y_reg, cv=self.cv, verbose=self.verbose, 
+                                scoring=self.reg_scoring, n_jobs=self.n_jobs)
+
+                model_out_scores = os.path.join(self.path_out, "scoring", "ens")
+
+                try: #make new dir if needed
+                    os.makedirs(model_out_scores)
+                except:
+                    None
+
+                reg_scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{"_reg.sav"}")
+
+                with open(reg_scores_file_path, 'wb') as f:
+                                pickle.dump(reg_scores, f)
+
 
             else:
                 raise ValueError("classifiers are not supported")
+            
 
-            scores = cross_validate(m, self.X_train, self.y, cv=self.cv, verbose=self.verbose, 
-                                    scoring=self.scoring, n_jobs=self.n_jobs)
-
-            model_out_scores = os.path.join(self.path_out, "scoring", "ens")
-
-            try: #make new dir if needed
-                os.makedirs(model_out_scores)
-            except:
-                None
-
-            scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
-
-            with open(scores_file_path, 'wb') as f:
-                pickle.dump(scores, f)
+            
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")
