@@ -238,13 +238,23 @@ class post:
             
             target = self.unique_targets[i]
             target_no_space = target.replace(' ', '_')
-            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "scoring", model, target_no_space) + self.extension, 'rb') as file:
+            if self.model_type=="reg":
+                with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "scoring", model, target_no_space) + self.extension, 'rb') as file:
+                    m = pickle.load(file)
 
-                m = pickle.load(file)
-            
-            if self.model_config['ensemble_config']['classifier'] and not self.model_config['ensemble_config']['regressor']:
-                raise ValueError("classifiers are not supported")
-            else:
+                mean = np.mean(self.d[self.d.columns[i]])
+                R2 = np.mean(m['test_R2'])
+                RMSE = -1*np.mean(m['test_RMSE'])
+                MAE = -1*np.mean(m['test_MAE'])
+                rRMSE = -1*np.mean(m['test_RMSE'])/mean
+                rMAE = -1*np.mean(m['test_MAE'])/mean            
+                performance = pd.DataFrame({'target':[target], 'R2':[R2], 'RMSE':[RMSE], 'MAE':[MAE],
+                                            'rRMSE':[rRMSE], 'rMAE':[rMAE]})
+                all_performance.append(performance)
+            elif self.model_type=="zir":
+                with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "scoring", model, target_no_space) + "_reg.sav", 'rb') as file:
+                    m = pickle.load(file)
+
                 mean = np.mean(self.d[self.d.columns[i]])
                 R2 = np.mean(m['test_R2'])
                 RMSE = -1*np.mean(m['test_RMSE'])
