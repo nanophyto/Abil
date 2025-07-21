@@ -803,7 +803,7 @@ class post:
 
                 print(f"Exported totals")
 
-    def estimate_applicability(self, targets=None):
+    def estimate_applicability(self, targets=None, threshold='tukey', return_all=False):
         """
         Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
 
@@ -843,7 +843,9 @@ class post:
                 X_test=self.X_predict,
                 X_train=self.X_train,
                 y_train= self.y_train,
-                model=m
+                model=m,
+                threshold=threshold,
+                return_all=False
             )
 
             # update the dataframe, where each column name is the target analyzed
