@@ -857,7 +857,7 @@ class post:
                     f"{target}_aoa": {"zlib": True, "complevel": 4, "dtype": "float32", "_FillValue": np.float32(np.nan)},
                     f"{target}_di": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                     f"{target}_lpd": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
-                    f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
+                    f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)}
                 }
             elif return_all == False:
                 aoa = area_of_applicability(
@@ -869,6 +869,10 @@ class post:
                     return_all=return_all
                 )
                 aoa_dataset[f"{target}_aoa"] = aoa
+
+                encoding = {
+                    f"{target}_aoa": {"zlib": True, "complevel": 4, "dtype": "float32", "_FillValue": np.float32(np.nan)}
+                }
             else:
                 print("return_all requires a boolean input")
 
