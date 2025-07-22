@@ -15,6 +15,7 @@ def area_of_applicability(
     feature_weight_kwargs=None,
     threshold="tukey",
     return_all=False,
+    chunk_size=10000
 ):
     """
     Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
@@ -110,6 +111,7 @@ def area_of_applicability(
         X_train * feature_weights[None, :], metric=metric
     )
     numpy.fill_diagonal(train_distance, train_distance.max())
+
     if cv is not None:
         d_mins = numpy.empty((X_train.shape[0],))
         mean_acc_num = 0
@@ -124,6 +126,7 @@ def area_of_applicability(
         d_mins = train_distance.min(axis=1)
         numpy.fill_diagonal(train_distance, 0)
         d_mean = d_mean = train_distance[train_distance > 0].mean()
+
     di_train = d_mins / d_mean
 
     if threshold == "tukey":
@@ -138,33 +141,69 @@ def area_of_applicability(
         cutpoint = numpy.percentile(di_train, threshold)
     cutpoint = numpy.maximum(cutpoint, di_train.max())
 
-    if return_all:
-        test_to_train_d = metrics.pairwise_distances(
-            X_test * feature_weights[None, :],
-            X_train * feature_weights[None, :],
-            metric=metric,
-        )
-        test_to_train_d_min = test_to_train_d.min(axis=1)
-        test_to_train_i = test_to_train_d.argmin(axis=1)
+    X_test_weighted = X_test * feature_weights[None, :]
+    X_train_weighted = X_train * feature_weights[None, :]
 
-        di_test = test_to_train_d_min / d_mean
-        lpd_test = ((test_to_train_d / test_to_train_d.mean()) < cutpoint).sum(axis=1)
+    # Efficient chunked dissimilarity index computation
+    def compute_dissimilarity_index_in_chunks(X_test_w, X_train_w, d_mean, cutpoint, return_all, metric="euclidean", chunk_size=10000):
+        n_test = X_test_w.shape[0]
+        di_test = numpy.empty(n_test)
+        test_to_train_i = numpy.empty(n_test, dtype=int)
+        lpd_test = numpy.full(n_test, numpy.nan) if not return_all else numpy.empty(n_test)
 
-    else:
-        # if we don't need local point density, this can be used
-        test_to_train_i, test_to_train_d_min = metrics.pairwise_distances_argmin_min(
-            X_test * feature_weights[None, :],
-            X_train * feature_weights[None, :],
-            metric=metric,
-        )
-        di_test = test_to_train_d_min / d_mean
-        lpd_test = numpy.empty_like(di_test) * numpy.nan
+        for start in range(0, n_test, chunk_size):
+            end = min(start + chunk_size, n_test)
+            X_chunk = X_test_w[start:end]
+            dist_chunk = metrics.pairwise_distances(X_chunk, X_train_w, metric=metric)
+            di_chunk = dist_chunk.min(axis=1) / d_mean
+            idx_chunk = dist_chunk.argmin(axis=1)
+
+            di_test[start:end] = di_chunk
+            test_to_train_i[start:end] = idx_chunk
+
+            if return_all:
+                lpd_test[start:end] = (dist_chunk / dist_chunk.mean() < cutpoint).sum(axis=1)
+
+        return di_test, test_to_train_i, lpd_test
+
+    di_test, test_to_train_i, lpd_test = compute_dissimilarity_index_in_chunks(
+        X_test_weighted,
+        X_train_weighted,
+        d_mean,
+        cutpoint,
+        return_all,
+        metric=metric,
+        chunk_size=chunk_size,
+    )
+
+    # if return_all:
+    #     test_to_train_d = metrics.pairwise_distances(
+    #         X_test * feature_weights[None, :],
+    #         X_train * feature_weights[None, :],
+    #         metric=metric,
+    #     )
+    #     test_to_train_d_min = test_to_train_d.min(axis=1)
+    #     test_to_train_i = test_to_train_d.argmin(axis=1)
+
+    #     di_test = test_to_train_d_min / d_mean
+    #     lpd_test = ((test_to_train_d / test_to_train_d.mean()) < cutpoint).sum(axis=1)
+
+    # else:
+    #     # if we don't need local point density, this can be used
+    #     test_to_train_i, test_to_train_d_min = metrics.pairwise_distances_argmin_min(
+    #         X_test * feature_weights[None, :],
+    #         X_train * feature_weights[None, :],
+    #         metric=metric,
+    #     )
+    #     di_test = test_to_train_d_min / d_mean
+    #     lpd_test = numpy.empty_like(di_test) * numpy.nan
 
     aoa = di_test >= cutpoint
-    if return_all:
-        return aoa, di_test, lpd_test, cutpoint, test_to_train_d
 
-    return aoa
+    if return_all:
+        return aoa, di_test, lpd_test, cutpoint
+    else:
+        return aoa
 
 if __name__ == "__main__":
     import pandas as pd
