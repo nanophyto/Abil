@@ -75,8 +75,6 @@ def area_of_applicability(
     if feature_weight_kwargs is None:
         feature_weight_kwargs = dict()
     
-    # TODO: make a mask, and set any "NA" input to be NA as output
-    #       then calculate the AOA only for values where no input X is NA. 
     base.check_array(X_test, ensure_all_finite='allow-nan')
     base.check_array(X_train, ensure_all_finite='allow-nan')
 
