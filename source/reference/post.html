@@ -430,7 +430,7 @@ column names to be grouped under each key.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.post.estimate_applicability">
-<span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tukey'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
 <dd><p>Estimate the area of applicability for the data using a strategy similar to Meyer &amp; Pebesma 2022).</p>
 <p>This calculates the importance-weighted feature distances from test to train points,
 and then defines the “applicable” test sites as those closer than some threshold
