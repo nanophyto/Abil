@@ -74,15 +74,37 @@ def area_of_applicability(
     """
     if feature_weight_kwargs is None:
         feature_weight_kwargs = dict()
+    
+    # TODO: make a mask, and set any "NA" input to be NA as output
+    #       then calculate the AOA only for values where no input X is NA. 
+    base.check_array(X_test, ensure_all_finite='allow-nan')
+    base.check_array(X_train, ensure_all_finite='allow-nan')
 
-    base.check_array(X_test)
-    base.check_array(X_train)
+    mask_test = numpy.asarray(~numpy.isnan(X_test).any(axis=1))
+    mask_train = numpy.asarray(~numpy.isnan(X_train).any(axis=1))
+    
+    if y_train is not None:
+        mask_train *= (~numpy.isnan(numpy.asarray(y_train)))
 
     n_test, n_features = X_test.shape
     n_train, _ = X_train.shape
     assert n_features == X_train.shape[1], (
         "features must be the same for both training and test data."
     )
+
+    assert mask_test.sum() > 2, "at least two test samples must be not nan"
+    assert mask_train.sum() > 2, "at least two train samples must be not nan"
+
+    aoa_ = numpy.empty((n_test, ))
+    di_test_ = numpy.empty((n_test, ))
+    lpd_test_ = numpy.empty((n_test, ))
+
+    if return_all:
+        lpd_test_ = numpy.empty((n_test, ))
+        test_to_train_d_ = numpy.empty((n_test, n_train))
+
+    X_train = X_train[mask_train]
+    y_train = y_train[mask_train]
 
     if not feature_weights:
         feature_weights = numpy.ones(n_features)
@@ -137,10 +159,27 @@ def area_of_applicability(
 
     if return_all:
         test_to_train_d = metrics.pairwise_distances(
-            X_test * feature_weights[None, :],
+            X_test[mask_test] * feature_weights[None, :],
+            # NOTE: X_train is already filtered from the previous step!
             X_train * feature_weights[None, :],
             metric=metric,
-        )
+        )  
+
+        # NOTE: This is gross, but I don't see how to work around this. 
+        # I tried doing something along the lines of: 
+        # ```{python}
+        # test_to_train_d_[
+        #     mask_test.reshape(-1,1)*mask_test.reshape(1,-1)
+        # ] = test_to_train_d
+        # ```
+        # but you can't assign a 2d matrix *into* a 2d selection. 
+        test_to_train_d_[:] = numpy.nan
+        i_in_full = 0
+        for i, is_null in enumerate(mask_test):
+            if not is_null:
+                test_to_train_d_[i, mask_train] = test_to_train_d[i_in_full]
+                i_in_full+=1
+
         test_to_train_d_min = test_to_train_d.min(axis=1)
         test_to_train_i = test_to_train_d.argmin(axis=1)
 
@@ -150,7 +189,8 @@ def area_of_applicability(
     else:
         # if we don't need local point density, this can be used
         test_to_train_i, test_to_train_d_min = metrics.pairwise_distances_argmin_min(
-            X_test * feature_weights[None, :],
+            X_test[mask_test] * feature_weights[None, :],
+            # NOTE: X_train is already filtered from the previous step!
             X_train * feature_weights[None, :],
             metric=metric,
         )
@@ -158,10 +198,16 @@ def area_of_applicability(
         lpd_test = numpy.empty_like(di_test) * numpy.nan
 
     aoa = di_test >= cutpoint
-    if return_all:
-        return aoa, di_test, lpd_test, cutpoint, test_to_train_d
 
-    return aoa
+    lpd_test_[mask_test] = lpd_test
+    di_test_[mask_test] = di_test
+    aoa_[mask_test] = aoa
+    lpd_test_[~mask_test] = di_test_[~mask_test] = aoa_[~mask_test] = np.nan
+
+    if return_all:
+        return aoa_, di_test_, lpd_test_, cutpoint, test_to_train_d_
+
+    return aoa_
 
 if __name__ == "__main__":
     import pandas as pd
