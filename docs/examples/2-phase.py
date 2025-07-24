@@ -52,7 +52,5 @@ def do_post(statistic):
     integ.integrated_totals(targets)
 
 do_post(statistic="mean")
-do_post(statistic="median")
-do_post(statistic="std")
 do_post(statistic="ci95_UL")
 do_post(statistic="ci95_LL")

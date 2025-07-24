@@ -1,0 +1,85 @@
+---
+  root: "." 
+  run_name: ghux_example #update for specific run name
+
+  path_out:  ModelOutput/ #root + folder
+
+  targets:  data/traits.csv #root + folder
+  training:  data/training.csv
+
+  predictors: ["temperature", 
+    "sio4", "po4", "no3", 
+    "o2", "DIC", "TA",
+    "PAR"]
+
+  verbose: 3
+  seed : 1 # random seed
+  n_threads : 12 # how many cpu threads to use (local)
+  cv : 10
+
+  ensemble_config: 
+    classifier: True
+    regressor: True
+    m1: "rf"
+    m2: "xgb"
+    m3: "knn"
+     
+  upsample: False
+  stratify: True
+  
+  reg_scoring:
+   R2: r2
+   MAE: neg_mean_absolute_error
+   RMSE: neg_root_mean_squared_error
+
+  clf_scoring:
+   accuracy: balanced_accuracy
+
+  param_grid:
+    rf_param_grid:
+      reg_param_grid:
+        n_estimators: [100]
+        max_features:  [0.8]
+        max_depth: [51]
+        min_samples_leaf: [1]
+        max_samples: [0.9]     
+      clf_param_grid:  
+        n_estimators: [250]
+        max_features:  [ 1]
+        max_depth: [51]
+        min_samples_leaf: [1]
+        max_samples: [0.9]     
+    xgb_param_grid:
+      reg_param_grid:  
+        learning_rate: [0.1]
+        n_estimators: [100]
+        max_depth: [7]
+        subsample: [0.4, 0.6]
+        colsample_bytree: [1]
+        gamma: [0] 
+        reg_alpha: [0]
+      clf_param_grid:  
+        learning_rate: [0.1]
+        n_estimators: [100]
+        max_depth: [51]
+        subsample: [ 1]
+        colsample_bytree: [0.9]
+        gamma: [0] 
+        reg_alpha: [0]
+    knn_param_grid:
+      reg_param_grid:  
+        max_samples: [0.9]
+        max_features: [0.8]
+        estimator__leaf_size: [30]
+        estimator__n_neighbors: [3]
+        estimator__p:  [1]        
+        estimator__weights: ["distance"]
+      clf_param_grid:  
+        max_samples: [0.9]
+        max_features: [0.8]
+        estimator__leaf_size: [30]
+        estimator__n_neighbors: [3,]
+        estimator__p:  [1]        
+        estimator__weights: ["distance"]
+  knn_bagging_estimators: 40
+

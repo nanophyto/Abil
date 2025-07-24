@@ -103,10 +103,11 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
     if (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
         with parallel_backend("loky", n_jobs=n_threads):
-            d = pp.process_data_with_model(
+            d = pp.estimate_prediction_quantiles(
                 m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
             )["predict_stats"]
-
+            d['mean'] = m.predict(X_predict)
+        
         d = d.to_xarray()
         d['target'] = target
         export_path = os.path.join(model_out, target_no_space + ".nc")
@@ -118,24 +119,28 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         print("finished exporting summary stats to: ",  export_path)
         
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
+        y_clf = y_train.copy()
+        y_clf[y_clf > 0] = 1
+        
+        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
 
         with parallel_backend("loky", n_jobs=n_threads):
-            d_both = pp.process_data_with_model(
-                m, X_predict=X_predict, X_train=X_train, y_train=y_train>0, cv=cv
+            d_both = pp.estimate_prediction_quantiles(
+                m, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv, threshold=optimal_threshold
             )
             # Generate classifier and regressor stats
             d_clf = d_both['classifier_predict_stats']
             d_reg = d_both['regressor_predict_stats']
 
 
-
-        columns = ["mean", "sd", "median", "ci95_LL", "ci95_UL"]
+        columns = ["ci95_LL", "ci95_UL"]
         d = pd.DataFrame(d_reg)
-        y_clf = y_train.copy()
-        y_clf[y_clf > 0] = 1
-        optimal_threshold = find_optimal_threshold(m.classifier, X_train, y_clf)
+
         for col in columns:
             d[col] = np.where(d_clf[col] < optimal_threshold, 0, d_reg[col])
+
+        with parallel_backend("loky", n_jobs=n_threads):
+            d['mean'] = m.predict(X_predict)
 
         d_clf = d_clf.to_xarray()
         d_reg = d_reg.to_xarray()
@@ -329,9 +334,6 @@ class predict:
 
             model_name = self.ensemble_config["m" + str(1)]
             model_out = os.path.join(self.path_out, "predictions", model_name)
-
-            # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-            #                   model_out = model_out, n_threads=self.n_jobs)
             export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
                               model_out, n_threads=self.n_jobs)
 
@@ -346,20 +348,10 @@ class predict:
                 m, mae = load_model_and_scores(self.path_out, self.ensemble_config, i, self.target_no_space)
                 model_name = self.ensemble_config["m" + str(i + 1)]
                 model_out = os.path.join(self.path_out, "predictions", model_name)
-                
-                print("===================")
-                print("DEBUG OF ZIR MODELS")
-                print("===================")
-                print(model_name)
-                print(type(m))
-                print(type(self.X_predict))
-                print(type(self.X_train))
-
 
                 if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
                     export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
                                     model_out, n_threads=self.n_jobs)
-                    print("exporting " + model_name + " prediction to: " + model_out)
                 if (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
 
                     export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
@@ -372,8 +364,6 @@ class predict:
             if (self.ensemble_config["classifier"] ==False) and (self.ensemble_config["regressor"] == True):
                 m = VotingRegressor(estimators=models, weights=w).fit(self.X_train, self.y)   
                 model_out = os.path.join(self.path_out, "predictions", "ens")
-                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                #               model_out = model_out, n_threads=self.n_jobs)      
                 export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
                                 model_out, n_threads=self.n_jobs)
                 
@@ -389,26 +379,22 @@ class predict:
                 with open(file_path, 'wb') as f:
                     pickle.dump(m, f)
 
-                print("exporting m ens to: ", file_path)
             elif (self.ensemble_config["classifier"] ==True) and (self.ensemble_config["regressor"] == True):
                 clf_models = []
                 reg_models = []
 
                 for i in range(number_of_models):
                     path_to_param  = os.path.join(self.path_out, "model", self.ensemble_config["m"+str(i+1)])
-                    print("loading clf")
 
                     with open(os.path.join(path_to_param, self.target_no_space) + '_clf.sav', 'rb') as file:
                         m_clf = pickle.load(file)       
                     clf_models.append(('clf'+str(i+1), m_clf))  
 
-                    print("loading reg")
                     with open(os.path.join(path_to_param, self.target_no_space) + '_reg.sav', 'rb') as file:
                         m_reg = pickle.load(file)
 
                     reg_models.append(('reg'+str(i+1), m_reg))  
 
-                print("defining voting regressor")
                 y = self.y.values.ravel().copy()
 
                 voting_reg = VotingRegressor(estimators=reg_models, weights=w).fit(self.X_train, y)
@@ -418,23 +404,15 @@ class predict:
                 voting_clf = VotingClassifier(estimators=clf_models, weights=w, voting="soft").fit(self.X_train, y_clf)
 
                 optimal_threshold = find_optimal_threshold(voting_clf, self.X_train, y_clf)
-                print("optimal clf threshold: ", optimal_threshold)
-                print("defining ZIR")
                 m = ZeroInflatedRegressor(
                     classifier=voting_clf,
                     regressor=voting_reg,
                     threshold=optimal_threshold
                 )
-                print("predicting ZIR")
                 m.fit(self.X_train, y)
-
                 model_out = os.path.join(self.path_out, "predictions", "ens")
-
-                # export_prediction(m=m, target = self.target, target_no_space = self.target_no_space, X_predict = self.X_predict,
-                #               model_out = model_out, n_threads=self.n_jobs)  
                 export_prediction(self.ensemble_config, m, self.target, self.target_no_space, self.X_predict, self.X_train, self.y, self.cv, 
                                 model_out, n_threads=self.n_jobs)
-                print("exporting ZIR object")
                 base_output_path = os.path.join(self.path_out, "model", "ens")
 
                 try: #make new dir if needed
@@ -446,8 +424,6 @@ class predict:
 
                 with open(file_path, 'wb') as f:
                     pickle.dump(m, f)
-
-                print("exporting to ens: ", file_path)
 
             else:
                 raise ValueError("classifiers are not supported")
@@ -464,10 +440,8 @@ class predict:
 
             scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
 
-
             with open(scores_file_path, 'wb') as f:
                 pickle.dump(scores, f)
-            print("exporting ensemble scores to: " + scores_file_path)
 
         else:
             raise ValueError("at least one model should be defined in the ensemble")

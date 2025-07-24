@@ -15,6 +15,7 @@ def area_of_applicability(
     feature_weight_kwargs=None,
     threshold="tukey",
     return_all=False,
+    chunk_size=10000
 ):
     """
     Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
@@ -71,6 +72,9 @@ def area_of_applicability(
         The first element is the applicability mentioned above, the second is the 
         dissimilarity index for the test points, and the thord
         is the local density of training points near each test point.
+
+        A value of 0 indicates the point is within the Area of Applicability, 
+        while a value of 1 indicates the point is outside the Area of Applicability.
     """
     if feature_weight_kwargs is None:
         feature_weight_kwargs = dict()
@@ -127,6 +131,7 @@ def area_of_applicability(
         X_train * feature_weights[None, :], metric=metric
     )
     numpy.fill_diagonal(train_distance, train_distance.max())
+
     if cv is not None:
         d_mins = numpy.empty((X_train.shape[0],))
         mean_acc_num = 0
@@ -141,6 +146,7 @@ def area_of_applicability(
         d_mins = train_distance.min(axis=1)
         numpy.fill_diagonal(train_distance, 0)
         d_mean = d_mean = train_distance[train_distance > 0].mean()
+
     di_train = d_mins / d_mean
 
     if threshold == "tukey":
@@ -201,11 +207,11 @@ def area_of_applicability(
     di_test_[mask_test] = di_test
     aoa_[mask_test] = aoa
     lpd_test_[~mask_test] = di_test_[~mask_test] = aoa_[~mask_test] = np.nan
-
+    
     if return_all:
         return aoa_, di_test_, lpd_test_, cutpoint, test_to_train_d_
-
-    return aoa_
+    else:
+        return aoa_, di_test_
 
 if __name__ == "__main__":
     import pandas as pd
@@ -279,3 +285,4 @@ if __name__ == "__main__":
     assert numpy.isnan(
         nantest[0][X_predict.index.isin(test_nans.index)]
     ).all()
+    

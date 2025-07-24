@@ -1,0 +1,71 @@
+---
+  root: /user/work/mv23682/Abil_Wiseman2025/
+  local_root: /home/mv23682/Documents/Abil_Wiseman2025/
+
+
+  run_name: v25.04.01 #update for specific run name
+
+  path_out:  scripts/ModelOutput/ #root + folder
+  path_in:  predictions/ens/ #root + folder
+
+  prediction: scripts/data/env_data.csv #root + folder
+  targets: scripts/data/traits_calc_presample.csv #root + folder
+  training: scripts/data/calcif_env_presample.csv
+
+  predictors: ["temperature", 
+    "sio4", "po4", "no3", 
+    "o2", "mld", "DIC", "TA",
+    "PAR","chlor_a","CI_2"]
+ 
+    
+  verbose: 1
+  seed : 1 # random seed
+  n_threads : 10 # how many cpu threads to use, reduce when using higher cv's in MAPIE
+  cv : 10
+  predict_probability: False 
+
+  ensemble_config: 
+    classifier: False
+    regressor: True
+    m1: "rf"
+    m2: "xgb"
+    m3: "knn"
+     
+  upsample: False
+  stratify: False
+
+  reg_scoring:
+   R2: r2
+   MAE: neg_mean_absolute_error
+   RMSE: neg_root_mean_squared_error
+
+  param_grid:
+    rf_param_grid:
+      reg_param_grid:
+        n_estimators: [250]
+        max_features:  [0.2, 0.4, 0.6, 0.8, 1]
+        max_depth: [25, 51, 75]
+        min_samples_leaf: [1, 2, 5]
+        max_samples: [0.8, 0.85, 0.9, 1]   
+
+    xgb_param_grid:
+      reg_param_grid:  
+        n_estimators: [100]      
+        learning_rate: [0.1, 0.15, 0.2]
+        max_depth: [5, 25, 51, 75]
+        subsample: [0.4, 0.6, 0.7, 0.8, 1.0]
+        colsample_bytree: [0.9, 0.95, 1]
+        reg_alpha: [0, 0.1]       
+        gamma: [0] 
+
+
+    knn_param_grid:
+      reg_param_grid:  
+        max_samples: [0.97, 0.98, 0.99, 1.0]
+        max_features: [3, 4, 5]
+        estimator__n_neighbors: [3, 4, 5, 6]
+        estimator__p:  [1, 2]
+        estimator__weights: ["distance"]
+
+  knn_bagging_estimators: 60
+

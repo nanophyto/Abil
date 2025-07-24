@@ -8,18 +8,116 @@ from sklearn.metrics import roc_curve, roc_auc_score
 
 from joblib import delayed
 import warnings
-from xgboost import DMatrix
+from xgboost import DMatrix, Booster
+from sklearn.exceptions import NotFittedError
+from xgboost import XGBClassifier, XGBRegressor, DMatrix
+from sklearn.pipeline import Pipeline
+from sklearn.compose import TransformedTargetRegressor
 
-def _predict_one_member(i, member, chunk):
+def do_nothing(x):
+    """
+    Apply no transformation to the input values.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    y : array-like
+        Non-transformed values.
+    """
+    return(x)
+
+def is_xgboost_model(model):
+    """
+    Recursively check if the model is an XGBoost model,
+    even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+    Uses `getattr` to check for XGBoost-specific attributes.
+    """
+    # Base case: Check if the model is directly an XGBoost model
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        return True
+    # Check for XGBoost-specific attributes using `getattr`
+    elif getattr(model, "get_booster", None) is not None or getattr(model, "booster", None) is not None:
+        return True
+
+    # Recursive case: Unwrap the model if it's a wrapper
+    if isinstance(model, Pipeline):
+        # Get the final estimator in the pipeline
+        return is_xgboost_model(model.steps[-1][1])
+    elif isinstance(model, TransformedTargetRegressor):
+        # Get the regressor inside the TransformedTargetRegressor
+        return is_xgboost_model(model.regressor)
+    elif getattr(model, "estimator", None) is not None:
+        # Handle other meta-estimators (e.g., GridSearchCV, BaggingRegressor)
+        return is_xgboost_model(model.estimator)
+    elif getattr(model, "base_estimator", None) is not None:
+        # Handle ensemble models (e.g., AdaBoost, Bagging)
+        return is_xgboost_model(model.base_estimator)
+
+    # If none of the above, it's not an XGBoost model
+    return False
+
+def xgboost_get_n_estimators(model):
+    """
+    Recursively extract the `n_estimators` parameter from an XGBoost model,
+    even if it's wrapped in a Pipeline or TransformedTargetRegressor.
+    """
+    # Unwrap TransformedTargetRegressor
+    if isinstance(model, TransformedTargetRegressor):
+        model = model.regressor
+
+    # Unwrap Pipeline
+    if isinstance(model, Pipeline):
+        model = model.steps[-1][1]  # Get the final estimator
+
+    # Check if the model is an XGBoost model and has `n_estimators`
+    if isinstance(model, (XGBClassifier, XGBRegressor)):
+        return model.n_estimators
+    elif hasattr(model, "n_estimators"):
+        return model.n_estimators
+
+    # If no `n_estimators` is found, raise an error or return a default value
+    raise ValueError("Could not extract `n_estimators` from the model.")
+from sklearn.pipeline import Pipeline
+from sklearn.compose import TransformedTargetRegressor
+from xgboost import XGBClassifier, XGBRegressor
+from sklearn.exceptions import NotFittedError
+from sklearn.base import _is_fitted
+
+def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
     """
     """
-    with warnings.catch_warnings(
-        action='ignore', category=UserWarning
-    ):
-        try:
-            return member.predict(DMatrix(chunk), iteration_range=(i, i+1))
-        except TypeError:
-            return member.predict(chunk)
+    with warnings.catch_warnings(action='ignore', category=UserWarning):
+        if proba:
+            if isinstance(member, Booster):
+                # For XGBoost Booster, use predict() to get probabilities
+                proba_preds = member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(i, i+1))
+                # For binary classification, proba_preds is already the probability of the positive class
+                positive_proba = proba_preds
+
+                if (positive_proba < 0).any() or (positive_proba > 1).any():
+                    raise ValueError("Probabilities are outside the valid range [0, 1]")
+                
+            else:
+                # For other models, use predict_proba()
+                proba_preds = member.predict_proba(chunk)
+                
+                # Extract probabilities for the positive class (second column)
+                positive_proba = proba_preds[:, 1]
+            
+            # Convert probabilities to binary predictions based on the threshold
+            return (positive_proba > threshold).astype(int)
+        else:
+            if isinstance(member, Booster):
+                prediction = member.predict(DMatrix(chunk, feature_names=chunk.columns.tolist()), iteration_range=(0, i+1))
+            #    if (prediction > 1).any():
+            #        raise ValueError("prediction >1 was made :)")
+            else:
+                prediction =member.predict(chunk)
+            return prediction
 
 
 def upsample(d, target, ratio=10):
@@ -279,3 +377,52 @@ def find_optimal_threshold(model, X, y_test):
     optimal_threshold = thresholds[optimal_idx]
 
     return optimal_threshold
+
+
+def weighted_quantile(x, weights, q=.5):
+    """
+    Computes the weighted quantile(s) of a dataset.
+
+    Parameters:
+    -----------
+    x : array-like of shape (n_samples,)
+        The data for which to compute the quantile(s).
+    weights : array-like of shape (n_samples,)
+        The weights corresponding to each data point in `x`.
+    q : float or array-like of floats, default=0.5
+        The quantile(s) to compute. Must be between 0 and 1. If an array is provided, 
+        the function will return the weighted quantiles for each value in `q`.
+
+    Returns:
+    --------
+    result : float or list of floats
+        The weighted quantile(s) corresponding to the input `q`. If `q` is a single float, 
+        the result is a single value. If `q` is an array-like, the result is a list of quantiles."
+    """
+    # build a dataframe with two columns, "weight" and "data"
+    df = pd.DataFrame.from_dict(dict(data=x, weight=weights))
+    # sort values ascending based on the "data"
+    df.sort_values("data", inplace=True)
+    # the cumulative sum of the weight column tells you how much 
+    # of the weight in the dataframe is less than or equal to
+    # this row. 
+    weight_sums = df.weight.cumsum()
+    # the sum of all weight is the last value of that cumulative sum    
+    total_weight = weight_sums.iloc[-1]
+    # then, the quantile value at each row is equal to the weight
+    # at or below that row divided by the total weight. 
+    observed_quantiles = (weight_sums/total_weight)
+    if isinstance(q, float):
+        assert (0 <= q) & (q <= 1), "quantile must be between zero and one"
+        # Give me all rows in the data where the fraction of weight
+        # smaller than that row is at least the quantile we're looking for. 
+        at_or_above_q = df.data[observed_quantiles >= q]
+        # and use the first row that is greater than q% of the weight. 
+        result = at_or_above_q.iloc[0]
+    else:
+        result = []
+        for q_ in q:
+            assert (0 <= q_) & (q_ <= 1), "all quantiles must be between zero and one"
+            at_or_above_q = df.data[observed_quantiles >= q_]
+            result.append(at_or_above_q.iloc[0])
+    return result
