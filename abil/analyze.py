@@ -258,4 +258,24 @@ if __name__ == "__main__":
         model=model,
         cv=reg.cv
     )
-    
+    ynan_train = y_train.copy()
+    train_nans = X_train.sample(frac=.2).sample(frac=.2, axis=1)
+    Xnan_train = X_train.copy()
+    Xnan_train.loc[train_nans.index, train_nans.columns] = numpy.nan
+    ynan_train[~ynan_train.index.isin(train_nans.index)].iloc[0] = numpy.nan
+    Xnan_predict = X_predict.copy()
+    test_nans = Xnan_predict.sample(frac=.2).sample(frac=.2,axis=1)
+    Xnan_predict.loc[test_nans.index, test_nans.columns] = numpy.nan
+
+
+    nantest = area_of_applicability(
+        X_test=Xnan_predict,
+        X_train=Xnan_train,
+        y_train=ynan_train,
+        model=model,
+        return_all=True
+    )
+
+    assert numpy.isnan(
+        nantest[0][X_predict.index.isin(test_nans.index)]
+    ).all()
