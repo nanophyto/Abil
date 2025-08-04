@@ -7,9 +7,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Abil'
-copyright = '2024, Abil developers'
+copyright = '2025, Abil developers'
 author = 'nanophyto'
-release = '25.05.01'
+release = '25.08.01'
 
 
 # -- General configuration ---------------------------------------------------
