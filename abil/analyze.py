@@ -206,7 +206,7 @@ def area_of_applicability(
     lpd_test_[mask_test] = lpd_test
     di_test_[mask_test] = di_test
     aoa_[mask_test] = aoa
-    lpd_test_[~mask_test] = di_test_[~mask_test] = aoa_[~mask_test] = np.nan
+    lpd_test_[~mask_test] = di_test_[~mask_test] = aoa_[~mask_test] = numpy.nan
     
     if return_all:
         return aoa_, di_test_, lpd_test_, cutpoint, test_to_train_d_
