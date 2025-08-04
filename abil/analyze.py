@@ -79,8 +79,8 @@ def area_of_applicability(
     if feature_weight_kwargs is None:
         feature_weight_kwargs = dict()
     
-    base.check_array(X_test, ensure_all_finite='allow-nan')
-    base.check_array(X_train, ensure_all_finite='allow-nan')
+    base.check_array(X_test, force_all_finite='allow-nan')
+    base.check_array(X_train, force_all_finite='allow-nan')
 
     mask_test = numpy.asarray(~numpy.isnan(X_test).any(axis=1))
     mask_train = numpy.asarray(~numpy.isnan(X_train).any(axis=1))
