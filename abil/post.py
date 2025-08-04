@@ -848,8 +848,12 @@ class post:
                 else:
                     y_train = self.y_train.copy()
                     y_train.loc[y_train[target] <= 0, target] = np.nan
+                    y_train = y_train[target]
             else:
-                y_train = self.y_train
+                if isinstance(self.y_train, pd.Series):
+                    y_train = self.y_train
+                else:
+                    y_train = self.y_train[target]
 
             if return_all == True:
                 aoa, di_test, lpd_test, cutpoint, test_to_train_d = area_of_applicability(
