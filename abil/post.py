@@ -803,7 +803,7 @@ class post:
 
                 print(f"Exported totals")
 
-    def estimate_applicability(self, targets=None, threshold='tukey', return_all=False):
+    def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
         """
         Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
 
@@ -821,6 +821,9 @@ class post:
         targets : an np.array of str, optional
             An np.array of target variable names to include in the merge. If None, the default 
             targets from `self.targets` are used (default is None).
+        drop_zeros : bool, optional
+            Wether or not to exclude rows where y_train values are equal to 0.
+            (default is False)
 
         """
         if targets is None:
@@ -838,12 +841,21 @@ class post:
             # load the voting regressor model object for each target:
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
                 m = pickle.load(file)
-            
+
+            if drop_zeros:
+                if isinstance(self.y_train, pd.Series):
+                    y_train = self.y_train.where(self.y_train > 0)
+                else:
+                    y_train = self.y_train.copy()
+                    y_train.loc[y_train[target] <= 0, target] = np.nan
+            else:
+                y_train = self.y_train
+
             if return_all == True:
                 aoa, di_test, lpd_test, cutpoint, test_to_train_d = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,
-                    y_train= self.y_train,
+                    y_train= y_train,
                     model=m,
                     threshold=threshold,
                     return_all=return_all
@@ -864,7 +876,7 @@ class post:
                 aoa, di_test = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,
-                    y_train= self.y_train,
+                    y_train= y_train,
                     model=m,
                     threshold=threshold,
                     return_all=return_all
