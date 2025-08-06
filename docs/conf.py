@@ -9,7 +9,7 @@
 project = 'Abil'
 copyright = '2025, Abil developers'
 author = 'nanophyto'
-release = '25.08.04'
+release = '25.08.06'
 
 
 # -- General configuration ---------------------------------------------------
