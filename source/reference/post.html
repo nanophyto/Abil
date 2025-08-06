@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Post &#8212; Abil 25.08.04 documentation</title>
+    <title>Post &#8212; Abil 25.08.06 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=b14b7dcb"></script>
+    <script src="../../_static/documentation_options.js?v=22cb73b8"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
@@ -112,7 +112,7 @@
   
   
   
-    <p class="title logo__title">Abil 25.08.04 documentation</p>
+    <p class="title logo__title">Abil 25.08.06 documentation</p>
   
 </a></div>
     
@@ -430,7 +430,7 @@ column names to be grouped under each key.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.post.estimate_applicability">
-<span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tukey'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tukey'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_zeros</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
 <dd><p>Estimate the area of applicability for the data using a strategy similar to Meyer &amp; Pebesma 2022).</p>
 <p>This calculates the importance-weighted feature distances from test to train points,
 and then defines the “applicable” test sites as those closer than some threshold
@@ -441,8 +441,12 @@ Note: if using pseudo-absences in y_train and  X_train, mask out where y_train =
 the AOA for the original dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>targets</strong> (<em>an np.array</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – An np.array of target variable names to include in the merge. If None, the default
-targets from <cite>self.targets</cite> are used (default is None).</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>targets</strong> (<em>an np.array</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – An np.array of target variable names to include in the merge. If None, the default
+targets from <cite>self.targets</cite> are used (default is None).</p></li>
+<li><p><strong>drop_zeros</strong> (<em>bool</em><em>, </em><em>optional</em>) – Wether or not to exclude rows where y_train values are equal to 0.
+(default is False)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
