@@ -1,6 +1,9 @@
 1-phase Ensemble 
 ****************
 
+In this example we will use Abil to predict the biomass of a highly abundant calcifying nanoplankton which is important for the carbon cycle (`Gephyrocapsa huxleyi` HET).
+
+
 YAML example
 ~~~~~~~~~~~~
 
@@ -9,7 +12,7 @@ For a detailed explanation of each parameter see :ref:`yaml_config`.
 
 An example of YAML file of a 1-phase model is provided below.
 
-.. literalinclude:: ../../../tests/regressor.yml
+.. literalinclude:: ../../examples/regressor.yml
    :language: yaml
 
 
@@ -30,28 +33,33 @@ For instructions on how to install these packages, see `requirements.txt <../../
 and the Abil :ref:`getting-started`.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 4-10
+   :lines: 4-20
    :language: python
 
 Loading the configuration YAML
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 After loading the required packages we need to define our file paths.
-Note that this is operating system specific, as Unix and Mac use '/' while for Windows '\' is used.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 16-17
+   :lines: 22
    :language: python
 
 
-Creating example data
+Loading example data
 ^^^^^^^^^^^^^^^^^^^^^
 
-Next we create some example data. When applying the pipeline to your own data, note that the data
+Next we load some example data, here we utilize abundance data from the CASCADE database (10.5281/zenodo.12797197).
+The CASCADE database provides observations gridded to 1 degree x 1 degree x 5 meters x 1 month. 
+For the example we focus on the Southern Ocean, a region with high Gephyrocapsa huxleyi abundances.
+Furthermore, we averaged the observations with time and use only observations in the top 5 meters to speed up the simulations. 
+In addition to our predictors (`y_train`) we also need environmental data which match our predictions ('X_train'). 
+This data was obtained from monthly climatologies from data sources such as the World Ocean Atlas, NNGv2, and Castant et al.
+When applying the pipeline to your own data, note that the data
 needs to be in a `Pandas DataFrame format <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 20-23
+   :lines: 24-35
    :language: python
 
 Training the model
@@ -61,16 +69,24 @@ Next we train our model. Note that depending on the number of hyper-parameters s
 YAML file this can be computationally very expensive and it recommended to do this on a HPC system. 
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 26-29
+   :lines: 37-41
    :language: python
 
 Making predictions
 ^^^^^^^^^^^^^^^^^^
 
-After training our model we can make predictions on a new dataset (X_predict):
+After training our model we can make predictions on the Southern Ocean dataset:
+
+First we need to load our environmental data to make the predictions on (X_predict):
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 32-33
+   :lines: 43-44
+   :language: python
+
+Then we can make our predictions:
+
+.. literalinclude:: ../../examples/regressor.py
+   :lines: 47-49
    :language: python
 
 Post-processing
@@ -79,5 +95,16 @@ Post-processing
 Finally, we conduct the post-processing.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 36-58
+   :lines: 51-60
    :language: python
+
+Plotting
+^^^^^^^^
+
+Now that we have predictions we can plot them:
+
+.. literalinclude:: ../../examples/regressor.py
+   :lines: 62-139
+   :language: python
+
+.. figure:: ../../examples/figure_1.png
