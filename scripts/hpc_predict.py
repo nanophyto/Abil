@@ -3,7 +3,7 @@ import pandas as pd
 import sys, os
 from yaml import load
 from yaml import CLoader as Loader
-from abil.predict import predict
+from abil.predict import ModelPredictor
 
 #define directories
 print(sys.argv[1])
@@ -41,7 +41,7 @@ X_train = d[predictors]
 print("finished loading data")
 
 #setup model
-m = predict(X_train, y, X_predict, model_config, n_jobs=n_jobs)
+m = ModelPredictor(X_train, y, X_predict, model_config, n_jobs=n_jobs)
 
 #run model
 m.make_prediction()

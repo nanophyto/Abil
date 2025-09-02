@@ -18,7 +18,7 @@ from .zir import ZeroInflatedRegressor
 from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 from .log_grid_search import LogGridSearch
 
-class tune:
+class ModelTuner:
     """
     A class for model training, hyperparameter tuning, and cross-validation.
 
@@ -41,7 +41,7 @@ class tune:
 
     def __init__(self, X_train, y, model_config, regions=None):
         """
-        Initialize the `tune` object.
+        Initialize the `ModelTuner` object.
 
         Parameters
         ----------
@@ -77,7 +77,7 @@ class tune:
         >>> X, y = example_data(y_name =  "Coccolithus pelagicus",
         ...                            n_samples=500, n_features=5, noise=20, 
         ...                            random_state=model_config['seed'])
-        >>> m = tune(X, y, model_config)
+        >>> m = ModelTuner(X, y, model_config)
 
         Returns
         -------
@@ -196,14 +196,14 @@ class tune:
         else:
             raise ValueError("invalid model")
 
-        if (self.ensemble_config['classifier'] == False) and (self.ensemble_config['regressor'] == False):
+        if (not self.ensemble_config['classifier']) and (not self.ensemble_config['regressor']):
             raise ValueError("both classifier and regressor defined as False")
 
-        if (self.ensemble_config['classifier'] == True) and (self.ensemble_config['regressor'] != True):        
+        if self.ensemble_config['classifier'] and (not self.ensemble_config['regressor']):        
             raise ValueError("classifiers are not supported")
 
-        if self.ensemble_config['regressor'] == True:
-            if self.ensemble_config['classifier'] == True:
+        if self.ensemble_config['regressor']:
+            if self.ensemble_config['classifier']:
                 y = self.y[self.y > 0]
                 X_train = self.X_train[self.y > 0].reset_index(drop=True)
                 cv = ZeroStratifiedKFold(n_splits=self.model_config['cv'])
@@ -264,20 +264,20 @@ class tune:
             if "RMSE" in reg_scoring:
                 try:
                     logging.info("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
-                except:
+                except ValueError:
                     logging.info("reg rRMSE is NA (!)")
             if "MAE" in reg_scoring:
                 try:
                     logging.info("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
-                except:
+                except ValueError:
                     logging.info("reg rMAE is NA (!)")
             if "R2" in reg_scoring:
                 try:
                     logging.info("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
-                except:
+                except ValueError:
                     logging.info("reg R2 is NA (!)")
 
-        if (self.ensemble_config['classifier'] == True) and (self.ensemble_config['regressor'] == True):      
+        if self.ensemble_config['classifier'] and self.ensemble_config['regressor']:      
             
             logging.info("training classifier")
 
@@ -367,15 +367,15 @@ class tune:
 
             try:
                 logging.info("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
-            except:
+            except ValueError:
                 logging.info("zir rRMSE is NA (!)")
             try:
                 logging.info("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
-            except:
+            except ValueError:
                 logging.info("zir rMAE is NA (!)")
             try:
                 logging.info("zir R2: " + str(round(np.mean(zir_scores['test_R2']), 2)))
-            except:
+            except ValueError:
                 logging.info("zir R2 is NA (!)")
         st = time.time()
         et = time.time()

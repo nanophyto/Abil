@@ -11,7 +11,7 @@ from skbio.diversity.alpha import shannon
 
 from .analyze import area_of_applicability
 
-class post:
+class SDMPostProcessor:
     """
     Post processing of SDM
     """
@@ -257,10 +257,8 @@ class post:
                 all_performance.append(performance)
 
         all_performance = pd.concat(all_performance)
-        try: #make new dir if needed
-            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance"))
-        except:
-            None
+        #make new dir if needed
+        os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance"), exist_ok=True)
         all_performance.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance", model) + "_performance.csv", index=False)
 
         logging.info("finished merging performance")
@@ -442,10 +440,8 @@ class post:
                     all_parameters.append(parameters) 
 
         all_parameters= pd.concat(all_parameters)
-        try: #make new dir if needed
-            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters"))
-        except:
-            None
+        #make new dir if needed
+        os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters"), exist_ok=True)
         all_parameters.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters", model) + "_parameters.csv", index=False)
 
         
@@ -609,7 +605,7 @@ class post:
 
             Examples
             --------
-            >>> m = post(model_config)
+            >>> m = SDMPostProcessor(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> print("Volume calculated:", int.ds['volume'].values)
 
@@ -671,7 +667,7 @@ class post:
 
             Examples
             --------
-            >>> m = post(model_config)
+            >>> m = SDMPostProcessor(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> result = integration.integrate_total(variable='Calcification')
             >>> print("Final integrated total:", result.values)
@@ -783,10 +779,9 @@ class post:
             if export:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 month_str = "_monthly_int" if monthly else ""
-                try: #make new dir if needed
-                    os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"))
-                except:
-                    None
+                #make new dir if needed
+                os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"), exist_ok=True)
+
 
                 path_out = self.parent.model_config['path_out']
                 run_name = self.parent.model_config['run_name']
@@ -856,7 +851,7 @@ class post:
                 else:
                     y_train = self.y_train[target]
 
-            if return_all == True:
+            if return_all is True:
                 aoa, di_test, lpd_test, cutpoint, test_to_train_d = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,
@@ -877,7 +872,7 @@ class post:
                     f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                 }
                 
-            elif return_all == False:
+            elif not return_all:
                 aoa, di_test, cutpoint = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,
@@ -962,10 +957,9 @@ class post:
         - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
-        try: #make new dir if needed
-            os.makedirs(self.path_out)
-        except:
-            None
+        #make new dir if needed
+        os.makedirs(self.path_out, exist_ok=True)
+
 
         logging.info("export_ds")
         logging.info("dataframe: ")
@@ -980,19 +974,19 @@ class post:
         try:
             ds['lat'].attrs['units'] = 'degrees_north'
             ds['lat'].attrs['long_name'] = 'latitude'
-        except:
+        except KeyError:
             pass
         try:
             ds['lon'].attrs['units'] = 'degrees_east'
             ds['lon'].attrs['long_name'] = 'longitude'
-        except:
+        except KeyError:
             pass
         try:
             ds['depth'].attrs['units'] = 'm'
             ds['depth'].attrs['positive'] = 'down'
-        except:
+        except KeyError:
             pass
-        #to add loop defining units of variables
+        # TODO: to add loop defining units of variables
 
         logging.info(self.d.head())
         ds.to_netcdf(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".nc")
@@ -1020,10 +1014,7 @@ class post:
         - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
-        try: #make new dir if needed
-            os.makedirs(self.path_out)
-        except:
-            None
+        os.makedirs(self.path_out, exist_ok=True)
     
         logging.info(self.d.head())
         self.d.to_csv(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".csv")

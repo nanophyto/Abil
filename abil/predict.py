@@ -111,10 +111,8 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         d = d.to_xarray()
         d['target'] = target
         export_path = os.path.join(model_out, target_no_space + ".nc")
-        try: #make new dir if needed
-            os.makedirs(model_out)
-        except:
-            None
+        os.makedirs(model_out, exist_ok=True)
+
         d.to_netcdf(export_path) 
         logging.info("finished exporting summary stats to: ",  export_path)
         
@@ -154,10 +152,7 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         zir_export_path = os.path.join(model_out, target_no_space + ".nc")
 
         for dir_name in ["", "clf", "reg"]:
-            try:
-                os.makedirs(os.path.join(model_out, dir_name))
-            except FileExistsError:
-                pass
+            os.makedirs(os.path.join(model_out, dir_name), exist_ok=True)
 
         d_clf.to_netcdf(clf_export_path) 
         logging.info("finished exporting summary stats to: ",  clf_export_path)
@@ -172,9 +167,9 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
     #remove loky tmp data:
     shutil.rmtree(temp_folder, ignore_errors=True)
 
-class predict:
+class ModelPredictor:
     """
-    Predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.
+    Class to predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.
 
     Parameters
     ----------
@@ -369,10 +364,9 @@ class predict:
                 
                 #export model object:
                 base_output_path = os.path.join(self.path_out, "model", "ens")
-                try: #make new dir if needed
-                    os.makedirs(base_output_path)
-                except:
-                    None
+                #make new dir if needed
+                os.makedirs(base_output_path, exist_ok=True)
+
 
                 file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
 
@@ -415,10 +409,8 @@ class predict:
                                 model_out, n_threads=self.n_jobs)
                 base_output_path = os.path.join(self.path_out, "model", "ens")
 
-                try: #make new dir if needed
-                    os.makedirs(base_output_path)
-                except:
-                    None
+                #make new dir if needed
+                os.makedirs(base_output_path, exist_ok=True)
 
                 file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
 
@@ -433,10 +425,9 @@ class predict:
 
             model_out_scores = os.path.join(self.path_out, "scoring", "ens")
 
-            try: #make new dir if needed
-                os.makedirs(model_out_scores)
-            except:
-                None
+            #make new dir if needed
+            os.makedirs(model_out_scores, exist_ok=True)
+
 
             scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
 

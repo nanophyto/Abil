@@ -117,22 +117,22 @@ class LogGridSearch:
         ValueError
             If `log` is not "yes", "no", or "both".
         """
-
-        if log=="yes":
+        # TODO: would encoding this as True/False/'both' be better?
+        if log == "yes":
 
             model = TransformedTargetRegressor(self.m, func = self.do_log, inverse_func=self.do_exp)
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
         
-        elif log=="no":
+        elif log == "no":
 
             model = TransformedTargetRegressor(self.m, func = self.do_nothing, inverse_func=self.do_nothing)
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
 
-        elif log =="both":
+        elif log == "both":
 
             normal_m = TransformedTargetRegressor(self.m, func = self.do_nothing, inverse_func=self.do_nothing)
             grid_search1 = GridSearchCV(normal_m, param_grid = self.param_grid, scoring=self.scoring, refit=True,
