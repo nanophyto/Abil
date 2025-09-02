@@ -8,6 +8,7 @@ import time
 import pickle
 import pandas as pd
 import numpy as np
+import logging
 from joblib import parallel_backend
 from xgboost import XGBClassifier, XGBRegressor
 from sklearn.model_selection import GridSearchCV, cross_validate, KFold
@@ -90,8 +91,7 @@ class tune:
         
         """
         self.y = y.sample(frac=1, random_state=model_config['seed']) #shuffle
-        print("length of y:")
-        print(len(self.y))
+        logging.info(f"length of y: {len(self.y)}")
         self.y = self.y.values.ravel()
         self.X_train = X_train.sample(frac=1, random_state=model_config['seed']) #shuffle
         self.model_config = model_config
@@ -113,7 +113,7 @@ class tune:
         if model_config['stratify']:
             if model_config['upsample']:
                 self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'])
-                print("upsampling = True")
+                logging.info("upsampling = True")
             else:
                 self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'])
         else:
@@ -217,7 +217,7 @@ class tune:
                 X_train = self.X_train
                 cv = self.cv
 
-            print("training regressor")
+            logging.info("training regressor")
 
             reg_scoring = {
                 'R2': 'r2',
@@ -233,7 +233,7 @@ class tune:
                 for key, value in user_reg_param_grid.items()
             }
 
-            print(reg_param_grid)
+            logging.info(reg_param_grid)
 
             reg_sav_out_scores = os.path.join(self.path_out, "scoring/", model)
             reg_sav_out_model = os.path.join(self.path_out, "model/", model)
@@ -263,7 +263,7 @@ class tune:
             with open(os.path.join(reg_sav_out_model, self.target_no_space) + '_reg.sav', 'wb') as f:
                 pickle.dump(m2, f)
 
-            print("exported model to: " + reg_sav_out_model + "/"  + self.target_no_space + '_reg.sav')
+            logging.info("exported model to: " + reg_sav_out_model + "/"  + self.target_no_space + '_reg.sav')
 
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 reg_scores = cross_validate(m2, X_train, y, cv = cv, verbose = self.verbose, scoring=reg_scoring)
@@ -271,27 +271,27 @@ class tune:
             with open(os.path.join(reg_sav_out_scores, self.target_no_space) + '_reg.sav', 'wb') as f:
                 pickle.dump(reg_scores, f)
 
-            print("exported scoring to: " + reg_sav_out_scores + "/" + self.target_no_space + '_reg.sav')
+            logging.info("exported scoring to: " + reg_sav_out_scores + "/" + self.target_no_space + '_reg.sav')
 
             if "RMSE" in reg_scoring:
                 try:
-                    print("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
+                    logging.info("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
                 except:
-                    print("reg rRMSE is NA (!)")
+                    logging.info("reg rRMSE is NA (!)")
             if "MAE" in reg_scoring:
                 try:
-                    print("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
+                    logging.info("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
                 except:
-                    print("reg rMAE is NA (!)")
+                    logging.info("reg rMAE is NA (!)")
             if "R2" in reg_scoring:
                 try:
-                    print("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
+                    logging.info("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
                 except:
-                    print("reg R2 is NA (!)")
+                    logging.info("reg R2 is NA (!)")
 
         if (self.ensemble_config['classifier'] == True) and (self.ensemble_config['regressor'] == True):      
             
-            print("training classifier")
+            logging.info("training classifier")
 
             user_clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
 
@@ -329,11 +329,10 @@ class tune:
             )
 
             y_clf =  self.y.copy()
-            print("length of y_clf:")
-            print(len(y_clf))
+            logging.info(f"length of y_clf: {len(y_clf)}")
 
             y_clf[y_clf > 0] = 1
-            print(y_clf)
+            logging.info(y_clf)
             with parallel_backend('multiprocessing', self.n_jobs):
                 clf.fit(self.X_train, y_clf)
 
@@ -342,19 +341,19 @@ class tune:
             with open(os.path.join(clf_sav_out_model, self.target_no_space) + '_clf.sav', 'wb') as f:
                 pickle.dump(m1, f)
             
-            print("exported model to:" + clf_sav_out_model + "/" + self.target_no_space + '_clf.sav')
+            logging.info("exported model to:" + clf_sav_out_model + "/" + self.target_no_space + '_clf.sav')
 
             clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
             
             with open(os.path.join(clf_sav_out_scores, self.target_no_space) + '_clf.sav', 'wb') as f:
                 pickle.dump(clf_scores, f)
             
-            print("exported scoring to: " + clf_sav_out_scores + "/" + self.target_no_space + '_clf.sav')
+            logging.info("exported scoring to: " + clf_sav_out_scores + "/" + self.target_no_space + '_clf.sav')
 
-            print(clf_scores['test_accuracy'])
-            print("clf balanced accuracy " + str((round(np.mean(clf_scores['test_accuracy']), 2))))
+            logging.info(clf_scores['test_accuracy'])
+            logging.info("clf balanced accuracy " + str((round(np.mean(clf_scores['test_accuracy']), 2))))
 
-            print("training zero-inflated regressor")
+            logging.info("training zero-inflated regressor")
 
             zir = ZeroInflatedRegressor(
                 classifier=m1,
@@ -380,7 +379,7 @@ class tune:
             with open(os.path.join(zir_sav_out_model, self.target_no_space) + '_zir.sav', 'wb') as f:
                 pickle.dump(zir, f)
                 
-            print("exported model to: " + zir_sav_out_model + "/" + self.target_no_space + '_zir.sav')
+            logging.info("exported model to: " + zir_sav_out_model + "/" + self.target_no_space + '_zir.sav')
 
             with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
                 zir_scores = cross_validate(zir, self.X_train, self.y, cv=self.cv, verbose =self.verbose, scoring=reg_scoring)
@@ -388,22 +387,22 @@ class tune:
             with open(os.path.join(zir_sav_out_scores, self.target_no_space) + '_zir.sav', 'wb') as f:
                 pickle.dump(zir_scores, f)
 
-            print("exported scoring to: " + zir_sav_out_scores + "/" + self.target_no_space + '_zir.sav')
+            logging.info("exported scoring to: " + zir_sav_out_scores + "/" + self.target_no_space + '_zir.sav')
 
             try:
-                print("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
+                logging.info("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
             except:
-                print("zir rRMSE is NA (!)")
+                logging.info("zir rRMSE is NA (!)")
             try:
-                print("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
+                logging.info("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
             except:
-                print("zir rMAE is NA (!)")
+                logging.info("zir rMAE is NA (!)")
             try:
-                print("zir R2: " + str(round(np.mean(zir_scores['test_R2']), 2)))
+                logging.info("zir R2: " + str(round(np.mean(zir_scores['test_R2']), 2)))
             except:
-                print("zir R2 is NA (!)")
+                logging.info("zir R2 is NA (!)")
         st = time.time()
         et = time.time()
         elapsed_time = et-st
 
-        print("execution time:", elapsed_time, "seconds")        
+        logging.info("execution time:", elapsed_time, "seconds")        

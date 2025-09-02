@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.model_selection import GridSearchCV
+import logging
 
 class LogGridSearch:
     """
@@ -146,19 +147,19 @@ class LogGridSearch:
             if (grid_search1.best_score_ > grid_search2.best_score_):
                 grid_search = grid_search1
                 best_transformation = "nolog"
-                print("best = nolog")
+                logging.info("best = nolog")
         
             elif (grid_search1.best_score_ < grid_search2.best_score_):
                 grid_search = grid_search2
                 best_transformation = "log"
-                print("best = log")
+                logging.info("best = log")
             else:
-                print("same performance for both models")
+                logging.info("same performance for both models")
                 grid_search = grid_search1
                 best_transformation = "nobest"
             grid_search.cv_results_['best_transformation'] = best_transformation
 
         else: 
-            print("defined log invalid, pick from yes, no or both")
+            logging.info("defined log invalid, pick from yes, no or both")
 
         return grid_search

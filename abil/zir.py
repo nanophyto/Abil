@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import logging
 from sklearn.base import BaseEstimator, RegressorMixin, clone, is_regressor, is_classifier
 
 class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
@@ -81,7 +82,7 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
                         y[non_zero_indices],
                 )
         else:
-            print("All predictions are zero (!), skipping regressor fitting.")
+            logging.info("All predictions are zero (!), skipping regressor fitting.")
         
         return self
 

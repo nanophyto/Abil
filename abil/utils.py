@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
+import logging
 
 from sklearn.datasets import make_regression
 from sklearn.utils import resample
@@ -188,18 +189,18 @@ def merge_obs_env(obs_path="../data/gridded_abundances.csv",
     d.rename({'Latitude': 'lat', 'Longitude': 'lon', 'Depth': 'depth', 'Month': 'time'}, inplace=True, axis=1)
     d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
 
-    print("loading env")
+    logging.info("loading env")
     ds = xr.open_dataset(env_path)
-    print("converting to dataframe")
+    logging.info("converting to dataframe")
     df = ds.to_dataframe()
     ds = None
     df.reset_index(inplace=True)
     df = df[env_vars]
     df.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
-    print("merging environment")
+    logging.info("merging environment")
     out = d.merge(df, how="left", left_index=True, right_index=True)
     out.to_csv(out_path, index=True)
-    print("fin")
+    logging.info("fin")
 
 def example_data(
     y_name, 

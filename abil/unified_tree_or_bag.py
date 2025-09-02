@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-import warnings
+import logging
+
 from sklearn.metrics import mean_absolute_error, balanced_accuracy_score
 
 from sklearn.model_selection import KFold
@@ -509,11 +510,11 @@ if __name__ == "__main__":
         vzir_results = estimate_prediction_quantiles(
             zir_of_vmodels, X_predict=X_predict, X_train=X_train, y_train=y_train, cv=cv
         )
-    print("\n=== Training Summary Stats ===\n", results["train_stats"].head())
-    print("\n=== Prediction Summary Stats ===\n", results["predict_stats"].head())
+    logging.info("\n=== Training Summary Stats ===\n", results["train_stats"].head())
+    logging.info("\n=== Prediction Summary Stats ===\n", results["predict_stats"].head())
 
-    print("\n=== Training Summary Stats ===\n", vzir_results["classifier_train_stats"].head())
-    print("\n=== Prediction Summary Stats ===\n", vzir_results["classifier_predict_stats"].head())
+    logging.info("\n=== Training Summary Stats ===\n", vzir_results["classifier_train_stats"].head())
+    logging.info("\n=== Prediction Summary Stats ===\n", vzir_results["classifier_predict_stats"].head())
     
-    print("\n=== Training Summary Stats ===\n", vzir_results["regressor_train_stats"].head())
-    print("\n=== Prediction Summary Stats ===\n", vzir_results["regressor_predict_stats"].head())
+    logging.info("\n=== Training Summary Stats ===\n", vzir_results["regressor_train_stats"].head())
+    logging.info("\n=== Prediction Summary Stats ===\n", vzir_results["regressor_predict_stats"].head())
