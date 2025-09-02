@@ -1,9 +1,3 @@
-import os
-os.environ['MKL_NUM_THREADS'] = '1'
-os.environ['OMP_NUM_THREADS'] = '1'
-os.environ['MKL_DYNAMIC'] = 'FALSE'
-os.environ["OMP_THREAD_LIMIT"] = "1"
-
 import time
 import pickle
 import pandas as pd
@@ -406,3 +400,12 @@ class tune:
         elapsed_time = et-st
 
         logging.info("execution time:", elapsed_time, "seconds")        
+
+
+if __name__ == "__main__":
+    import os
+    os.environ['MKL_NUM_THREADS'] = '1'
+    os.environ['OMP_NUM_THREADS'] = '1'
+    os.environ['MKL_DYNAMIC'] = 'FALSE'
+    os.environ["OMP_THREAD_LIMIT"] = "1"
+
