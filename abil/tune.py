@@ -1,4 +1,5 @@
 import time
+import os
 import pickle
 import pandas as pd
 import numpy as np
@@ -233,15 +234,8 @@ class tune:
             reg_sav_out_model = os.path.join(self.path_out, "model/", model)
 
 
-            try: #make new dir if needed
-                os.makedirs(reg_sav_out_scores)
-            except:
-                None
-
-            try: #make new dir if needed
-                os.makedirs(reg_sav_out_model)
-            except:
-                None            
+            os.makedirs(reg_sav_out_scores, exist_ok=True)
+            os.makedirs(reg_sav_out_model, exist_ok=True)         
                 
             reg_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
                         ('estimator', reg_estimator)])
@@ -301,15 +295,10 @@ class tune:
             clf_sav_out_model = os.path.join(self.path_out, "model/", model)
 
 
-            try: #make new dir if needed
-                os.makedirs(clf_sav_out_scores)
-            except:
-                None
+            
+            os.makedirs(clf_sav_out_scores, exist_ok=True)
+            os.makedirs(clf_sav_out_model, exist_ok=True)
 
-            try: #make new dir if needed
-                os.makedirs(clf_sav_out_model)
-            except:
-                None
 
             clf_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
                       ('estimator', clf_estimator)])
@@ -358,15 +347,8 @@ class tune:
             zir_sav_out_model = os.path.join(self.path_out, "model/", model)
 
 
-            try: #make new dir if needed
-                os.makedirs(zir_sav_out_scores)
-            except:
-                None
-
-            try: #make new dir if needed
-                os.makedirs(zir_sav_out_model)
-            except:
-                None           
+            os.makedirs(zir_sav_out_scores, exist_ok=True)
+            os.makedirs(zir_sav_out_model, exist_ok=True)
 
             zir.fit(self.X_train, self.y)
 
