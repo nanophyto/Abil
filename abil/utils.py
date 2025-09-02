@@ -413,7 +413,8 @@ def weighted_quantile(x, weights, q=.5):
     # at or below that row divided by the total weight. 
     observed_quantiles = (weight_sums/total_weight)
     if isinstance(q, float):
-        assert (0 <= q) & (q <= 1), "quantile must be between zero and one"
+        if not ((0 <= q) & (q <= 1)):
+            raise ValueError("quantile must be between zero and one")
         # Give me all rows in the data where the fraction of weight
         # smaller than that row is at least the quantile we're looking for. 
         at_or_above_q = df.data[observed_quantiles >= q]
@@ -422,7 +423,8 @@ def weighted_quantile(x, weights, q=.5):
     else:
         result = []
         for q_ in q:
-            assert (0 <= q_) & (q_ <= 1), "all quantiles must be between zero and one"
+            if not ((0 <= q_) & (q_ <= 1)):
+                raise ValueError("all quantiles must be between zero and one")
             at_or_above_q = df.data[observed_quantiles >= q_]
             result.append(at_or_above_q.iloc[0])
     return result

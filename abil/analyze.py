@@ -90,12 +90,16 @@ def area_of_applicability(
 
     n_test, n_features = X_test.shape
     n_train, _ = X_train.shape
-    assert n_features == X_train.shape[1], (
+
+    if n_features != X_train.shape[1]:
+        raise ValueError(
         "features must be the same for both training and test data."
     )
 
-    assert mask_test.sum() > 2, "at least two test samples must be not nan"
-    assert mask_train.sum() > 2, "at least two train samples must be not nan"
+    if mask_test.sum() <= 2:
+        raise ValueError("at least two test samples must be not nan")
+    if mask_train.sum() <= 2:
+        raise ValueError("at least two train samples must be not nan")
 
     aoa_ = numpy.empty((n_test, ))
     di_test_ = numpy.empty((n_test, ))
@@ -122,7 +126,8 @@ def area_of_applicability(
         ).importances_mean
         feature_weights /= feature_weights.sum()
     else:
-        assert len(feature_weights) == n_features, (
+        if len(feature_weights) != n_features:
+            raise ValueError(
             "weights must be provided for all features"
         )
         feature_weights = feature_weights / sum(feature_weights)
@@ -282,7 +287,8 @@ if __name__ == "__main__":
         return_all=True
     )
 
-    assert numpy.isnan(
+    if not numpy.isnan(
         nantest[0][X_predict.index.isin(test_nans.index)]
-    ).all()
+    ).all():
+        raise ValueError("nan check failed, some nan values were dropped!")
     
