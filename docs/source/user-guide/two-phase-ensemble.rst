@@ -1,6 +1,11 @@
 2-phase Ensemble 
 ****************
 
+In this example we will use Abil to predict the biomass of a highly abundant calcifying nanoplankton (`Gephyrocapsa huxleyi`).
+We will focus on the Southern Ocean, a region with high `G. huxleyi`` stocks and of significant importance to the ocean carbon cycle.
+This region has an interesting macroscale distribution of calcifying nanoplankton biomass, with peak concentrations in the so called "great calcite belt" 
+between 40-60°S but a notable absence below 60° due to competition with silicifying nanoplankton.
+
 YAML example
 ~~~~~~~~~~~~
 
@@ -81,3 +86,6 @@ Finally, we conduct the post-processing.
 .. literalinclude:: ../../examples/2-phase.py
    :lines: 36-58
    :language: python
+
+
+.. figure:: ../../examples/SO_predictions.png
