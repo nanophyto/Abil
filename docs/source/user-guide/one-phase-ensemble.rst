@@ -1,8 +1,12 @@
 1-phase Ensemble 
 ****************
 
-In this example we will use Abil to predict the biomass of a highly abundant calcifying nanoplankton which is important for the carbon cycle (`Gephyrocapsa huxleyi` HET).
-
+In this example we will use Abil to predict the biomass of the calcifying nanoplankton *Gephyrocapsa huxleyi*.
+This species is highly abundant in the global oceans, and plays an important role in the carbon cycle.
+We fill focus this example on the Bermuda Atlantic Time Series (BATS), a location with great temporal coverage of *G. huxleyi*.
+In this location, wind-driven mixing in the winter drives nutrient upwelling which results in high concentrations of *G. huxleyi*.
+In the summer, as nutrient influx decreases due to lower mixing and subsequently the abundance of *G. huxleyi* decreases. 
+An interesting temporal dynamic we will try to capture with our machine learning ensemble. 
 
 YAML example
 ~~~~~~~~~~~~
@@ -33,7 +37,7 @@ For instructions on how to install these packages, see `requirements.txt <../../
 and the Abil :ref:`getting-started`.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 4-20
+   :lines: 4-17
    :language: python
 
 Loading the configuration YAML
@@ -42,25 +46,40 @@ Loading the configuration YAML
 After loading the required packages we need to define our file paths.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 22
+   :lines: 19
    :language: python
 
+Then we can load the YAML:
+
+.. literalinclude:: ../../examples/regressor.py
+   :lines: 21-23
+   :language: python
 
 Loading example data
 ^^^^^^^^^^^^^^^^^^^^^
 
 Next we load some example data, here we utilize abundance data from the CASCADE database (10.5281/zenodo.12797197).
 The CASCADE database provides observations gridded to 1 degree x 1 degree x 5 meters x 1 month. 
-For the example we focus on the Southern Ocean, a region with high Gephyrocapsa huxleyi abundances.
-Furthermore, we averaged the observations with time and use only observations in the top 5 meters to speed up the simulations. 
+For the example we have subset the data for Bermuda and have averaged the observations with latitude and longitude. 
 In addition to our predictors (`y_train`) we also need environmental data which match our predictions ('X_train'). 
-This data was obtained from monthly climatologies from data sources such as the World Ocean Atlas, NNGv2, and Castant et al.
+This data was obtained from monthly climatologies from data sources such as the World Ocean Atlas, and NNGv2.
 When applying the pipeline to your own data, note that the data
 needs to be in a `Pandas DataFrame format <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 24-35
+   :lines: 24-32
    :language: python
+
+Plotting example data
+^^^^^^^^^^^^^^^^^^^^^
+
+We can have a look at the example data. It already has pretty good data coverage.
+
+.. literalinclude:: ../../examples/regressor.py
+   :lines: 34-52
+   :language: python
+
+.. figure:: ../../examples/BATS_observations.png
 
 Training the model
 ^^^^^^^^^^^^^^^^^^
@@ -69,24 +88,36 @@ Next we train our model. Note that depending on the number of hyper-parameters s
 YAML file this can be computationally very expensive and it recommended to do this on a HPC system. 
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 37-41
+   :lines: 54-58
    :language: python
+
+
 
 Making predictions
 ^^^^^^^^^^^^^^^^^^
 
-After training our model we can make predictions on the Southern Ocean dataset:
+After training our model we can make predictions on the BATS environmental dataset:
 
 First we need to load our environmental data to make the predictions on (X_predict):
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 43-44
+   :lines: 60-63
    :language: python
+
+We can also quickly plot the environmental data. Note the seasonality in key parameters such as PAR and temperature.
+
+
+.. literalinclude:: ../../examples/regressor.py
+   :lines: 65-72
+   :language: python
+
+.. figure:: ../../examples/BATS_environment.png
+
 
 Then we can make our predictions:
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 47-49
+   :lines: 74-76
    :language: python
 
 Post-processing
@@ -95,7 +126,7 @@ Post-processing
 Finally, we conduct the post-processing.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 51-60
+   :lines: 79-86
    :language: python
 
 Plotting
@@ -104,7 +135,7 @@ Plotting
 Now that we have predictions we can plot them:
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 62-139
+   :lines: 89-100
    :language: python
 
-.. figure:: ../../examples/figure_1.png
+.. figure:: ../../examples/BATS_predictions.png
