@@ -4,14 +4,17 @@
   run_name: 2-phase #update for specific run name
   path_out:  ModelOutput/ #root + folder 
 
-  prediction:  data/prediction.csv #root + folder
-  targets:  data/targets.csv #root + folder
-  training:  data/training.csv
+  prediction:  data/so_prediction.csv #root + folder
+  targets:  ../data/targets.csv #root + folder
+  training:  data/so_training.csv
 
-  predictors: ["feature_1", "feature_2", "feature_3"]
+  predictors: ["temperature", 
+    "sio4", "po4", "no3", 
+    "o2", "DIC", "TA"]
+
   verbose: 1 # scikit-learn warning verbosity
   seed : 1 # random seed
-  n_threads : 1 # how many cpu threads to use
+  n_threads : 14 # how many cpu threads to use
   cv : 5 # number of cross folds
 
   ensemble_config: 
@@ -28,14 +31,16 @@
     rf_param_grid:
       reg_param_grid:
         n_estimators: [100]
-        max_features: [4]
+        max_features: [0.2, 0.4, 0.8]
         max_depth: [50]
         min_samples_leaf: [0.5]
-        max_samples: [0.5]     
-      clf_param_grid:
-        n_estimators: [100]  
-        max_depth: [50] 
-        max_samples: [0.8]
+        max_samples: [0.5]  
+      clf_param_grid:  
+        n_estimators: [100]
+        max_features:  [8]
+        max_depth: [2]
+        min_samples_leaf: [1]
+        max_samples: [0.6]     
 
     xgb_param_grid:
       reg_param_grid:  
@@ -46,26 +51,31 @@
         colsample_bytree: [0.5]
         gamma: [1] 
         reg_alpha: [0.1]   
+  
       clf_param_grid:  
-        learning_rate: [0.01]
+        learning_rate: [0.1]
         n_estimators: [100]
-        max_depth: [4]
-        subsample: [0.6]  
-        colsample_bytree: [0.6]
-        gamma: [1] 
-        reg_alpha: [1]   
+        max_depth: [2]
+        subsample: [ 0.6]
+        colsample_bytree: [0.8]
+        gamma: [0] 
+        reg_alpha: [0]
 
     knn_param_grid:
       reg_param_grid:  
-        max_samples: [0.2]
-        max_features: [0.2]
-        estimator__leaf_size: [25]
-        estimator__n_neighbors: [3]
-      clf_param_grid:  
-        max_samples: [0.2]
-        max_features: [0.2]
-        estimator__leaf_size: [25]
-        estimator__n_neighbors: [3]
+        max_samples: [0.85]
+        max_features: [0.85]
+        estimator__leaf_size: [5]
+        estimator__n_neighbors: [5]
+        estimator__p:  [1]        
+        estimator__weights: ["uniform"]
 
-  knn_bagging_estimators: 3
+      clf_param_grid:  
+        max_samples: [0.85]
+        max_features: [0.9]
+        estimator__n_neighbors: [3]
+        estimator__p:  [1]        
+        estimator__weights: ["distance"]
+
+  knn_bagging_estimators: 30
 
