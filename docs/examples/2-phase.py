@@ -26,7 +26,7 @@ os.chdir(os.path.join(".", "docs", "examples"))
 with open('2-phase.yml', 'r') as f:
     model_config = load(f, Loader=Loader)
 #load example training data:
-d = pd.read_csv(os.path.join("..", "data", "training.csv"))
+d = pd.read_csv(os.path.join("..", "data", "so_training.csv"))
 #define target:
 target = "Gephyrocapsa huxleyi HET"
 #define predictors based on YAML:
@@ -42,7 +42,7 @@ m.train(model="xgb")
 m.train(model="knn")
 
 #load prediction data:
-X_predict = pd.read_csv(os.path.join("..", "data", "southern_averaged.csv"))
+X_predict = pd.read_csv(os.path.join("..", "data", "so_prediction.csv"))
 X_predict.set_index(['lat', 'lon'], inplace=True)
 
 #predict your model:
