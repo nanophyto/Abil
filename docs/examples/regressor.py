@@ -15,6 +15,7 @@ from abil.predict import predict
 from abil.post import post
 #plotting:
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 os.chdir(os.path.join(".", "docs", "examples"))
 
@@ -98,4 +99,33 @@ for ax,da,title,lab in [
     plot_depth_time(ax, da, vmin=0, cbar_label=r'abundance (cells L$^{-1}$)'); ax.set_title(rf'$\mathbf{{{lab}}}$ {title}')
 plt.savefig('BATS_predictions.png',dpi=300,bbox_inches='tight',facecolor='white')
 
+plt.show()
+
+# Check statistics
+obs_abundance = pd.read_csv(os.path.join("ModelOutput", "regressor", "posts", 
+                                "performance", "ens_performance.csv"))
+# print
+print(
+    f"error metrics:\n"
+    f"R2 = {obs_abundance['R2'][0]:.2f}\n"
+    f"relative RMSE = {obs_abundance['rRMSE'][0]*100:.2f} (%)\n"
+    f"relative MAE = {obs_abundance['rMAE'][0]*100:.2f} (%)"
+)
+
+# Merge obs and model for plotting
+targets = np.array([target])
+def do_stats(statistic):
+    m = post(X_train, y, X_predict, model_config, statistic, datatype="abundance")
+    m.merge_obs(file_name="BATS", index_cols=['depth', 'time']) #default is lat, lon, depth, time
+
+do_stats(statistic="mean")
+
+obs_abundance = pd.read_csv(os.path.join("ModelOutput", "regressor", "posts", 
+                                "BATS_obs_abundance.csv"))
+
+# plot
+sns.regplot(data = obs_abundance, x = 'Gephyrocapsa huxleyi', 
+           y= 'Gephyrocapsa huxleyi_mod')
+
+plt.title('Observed vs modelled abundances')
 plt.show()
