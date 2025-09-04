@@ -87,5 +87,34 @@ Finally, we conduct the post-processing.
    :lines: 36-58
    :language: python
 
+Plotting
+^^^^^^^^
+
+Now that we have predictions we can plot them:
+
+.. literalinclude:: ../../examples/regressor.py
+   :lines: 89-100
+   :language: python
 
 .. figure:: ../../examples/SO_predictions.png
+
+Integrated inorganic carbon stock
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With post can also estimate integrated inorganic carbon stock.
+First we convert our abundances to cellular inorganic carbon, 
+and then integrate accounting for grid volumes and unit conversions.
+
+.. literalinclude:: ../../examples/2-phase.py
+   :lines: 96-113
+   :language: python
+
+Checking the output:
+
+.. code-block:: python
+
+   >>> print(f"estimated integrated total: {mean:.2f} [{ci95_LL:.2f}, {ci95_UL:.2f}] Tg IC")
+   estimated integrated total: 4.00 [0.69, 7.31] Tg IC
+
+The resulting number is OK on a first order basis, but rather high, likely due to our example not accounting 
+for the strong seasonality observed in this region.
