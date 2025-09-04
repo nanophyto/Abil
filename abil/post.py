@@ -1029,74 +1029,102 @@ class post:
 
         print("exported d to: " + self.path_out + file_name + "_" + self.statistic + self.datatype + ".csv")
 
-    def merge_obs(self, file_name, targets=None):
+    def merge_obs(self, file_name, targets=None, index_cols=None):
         """
         Merge model output with observational data and calculate residuals.
 
-        This function integrates model predictions with observational data based on 
-        spatial and temporal indices, calculates residuals, and exports the merged dataset.
+        Dimension-agnostic: joins on whatever shared coordinate columns exist between
+        model output and observations (e.g., lat/lon, lat/lon/time, lat/lon/depth/time,
+        or any other combo).
 
         Parameters
         ----------
         file_name : str
-            The base name of the output file to save the merged dataset.
-        targets : an np.array of str, optional
-            An np.array of target variable names to include in the merge. If None, the default 
-            targets from `self.targets` are used (default is None).
+            Base name of the output file (without extension).
+        targets : array-like of str, optional
+            Target variable names to include. Defaults to self.targets.
+        index_cols : array-like of str, optional
+            Explicit columns to join on. If omitted, they are inferred as the intersection
+            of columns (excluding target/value columns).
 
         Notes
         -----
-        - The function matches the observational data with model predictions based on the 
-        indices `['lat', 'lon', 'depth', 'time']`.
-        - Residuals are calculated as `observed - predicted` for each target variable.
-        - Columns included in the output are the original targets, their modeled values 
-        (suffixed with `_mod`), and their residuals (suffixed with `_resid`).
-        - The merged dataset is saved as a CSV file with a suffix `_PI` followed by the 
-        `pi` value, appended to the output file name.
-        - Observational data is loaded from the path defined in `self.model_config['training']`.
-
-        Raises
-        ------
-        FileNotFoundError
-            If the observational dataset file cannot be found at the specified location.
+        - Residuals are computed as observed - predicted for each target available on both sides.
+        - Output columns include the targets, *_mod, and *_resid. Coordinate columns are used
+        as an index in the CSV (like your original).
         """
-        # Select and rename the target columns for d
+        # ----- Prepare inputs -----
         if targets is None:
-            targets = self.targets
-        d = self.d[targets]
+            targets = list(self.targets)
+        else:
+            targets = list(targets)
 
-        mod_columns = {target: target + '_mod' for target in targets}
-        d = d.rename(mod_columns, axis=1)
-        d.reset_index(inplace=True)
-        d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
+        # Model dataframe: bring coordinates out of the index so we can infer join keys
+        d_mod = self.d.copy()
+        if d_mod.index.name is not None or isinstance(d_mod.index, (pd.MultiIndex, pd.DatetimeIndex)):
+            d_mod = d_mod.reset_index()
 
-        # Read the training targets from the training.csv file defined in model_config
+        # Keep everything for key inference, but rename target cols to *_mod
+        available_model_targets = [t for t in targets if t in d_mod.columns]
+        mod_map = {t: f"{t}_mod" for t in available_model_targets}
+        d_mod = d_mod.rename(columns=mod_map)
+
+        # ---- Read observations ----
         try:
-            df2_path = os.path.join(self.root, self.model_config['training'])
-
+            df2_path = os.path.join(self.root, self.model_config["training"])
             df2 = pd.read_csv(df2_path)
-        except:
+        except Exception:
             raise FileNotFoundError(f"Dataset not found at {df2_path}")
-        
 
-        df2.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
-        df2['dummy'] = 1
+        # ---- Infer join keys (dimension-agnostic) ----
+        # Exclude target/value columns from consideration
+        exclude_cols = set(targets) | set(mod_map.values())
 
-        out = pd.concat([df2, d], axis=1)
-        out = out[out['dummy'] == 1].drop(['dummy'], axis=1)
+        # Allow caller to force the keys, otherwise infer as shared columns minus value columns
+        if index_cols is not None:
+            join_keys = [c for c in index_cols if c in d_mod.columns and c in df2.columns]
+        else:
+            join_keys = sorted(
+                c for c in (set(d_mod.columns) & set(df2.columns)) if c not in exclude_cols
+            )
 
-        # Calculate residuals
-        for target in targets:
-            out[target + '_resid'] = out[target] - out[target + '_mod']
+        if not join_keys:
+            raise ValueError(
+                "No shared coordinate columns found to merge on. "
+                "You can pass `index_cols=[...]` to specify the join keys explicitly."
+            )
 
-        # Define the columns to keep in the final DataFrame
-        keep_columns = list(targets) + list(mod_columns.values()) + [target + '_resid' for target in targets]
+        # ---- Harmonize dtypes on temporal keys (common gotcha) ----
+        # Coerce any shared 'time'-like columns to datetime on both sides
+        timeish = {c for c in join_keys if c.lower() in {"time", "date", "datetime"}}
+        for c in timeish:
+            df2[c] = pd.to_datetime(df2[c], errors="coerce", utc=False)
+            d_mod[c] = pd.to_datetime(d_mod[c], errors="coerce", utc=False)
 
+        # ---- Merge ----
+        out = pd.merge(df2, d_mod, on=join_keys, how="inner")
+
+        # ---- Residuals ----
+        resid_targets = [t for t in targets if (t in out.columns and f"{t}_mod" in out.columns)]
+        for t in resid_targets:
+            out[f"{t}_resid"] = out[t] - out[f"{t}_mod"]
+
+        # ---- Select and order columns ----
+        keep_columns = (
+            resid_targets
+            + [f"{t}_mod" for t in resid_targets]
+            + [f"{t}_resid" for t in resid_targets]
+        )
+
+        # Preserve coordinates as index in the CSV (mirrors your original behavior)
+        out = out.set_index(join_keys)
         out = out[keep_columns]
-        file_name = f"{file_name}_obs"
+
+        # ---- Write ----
+        out_name = f"{file_name}_obs{self.datatype}.csv"
+        out_path = os.path.join(self.path_out, out_name)
+
         print(out.head())
-        out.to_csv(os.path.join(self.path_out, file_name)  + self.datatype +  ".csv")
-
-        print("exported d to: " + self.path_out + file_name  + self.datatype + ".csv")
-
-        print('training merged with predictions')
+        out.to_csv(out_path)
+        print(f"exported to: {out_path}")
+        print("training merged with predictions")
