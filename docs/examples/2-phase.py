@@ -36,20 +36,20 @@ predictors = model_config['predictors']
 y = d[target]
 X_train = d[predictors]
 
-# #train your model:
-# m = tune(X_train, y, model_config)
-# m.train(model="rf")
-# m.train(model="xgb")
-# m.train(model="knn")
+#train your model:
+m = tune(X_train, y, model_config)
+m.train(model="rf")
+m.train(model="xgb")
+m.train(model="knn")
 
 #load prediction data:
 X_predict = pd.read_csv(os.path.join("..", "data", "so_prediction.csv"))
 X_predict.set_index(['lat', 'lon'], inplace=True)
 X_predict = X_predict[predictors]
 
-# #predict your model:
-# m = predict(X_train, y, X_predict, model_config)
-# m.make_prediction()
+#predict your model:
+m = predict(X_train, y, X_predict, model_config)
+m.make_prediction()
 
 # Posts
 targets = np.array([target])
