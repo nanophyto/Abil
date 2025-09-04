@@ -11,7 +11,7 @@ from skbio.diversity.alpha import shannon
 
 from .analyze import area_of_applicability
 
-class SDMPostProcessor:
+class AbilPostProcessor:
     """
     Post processing of SDM
     """
@@ -605,7 +605,7 @@ class SDMPostProcessor:
 
             Examples
             --------
-            >>> m = SDMPostProcessor(model_config)
+            >>> m = AbilPostProcessor(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> print("Volume calculated:", int.ds['volume'].values)
 
@@ -667,7 +667,7 @@ class SDMPostProcessor:
 
             Examples
             --------
-            >>> m = SDMPostProcessor(model_config)
+            >>> m = AbilPostProcessor(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> result = integration.integrate_total(variable='Calcification')
             >>> print("Final integrated total:", result.values)
