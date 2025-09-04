@@ -606,51 +606,68 @@ class post:
             """
             Calculate the volume for each cell and add it as a new field to the dataset.
 
+            Works with any subset of ('lat','lon','depth'). If only 'lat' is present,
+            uses the zonal band area (integrated over all longitudes).
+
             Examples
             --------
             >>> m = post(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> print("Volume calculated:", int.ds['volume'].values)
-
             """            
             ds = self.parent.d.to_xarray()
-            resolution_lat = self.resolution_lat
-            resolution_lon = self.resolution_lon
-            depth_w = self.depth_w
-
-            # Calculate the number of cells in latitude and longitude
-            num_cells_lat = int(ds['lat'].size / resolution_lat)
-            num_cells_lon = int(ds['lon'].size / resolution_lon)
-
-            # Retrieve initial latitude and longitude bound
-            min_lat = ds['lat'].values[0]
-            min_lon = ds['lon'].values[0]
-
-            # Initialize the 2D array to store the areas
-            area = np.zeros((num_cells_lat, num_cells_lon))
+            resolution_lat = float(self.resolution_lat)
+            resolution_lon = float(self.resolution_lon)
+            depth_w = float(self.depth_w)
 
             earth_radius = 6371000.0  # Earth's radius in meters
 
-            # Calculate the area of each cell
-            for lat_index in range(num_cells_lat):
-                for lon_index in range(num_cells_lon):
-                    # Calculate the latitude range of the cell
-                    lat_bottom = min_lat + lat_index * resolution_lat
-                    lat_top = lat_bottom + resolution_lat
+            # area factor (lat/lon)
+            has_lat = ('lat' in ds.dims or 'lat' in ds.coords)
+            has_lon = ('lon' in ds.dims or 'lon' in ds.coords)
 
-                    # Calculate the longitude range of the cell
-                    lon_left = min_lon + lon_index * resolution_lon
-                    lon_right = lon_left + resolution_lon
+            if has_lat and has_lon:
+                # lat & lon present: per-cell horizontal area using uniform resolutions
+                lat = ds['lat'].values
+                lon = ds['lon'].values
 
-                    # Calculate the area of the grid cell
-                    areas = earth_radius ** 2 * (np.sin(np.radians(lat_top)) - np.sin(np.radians(lat_bottom))) * \
-                            (np.radians(lon_right) - np.radians(lon_left))
+                dphi = np.deg2rad(resolution_lat)
+                dlambda = np.deg2rad(resolution_lon)
 
-                    # Store the area in the array
-                    area[lat_index, lon_index] = areas
+                # vectorized latitude band contribution
+                phi = np.deg2rad(lat)
+                lat_band = (earth_radius ** 2) * (np.sin(phi + dphi / 2.0) - np.sin(phi - dphi / 2.0))  # (lat,)
 
-            volume = area * depth_w
-            ds['volume'] = (('lat', 'lon'), volume)
+                # longitude width (same for all longitudes for a given Δλ)
+                lon_width = np.full(lon.shape, dlambda)  # (lon,)
+
+                # outer product -> (lat, lon)
+                area = np.outer(lat_band, lon_width)
+                area_da = xr.DataArray(area, dims=('lat', 'lon'))
+
+            elif has_lat and not has_lon:
+                # lat only: use full 2π longitude span (zonal band area per latitude cell)
+                lat = ds['lat'].values
+                dphi = np.deg2rad(resolution_lat)
+                phi = np.deg2rad(lat)
+                # A_band = R^2 * (sin(phi+Δ/2) - sin(phi-Δ/2)) * 2π
+                area_band = (earth_radius ** 2) * (np.sin(phi + dphi / 2.0) - np.sin(phi - dphi / 2.0)) * (2.0 * np.pi)
+                area_da = xr.DataArray(area_band, dims=('lat',))
+            else:
+                # no horizontal dimensions -> multiply by 1
+                area_da = xr.DataArray(1.0)
+
+            # depth factor
+            if 'depth' in ds.dims or 'depth' in ds.coords:
+                nz = ds.sizes.get('depth', len(ds['depth']))
+                dz_da = xr.DataArray(np.full((nz,), depth_w), dims=('depth',))
+            else:
+                dz_da = xr.DataArray(1.0)
+
+            # estimate volume
+            volume = area_da * dz_da
+            volume.name = 'volume'
+            ds['volume'] = volume
             self.parent.d = ds.to_dataframe()
         
         def integrate_total(self, variable='total', monthly=False, subset_depth=None):
