@@ -669,7 +669,7 @@ class post:
             volume.name = 'volume'
             ds['volume'] = volume
             self.parent.d = ds.to_dataframe()
-            
+
         def integrate_total(self, variable='total', monthly=False, subset_depth=None):
             """
             Estimates global integrated values for a single target. Returns the depth integrated annual total.
@@ -841,7 +841,133 @@ class post:
                 totals.to_csv(file_path, index=False)
 
                 print(f"Exported totals")
+    def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
+        """
+        Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
+        This calculates the importance-weighted feature distances from test to train points,
+        and then defines the "applicable" test sites as those closer than some threshold
+        distance.
+        A value of 0 indicates the point is within the Area of Applicability, 
+        while a value of 1 indicates the point is outside the Area of Applicability.
+        Note: if using pseudo-absences in y_train and  X_train, mask out where y_train = 0 to calculate
+        the AOA for the original dataset.
+        
+        Parameters
+        ----------
+        targets : an np.array of str, optional
+            An np.array of target variable names to include in the merge. If None, the default 
+            targets from `self.targets` are used (default is None).
+        drop_zeros : bool, optional
+            Wether or not to exclude rows where y_train values are equal to 0.
+            (default is False)
+        """
+        if targets is None:
+            targets = self.targets
 
+        # create empty dataframe with the same index as X_predict
+        aoa_dataset = pd.DataFrame(index=self.X_predict.index)
+
+        # estimate the aoa for each target:
+        for i in range(len(targets)):
+
+            target = targets[i]
+            target_no_space = target.replace(' ', '_')
+
+            # load the voting regressor model object for each target:
+            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
+                m = pickle.load(file)
+
+            if drop_zeros:
+                if isinstance(self.y_train, pd.Series):
+                    y_train = self.y_train.where(self.y_train > 0)
+                else:
+                    y_train = self.y_train.copy()
+                    y_train.loc[y_train[target] <= 0, target] = np.nan
+                    y_train = y_train[target]
+            else:
+                if isinstance(self.y_train, pd.Series):
+                    y_train = self.y_train
+                else:
+                    y_train = self.y_train[target]
+
+            if return_all == True:
+                aoa, di_test, lpd_test, cutpoint, test_to_train_d = area_of_applicability(
+                    X_test=self.X_predict,
+                    X_train=self.X_train,
+                    y_train= y_train,
+                    model=m,
+                    threshold=threshold,
+                    return_all=return_all
+                )
+                aoa_dataset[f"{target}_aoa"] = aoa
+                aoa_dataset[f"{target}_di"] = di_test
+                aoa_dataset[f"{target}_lpd"] = lpd_test
+                aoa_dataset[f"{target}_cutpoint"] = cutpoint
+
+                encoding = {
+                    f"{target}_aoa": {"zlib": True, "complevel": 4, "dtype": "float32", "_FillValue": np.float32(np.nan)},
+                    f"{target}_di": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
+                    f"{target}_lpd": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
+                    f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
+                }
+
+            elif return_all == False:
+                aoa, di_test, cutpoint = area_of_applicability(
+                    X_test=self.X_predict,
+                    X_train=self.X_train,
+                    y_train= y_train,
+                    model=m,
+                    threshold=threshold,
+                    return_all=return_all
+                )
+                aoa_dataset[f"{target}_aoa"] = aoa
+                aoa_dataset[f"{target}_di"] = di_test
+                aoa_dataset[f"{target}_cutpoint"] = cutpoint
+
+                encoding = {
+                    f"{target}_aoa": {"zlib": True, "complevel": 4, "dtype": "float32", "_FillValue": np.float32(np.nan)},
+                    f"{target}_di": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
+                    f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)}
+                }                
+
+            else:
+                print("return_all requires a boolean input")
+
+        # convert df to xarray ds:
+        aoa_dataset = aoa_dataset.to_xarray()
+
+        # add metadata:
+        aoa_dataset['lat'].attrs['units'] = 'degrees_north'
+        aoa_dataset['lat'].attrs['long_name'] = 'latitude'
+
+        aoa_dataset['lon'].attrs['units'] = 'degrees_east'
+        aoa_dataset['lon'].attrs['long_name'] = 'longitude'
+
+        aoa_dataset['depth'].attrs['units'] = 'm'
+        aoa_dataset['depth'].attrs['positive'] = 'down'
+
+        # export aoa to netcdf:
+        aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"), encoding=encoding)
+
+    def merge_env(self):
+        """
+        Merge model output with environmental data.
+        This method aligns and merges the predicted values (model output) with the existing 
+        environmental dataset stored in `self.d`. The merged data replaces `self.d`.
+        Returns
+        -------
+        None
+        """
+
+        X_predict = self.X_predict.to_xarray()
+        ds = self.d.to_xarray()
+        aligned_datasets = xr.align(ds,X_predict, join="inner")
+        ds = xr.merge(aligned_datasets)
+        if 'FID' in ds:
+            ds['FID'] = ds['FID'].where(ds['FID'] != '', np.nan)
+        self.d = ds.to_dataframe()
+        self.d = self.d.dropna()
+        
     def export_ds(self, file_name, 
                   author=None, description=None):
         """
