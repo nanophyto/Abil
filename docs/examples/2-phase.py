@@ -55,37 +55,48 @@ X_predict = X_predict[predictors]
 targets = np.array([target])
 def do_post(statistic):
     m = post(X_train, y, X_predict, model_config, statistic, datatype="abundance")
-    m.export_ds("my_first_2-phase_model")
+    m.export_ds("SO") #Southern Ocean
 
 do_post(statistic="mean")
 do_post(statistic="ci95_UL")
 do_post(statistic="ci95_LL")
 
 # Load the predictions
-ds = xr.open_dataset("./ModelOutput/2-phase/posts/my_first_2-phase_model_mean_abundance.nc")
-ds_UL = xr.open_dataset("./ModelOutput/2-phase/posts/my_first_2-phase_model_ci95_UL_abundance.nc")
-ds_LL = xr.open_dataset("./ModelOutput/2-phase/posts/my_first_2-phase_model_ci95_LL_abundance.nc")
+ds = xr.open_dataset("./ModelOutput/2-phase/posts/SO_mean_abundance.nc")
+ds_UL = xr.open_dataset("./ModelOutput/2-phase/posts/SO_ci95_UL_abundance.nc")
+ds_LL = xr.open_dataset("./ModelOutput/2-phase/posts/SO_ci95_LL_abundance.nc")
 
 # Create the figure
-def plot_panel(ax, data, var, title, label, cmap='viridis', cbar_label='abundance (cells L$^{-1}$)'):
-    ax.set_extent([-180,180,-90,-30], crs=ccrs.PlateCarree()); ax.coastlines(); ax.gridlines(draw_labels=False, linewidth=0.5, alpha=0.5)
-    ax.add_feature(cfeature.LAND, color='gray'); ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
-    ax.set_title(f'$\mathbf{{{label}}}$  {title}', loc='left', pad=10, y=1.05, fontsize=10)
+def plot_panel(ax, data, var, title, label, 
+               cbar_label='abundance (cells L$^{-1}$)'):
+    ax.set_extent([-180,180,-90,-30], crs=ccrs.PlateCarree())
+    ax.coastlines(); ax.gridlines(draw_labels=False, linewidth=0.5, alpha=0.5)
+    ax.add_feature(cfeature.LAND, color='gray') 
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
+    ax.set_title(f'$\mathbf{{{label}}}$  {title}', loc='left', 
+                 pad=10, y=1.05, fontsize=10)
 
     if isinstance(data, pd.DataFrame):  # raw points
-        lon, lat, vals = np.asarray(data['lon']), np.asarray(data['lat']), np.asarray(data[var])
-        vmin, vmax = np.nanpercentile(vals, [2,98]); x, y = ax.projection.transform_points(ccrs.PlateCarree(), lon, lat)[:,0:2].T
-        h = ax.hexbin(x, y, C=vals, reduce_C_function=np.nanmean, gridsize=20, mincnt=1, cmap=cmap, norm=Normalize(vmin=vmin, vmax=vmax))
+        lon, lat = np.asarray(data['lon']), np.asarray(data['lat'])
+        vals = np.asarray(data[var])
+        # clip outliers for plotting
+        vmin, vmax = np.nanpercentile(vals, [2,98])
+        x, y = ax.projection.transform_points(ccrs.PlateCarree(), lon, lat)[:,0:2].T
+        h = ax.hexbin(x, y, C=vals, reduce_C_function=np.nanmean, gridsize=20, 
+                      mincnt=1, norm=Normalize(vmin=vmin, vmax=vmax))
     else:  # gridded data
         da = data[var] if isinstance(data, xr.Dataset) else data
-        h = da.plot(ax=ax, cmap=cmap, add_colorbar=False, robust=True, transform=ccrs.PlateCarree())
+        h = da.plot(ax=ax, add_colorbar=False, robust=True, 
+                    transform=ccrs.PlateCarree())
 
-    cb = plt.colorbar(h, ax=ax, shrink=0.6, pad=0.1); cb.ax.tick_params(labelsize=8); cb.set_label(cbar_label, size=8)
+    cb = plt.colorbar(h, ax=ax, shrink=0.6, pad=0.1); cb.ax.tick_params(labelsize=8)
+    cb.set_label(cbar_label, size=8)
 
 # apply plotting function and export
-fig, axs = plt.subplots(2,2, figsize=(8,6), subplot_kw={'projection': ccrs.SouthPolarStereo()})
+fig, axs = plt.subplots(2,2, figsize=(8,6), 
+                        subplot_kw={'projection': ccrs.SouthPolarStereo()})
 (ax00, ax01), (ax10, ax11) = axs
-plot_panel(ax00, d, target, 'Training Data (scaled to 2nd–98th percentiles)', 'A)')
+plot_panel(ax00, d, target, 'Training Data', 'A)')
 plot_panel(ax01, ds,    target, 'Mean Abundance', 'B)')
 plot_panel(ax10, ds_LL, target, '95% CI Lower Limit', 'C)')
 plot_panel(ax11, ds_UL, target, '95% CI Upper Limit', 'D)')
