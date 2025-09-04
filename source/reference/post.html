@@ -597,7 +597,7 @@ environmental dataset stored in <cite>self.d</cite>. The merged data replaces <c
 
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.post.merge_obs">
-<span class="sig-name descname"><span class="pre">merge_obs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_obs" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">merge_obs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['lat',</span> <span class="pre">'lon',</span> <span class="pre">'depth',</span> <span class="pre">'time']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_obs" title="Link to this definition">#</a></dt>
 <dd><p>Merge model output with observational data and calculate residuals.</p>
 <p>This function integrates model predictions with observational data based on
 spatial and temporal indices, calculates residuals, and exports the merged dataset.</p>
@@ -607,6 +607,7 @@ spatial and temporal indices, calculates residuals, and exports the merged datas
 <li><p><strong>file_name</strong> (<em>str</em>) – The base name of the output file to save the merged dataset.</p></li>
 <li><p><strong>targets</strong> (<em>an np.array</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – An np.array of target variable names to include in the merge. If None, the default
 targets from <cite>self.targets</cite> are used (default is None).</p></li>
+<li><p><strong>index_cols</strong> (<em>an np.array</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – A list of indices which denote the data dimensions. (default is [‘lat’, ‘lon’, ‘depth’, ‘time’])</p></li>
 </ul>
 </dd>
 </dl>
@@ -614,7 +615,7 @@ targets from <cite>self.targets</cite> are used (default is None).</p></li>
 <ul class="simple">
 <li><p>The function matches the observational data with model predictions based on the</p></li>
 </ul>
-<p>indices <cite>[‘lat’, ‘lon’, ‘depth’, ‘time’]</cite>.
+<p>index_cols which default to <cite>[‘lat’, ‘lon’, ‘depth’, ‘time’]</cite>.
 - Residuals are calculated as <cite>observed - predicted</cite> for each target variable.
 - Columns included in the output are the original targets, their modeled values
 (suffixed with <cite>_mod</cite>), and their residuals (suffixed with <cite>_resid</cite>).
