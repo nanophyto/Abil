@@ -126,6 +126,7 @@ obs_abundance = pd.read_csv(os.path.join("ModelOutput", "regressor", "posts",
 # plot
 sns.regplot(data = obs_abundance, x = 'Gephyrocapsa huxleyi', 
            y= 'Gephyrocapsa huxleyi_mod')
-
+plt.xlabel("obs")
+plt.ylabel("model")
 plt.title('Observed vs modelled abundances')
 plt.show()
