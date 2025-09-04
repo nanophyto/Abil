@@ -1035,7 +1035,7 @@ class post:
 
         Dimension-agnostic: joins on whatever shared coordinate columns exist between
         model output and observations (e.g., lat/lon, lat/lon/time, lat/lon/depth/time,
-        or any other combo).
+        or any other combo). 
 
         Parameters
         ----------
@@ -1051,72 +1051,59 @@ class post:
         -----
         - Residuals are computed as observed - predicted for each target available on both sides.
         - Output columns include the targets, *_mod, and *_resid. Coordinate columns are used
-        as an index in the CSV (like your original).
+        as an index in the CSV.
         """
-        # ----- Prepare inputs -----
+        # Targets
         if targets is None:
             targets = list(self.targets)
         else:
             targets = list(targets)
 
-        # Model dataframe: bring coordinates out of the index so we can infer join keys
+        # Model dataframe (bring coordinates out of index if needed)
         d_mod = self.d.copy()
         if d_mod.index.name is not None or isinstance(d_mod.index, (pd.MultiIndex, pd.DatetimeIndex)):
             d_mod = d_mod.reset_index()
 
-        # Keep everything for key inference, but rename target cols to *_mod
         available_model_targets = [t for t in targets if t in d_mod.columns]
         mod_map = {t: f"{t}_mod" for t in available_model_targets}
         d_mod = d_mod.rename(columns=mod_map)
 
-        # ---- Read observations ----
+        # Observations
         try:
             df2_path = os.path.join(self.root, self.model_config["training"])
             df2 = pd.read_csv(df2_path)
         except Exception:
             raise FileNotFoundError(f"Dataset not found at {df2_path}")
 
-        # ---- Infer join keys (dimension-agnostic) ----
-        # Exclude target/value columns from consideration
+        # Infer join keys
         exclude_cols = set(targets) | set(mod_map.values())
 
-        # Allow caller to force the keys, otherwise infer as shared columns minus value columns
         if index_cols is not None:
             join_keys = [c for c in index_cols if c in d_mod.columns and c in df2.columns]
         else:
-            join_keys = sorted(
-                c for c in (set(d_mod.columns) & set(df2.columns)) if c not in exclude_cols
-            )
+            join_keys = sorted(c for c in (set(d_mod.columns) & set(df2.columns)) if c not in exclude_cols)
 
         if not join_keys:
             raise ValueError(
                 "No shared coordinate columns found to merge on. "
-                "You can pass `index_cols=[...]` to specify the join keys explicitly."
+                "Pass `index_cols=[...]` to specify the join keys explicitly."
             )
 
-        # ---- Harmonize dtypes on temporal keys (common gotcha) ----
-        # Coerce any shared 'time'-like columns to datetime on both sides
-        timeish = {c for c in join_keys if c.lower() in {"time", "date", "datetime"}}
-        for c in timeish:
-            df2[c] = pd.to_datetime(df2[c], errors="coerce", utc=False)
-            d_mod[c] = pd.to_datetime(d_mod[c], errors="coerce", utc=False)
-
-        # ---- Merge ----
+        # Merge 
         out = pd.merge(df2, d_mod, on=join_keys, how="inner")
 
-        # ---- Residuals ----
+        # Residuals
         resid_targets = [t for t in targets if (t in out.columns and f"{t}_mod" in out.columns)]
         for t in resid_targets:
             out[f"{t}_resid"] = out[t] - out[f"{t}_mod"]
 
-        # ---- Select and order columns ----
+        # Select and order columns
         keep_columns = (
             resid_targets
             + [f"{t}_mod" for t in resid_targets]
             + [f"{t}_resid" for t in resid_targets]
         )
 
-        # Preserve coordinates as index in the CSV (mirrors your original behavior)
         out = out.set_index(join_keys)
         out = out[keep_columns]
 
