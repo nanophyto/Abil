@@ -431,11 +431,11 @@ column names to be grouped under each key.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.post.estimate_applicability">
 <span class="sig-name descname"><span class="pre">estimate_applicability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tukey'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_zeros</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.estimate_applicability" title="Link to this definition">#</a></dt>
-<dd><p>Estimate the area of applicability for the data using a strategy similar to Meyer &amp; Pebesma 2022).</p>
-<p>This calculates the importance-weighted feature distances from test to train points,
+<dd><p>Estimate the area of applicability for the data using a strategy similar to Meyer &amp; Pebesma 2022).
+This calculates the importance-weighted feature distances from test to train points,
 and then defines the “applicable” test sites as those closer than some threshold
-distance.</p>
-<p>A value of 0 indicates the point is within the Area of Applicability,
+distance.
+A value of 0 indicates the point is within the Area of Applicability,
 while a value of 1 indicates the point is outside the Area of Applicability.
 Note: if using pseudo-absences in y_train and  X_train, mask out where y_train = 0 to calculate
 the AOA for the original dataset.</p>
@@ -532,6 +532,8 @@ defined by <cite>self.path_out</cite>, with optional metadata such as author and
 <dt class="sig sig-object py" id="abil.post.post.integration.calculate_volume">
 <span class="sig-name descname"><span class="pre">calculate_volume</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.integration.calculate_volume" title="Link to this definition">#</a></dt>
 <dd><p>Calculate the volume for each cell and add it as a new field to the dataset.</p>
+<p>Works with any subset of (‘lat’,’lon’,’depth’). If only ‘lat’ is present,
+uses the zonal band area (integrated over all longitudes).</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">int</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">Integration</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">resolution_lat</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">resolution_lon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">depth_w</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">vol_conversion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">magnitude_conversion</span><span class="o">=</span><span class="mf">1e-21</span><span class="p">,</span> <span class="n">molar_mass</span><span class="o">=</span><span class="mf">12.01</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -544,6 +546,7 @@ defined by <cite>self.path_out</cite>, with optional metadata such as author and
 <dt class="sig sig-object py" id="abil.post.post.integration.integrate_total">
 <span class="sig-name descname"><span class="pre">integrate_total</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'total'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monthly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.integration.integrate_total" title="Link to this definition">#</a></dt>
 <dd><p>Estimates global integrated values for a single target. Returns the depth integrated annual total.</p>
+<p>Works with any subset/ordering of (‘lat’,’lon’,’depth’,’time’).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -586,14 +589,10 @@ targets from <cite>self.targets</cite> are used (default is None).</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.post.merge_env">
 <span class="sig-name descname"><span class="pre">merge_env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.post.merge_env" title="Link to this definition">#</a></dt>
-<dd><p>Merge model output with environmental data.</p>
-<p>This method aligns and merges the predicted values (model output) with the existing
-environmental dataset stored in <cite>self.d</cite>. The merged data replaces <cite>self.d</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
+<dd><p>Merge model output with environmental data.
+This method aligns and merges the predicted values (model output) with the existing
+environmental dataset stored in <cite>self.d</cite>. The merged data replaces <cite>self.d</cite>.
+:rtype: None</p>
 </dd></dl>
 
 <dl class="py method">
