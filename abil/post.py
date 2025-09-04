@@ -669,81 +669,7 @@ class post:
             volume.name = 'volume'
             ds['volume'] = volume
             self.parent.d = ds.to_dataframe()
-        
-        def integrate_total(self, variable='total', monthly=False, subset_depth=None):
-            """
-            Estimates global integrated values for a single target. Returns the depth integrated annual total.
             
-            Parameters
-            ----------
-            variable : str
-                The field to be integrated. Default is 'total' from PIC or POC Abil output.
-
-            monthly : bool
-                Whether or not to calculate a monthly average value instead of an annual total. Default is False.
- 
-            subset_depth : float
-                Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.
-
-            Examples
-            --------
-            >>> m = post(model_config)
-            >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
-            >>> result = integration.integrate_total(variable='Calcification')
-            >>> print("Final integrated total:", result.values)
-            """
-            print("Initiate integrated_total")
-            ds = self.parent.d.to_xarray()
-            vol_conversion = self.vol_conversion
-            magnitude_conversion = self.magnitude_conversion
-            molar_mass = self.molar_mass
-            rate = self.rate
-
-            # Average number of days for each month (accounting for leap years)
-            days_per_month_full = np.array([31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
-            
-            # Get the available time points (months) from the dataset
-            available_time = ds['time'].values  # Assuming 'time' is an array of 1, 2, 3, and 12
-
-            # Subset the days_per_month array to only include the available months
-            days_per_month = days_per_month_full[available_time - 1]
-
-            if subset_depth:
-                ds = ds.sel(depth=slice(0, subset_depth))
-
-            if rate:
-                if monthly:
-                    # Calculate monthly total (separately for each month)
-                    total = []
-                    for i,month in enumerate(available_time):
-                        monthly_total = (ds[variable].isel(time=i) * ds['volume'].isel(time=i) * days_per_month[i]).sum(dim=['lat', 'lon', 'depth'])
-                        monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
-                        total.append(monthly_total)
-                    total = xr.concat(total, dim="month")
-                    print(f"All monthly totals: {total.values}")
-                else:
-                    # Calculate annual total
-                    total = (ds[variable] * ds['volume'] * days_per_month.mean()).sum(dim=['lat', 'lon', 'depth', 'time'])
-                    total = (total * molar_mass) * vol_conversion * magnitude_conversion
-                    print("Final integrated total:", total.values)
-            else:
-                if monthly:
-                    # Calculate monthly total (separately for each month)
-                    total = []
-                    for i,month in enumerate(available_time):
-                        monthly_total = (ds[variable].isel(time=i) * ds['volume']).isel(time=i).sum(dim=['lat', 'lon', 'depth'])
-                        monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
-                        total.append(monthly_total)
-                    total = xr.concat(total, dim="month")
-                    print(f"All monthly totals: {total.values}")
-                else:
-                    # Calculate annual total
-                    total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
-                    total = (total * molar_mass) * vol_conversion * magnitude_conversion
-                    print("Final integrated total:", total.values)
-            return total
-
-
         def integrate_total(self, variable='total', monthly=False, subset_depth=None):
             """
             Estimates global integrated values for a single target. Returns the depth integrated annual total.
@@ -835,144 +761,86 @@ class post:
                     total = xr.concat(total, dim="month")
                     print(f"All monthly totals: {total.values}")
                 else:
-                    # Integrate over existing dims
+                    # Integrate over whatever dims exist
                     total = (var * vol).sum(dim=list(var.dims))
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
                     print("Final integrated total:", total.values)
-            return total
+            return total    
         
+        def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
+                         export=True, model="ens"):
+            """
+            Estimates global integrated values for all targets.
 
-    def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
-        """
-        Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
+            Considers latitude and depth bin size.
 
-        This calculates the importance-weighted feature distances from test to train points,
-        and then defines the "applicable" test sites as those closer than some threshold
-        distance.
+            Parameters
+            ----------
+            targets : an np.array of str, optional
+                An np.array of target variable names to include in the merge. If None, the default 
+                targets from `self.targets` are used (default is None).
 
-        A value of 0 indicates the point is within the Area of Applicability, 
-        while a value of 1 indicates the point is outside the Area of Applicability.
-        Note: if using pseudo-absences in y_train and  X_train, mask out where y_train = 0 to calculate
-        the AOA for the original dataset.
-        
-        Parameters
-        ----------
-        targets : an np.array of str, optional
-            An np.array of target variable names to include in the merge. If None, the default 
-            targets from `self.targets` are used (default is None).
-        drop_zeros : bool, optional
-            Wether or not to exclude rows where y_train values are equal to 0.
-            (default is False)
+            monthly : bool
+                Whether or not to calculate a monthly average value instead of an annual total. Default is False.
 
-        """
-        if targets is None:
-            targets = self.targets
+            subset_depth : float
+                Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.
 
-        # create empty dataframe with the same index as X_predict
-        aoa_dataset = pd.DataFrame(index=self.X_predict.index)
+            export : bool
+                Whether of not to export integrated totals as .csv. Default is True.
 
-        # estimate the aoa for each target:
-        for i in range(len(targets)):
-            
-            target = targets[i]
-            target_no_space = target.replace(' ', '_')
+            model : str
+                The model version to be integrated. Default is "ens". Other options include {"rf", "xgb", "knn"}.
+            """
+            ds = self.parent.d.to_xarray()
+            if targets is None:
+                targets = self.targets
+            if "total" in ds:
+                targets = np.append(targets, 'total')
+            if "mean" in ds:
+                targets = np.append(targets, 'mean')
+            if "stdev" in ds:
+                targets = np.append(targets, 'stdev')
+            if "prctile_2.5" in ds:
+                targets = np.append(targets, 'prctile_2.5')
+            if "prctile_97.5" in ds:
+                targets = np.append(targets, 'prctile_97.5')
+            totals = []
 
-            # load the voting regressor model object for each target:
-            with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", "ens", target_no_space) + self.extension, 'rb') as file:
-                m = pickle.load(file)
+            for target in targets:
+                try:
+                    print(f"Processing target: {target}")
+                    total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
+                    total_df = pd.DataFrame({'total': [total.values], 'variable': target})
+                    totals.append(total_df)
+                except Exception as e:
+                    print(f"Some targets do not have predictions! Missing: {target}")
+                    print(f"Error: {e}")
+            totals = pd.concat(totals)
 
-            if drop_zeros:
-                if isinstance(self.y_train, pd.Series):
-                    y_train = self.y_train.where(self.y_train > 0)
-                else:
-                    y_train = self.y_train.copy()
-                    y_train.loc[y_train[target] <= 0, target] = np.nan
-                    y_train = y_train[target]
-            else:
-                if isinstance(self.y_train, pd.Series):
-                    y_train = self.y_train
-                else:
-                    y_train = self.y_train[target]
+            if export:
+                depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
+                month_str = "_monthly_int" if monthly else ""
+                try: #make new dir if needed
+                    os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"))
+                except:
+                    None
 
-            if return_all == True:
-                aoa, di_test, lpd_test, cutpoint, test_to_train_d = area_of_applicability(
-                    X_test=self.X_predict,
-                    X_train=self.X_train,
-                    y_train= y_train,
-                    model=m,
-                    threshold=threshold,
-                    return_all=return_all
-                )
-                aoa_dataset[f"{target}_aoa"] = aoa
-                aoa_dataset[f"{target}_di"] = di_test
-                aoa_dataset[f"{target}_lpd"] = lpd_test
-                aoa_dataset[f"{target}_cutpoint"] = cutpoint
+                path_out = self.parent.model_config['path_out']
+                run_name = self.parent.model_config['run_name']
+                #pi = self.parent.pi
+                statistic = self.parent.statistic
+                datatype = self.parent.datatype
 
-                encoding = {
-                    f"{target}_aoa": {"zlib": True, "complevel": 4, "dtype": "float32", "_FillValue": np.float32(np.nan)},
-                    f"{target}_di": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
-                    f"{target}_lpd": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
-                    f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
-                }
-                
-            elif return_all == False:
-                aoa, di_test, cutpoint = area_of_applicability(
-                    X_test=self.X_predict,
-                    X_train=self.X_train,
-                    y_train= y_train,
-                    model=m,
-                    threshold=threshold,
-                    return_all=return_all
-                )
-                aoa_dataset[f"{target}_aoa"] = aoa
-                aoa_dataset[f"{target}_di"] = di_test
-                aoa_dataset[f"{target}_cutpoint"] = cutpoint
+                # Build the full file path
+                output_dir = os.path.join(self.parent.root, path_out, run_name, "posts/integrated_totals")
+                filename = f"{model}_integrated_totals_{statistic}{depth_str}{month_str}{datatype}.csv"
+                file_path = os.path.join(output_dir, filename)
 
-                encoding = {
-                    f"{target}_aoa": {"zlib": True, "complevel": 4, "dtype": "float32", "_FillValue": np.float32(np.nan)},
-                    f"{target}_di": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
-                    f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)}
-                }                
+                # Write to CSV
+                totals.to_csv(file_path, index=False)
 
-            else:
-                print("return_all requires a boolean input")
-
-        # convert df to xarray ds:
-        aoa_dataset = aoa_dataset.to_xarray()
-
-        # add metadata:
-        aoa_dataset['lat'].attrs['units'] = 'degrees_north'
-        aoa_dataset['lat'].attrs['long_name'] = 'latitude'
-
-        aoa_dataset['lon'].attrs['units'] = 'degrees_east'
-        aoa_dataset['lon'].attrs['long_name'] = 'longitude'
-
-        aoa_dataset['depth'].attrs['units'] = 'm'
-        aoa_dataset['depth'].attrs['positive'] = 'down'
-
-        # export aoa to netcdf:
-        aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"), encoding=encoding)
-   
-    def merge_env(self):
-        """
-        Merge model output with environmental data.
-
-        This method aligns and merges the predicted values (model output) with the existing 
-        environmental dataset stored in `self.d`. The merged data replaces `self.d`.
-
-        Returns
-        -------
-        None
-        """
-
-        X_predict = self.X_predict.to_xarray()
-        ds = self.d.to_xarray()
-        aligned_datasets = xr.align(ds,X_predict, join="inner")
-        ds = xr.merge(aligned_datasets)
-        if 'FID' in ds:
-            ds['FID'] = ds['FID'].where(ds['FID'] != '', np.nan)
-        self.d = ds.to_dataframe()
-        self.d = self.d.dropna()
+                print(f"Exported totals")
 
     def export_ds(self, file_name, 
                   author=None, description=None):
