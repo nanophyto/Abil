@@ -11,7 +11,7 @@ import xarray as xr
 from abil.tune import ModelTuner as tune
 from abil.utils import example_data # example_training_data, example_predict_data
 from abil.predict import ModelPredictor as predict
-from abil.post import SDMPostProcessor as post
+from abil.post import AbilPostProcessor as post
 
 class TestRegressors(unittest.TestCase):
 
