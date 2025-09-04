@@ -744,81 +744,103 @@ class post:
             return total
 
 
-        def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
-                             export=True, model="ens"):
+        def integrate_total(self, variable='total', monthly=False, subset_depth=None):
             """
-            Estimates global integrated values for all targets.
-    
-            Considers latitude and depth bin size.
-    
+            Estimates global integrated values for a single target. Returns the depth integrated annual total.
+            
+            Works with any subset/ordering of ('lat','lon','depth','time').
+
             Parameters
             ----------
-            targets : an np.array of str, optional
-                An np.array of target variable names to include in the merge. If None, the default 
-                targets from `self.targets` are used (default is None).
+            variable : str
+                The field to be integrated. Default is 'total' from PIC or POC Abil output.
 
             monthly : bool
                 Whether or not to calculate a monthly average value instead of an annual total. Default is False.
- 
+
             subset_depth : float
                 Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.
 
-            export : bool
-                Whether of not to export integrated totals as .csv. Default is True.
-
-            model : str
-                The model version to be integrated. Default is "ens". Other options include {"rf", "xgb", "knn"}.
-    
+            Examples
+            --------
+            >>> m = post(model_config)
+            >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
+            >>> result = integration.integrate_total(variable='Calcification')
+            >>> print("Final integrated total:", result.values)
             """
+            print("Initiate integrated_total")
             ds = self.parent.d.to_xarray()
-            if targets is None:
-                targets = self.targets
-            if "total" in ds:
-                targets = np.append(targets, 'total')
-            if "mean" in ds:
-                targets = np.append(targets, 'mean')
-            if "stdev" in ds:
-                targets = np.append(targets, 'stdev')
-            if "prctile_2.5" in ds:
-                targets = np.append(targets, 'prctile_2.5')
-            if "prctile_97.5" in ds:
-                targets = np.append(targets, 'prctile_97.5')
-            totals = []
+            vol_conversion = self.vol_conversion
+            magnitude_conversion = self.magnitude_conversion
+            molar_mass = self.molar_mass
+            rate = self.rate
 
-            for target in targets:
-                try:
-                    print(f"Processing target: {target}")
-                    total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
-                    total_df = pd.DataFrame({'total': [total.values], 'variable': target})
-                    totals.append(total_df)
-                except Exception as e:
-                    print(f"Some targets do not have predictions! Missing: {target}")
-                    print(f"Error: {e}")
-            totals = pd.concat(totals)
+            # Average number of days for each month (accounting for leap years)
+            days_per_month_full = np.array([31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+            
+            if variable not in ds:
+                raise KeyError(f"Variable '{variable}' not found in dataset.")
 
-            if export:
-                depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
-                month_str = "_monthly_int" if monthly else ""
-                try: #make new dir if needed
-                    os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"))
-                except:
-                    None
+            # Optional depth subset if depth exists
+            if subset_depth is not None and ('depth' in ds.dims or 'depth' in ds.coords):
+                ds = ds.sel(depth=slice(0, subset_depth))
 
-                path_out = self.parent.model_config['path_out']
-                run_name = self.parent.model_config['run_name']
-                #pi = self.parent.pi
-                statistic = self.parent.statistic
-                datatype = self.parent.datatype
+            var = ds[variable]
+            vol = ds['volume']
 
-                # Build the full file path
-                output_dir = os.path.join(self.parent.root, path_out, run_name, "posts/integrated_totals")
-                filename = f"{model}_integrated_totals_{statistic}{depth_str}{month_str}{datatype}.csv"
-                file_path = os.path.join(output_dir, filename)
+            # Ensure volume is broadcastable to var
+            vol = vol.broadcast_like(var)
 
-                # Write to CSV
-                totals.to_csv(file_path, index=False)
+            has_time = ('time' in var.dims)
 
-                print(f"Exported totals")
+            # If time exists, map each time step to a month index 1..12
+            if has_time:
+                available_time = ds['time'].values
+                if np.issubdtype(available_time.dtype, np.datetime64):
+                    months_idx = pd.to_datetime(available_time).month.astype(int)
+                else:
+                    months_idx = available_time.astype(int)
+                days_per_month = days_per_month_full[months_idx - 1]
+
+            if rate and has_time:
+                if monthly:
+                    # Calculate monthly total (separately for each time step) with month-day weighting
+                    total = []
+                    for i in range(var.sizes['time']):
+                        vol_i = vol.isel(time=i) if ('time' in vol.dims) else vol
+                        monthly_total = (var.isel(time=i) * vol_i * days_per_month[i]).sum(
+                            dim=[d for d in var.dims if d != 'time']
+                        )
+                        monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
+                        total.append(monthly_total)
+                    total = xr.concat(total, dim="month")
+                    print(f"All monthly totals: {total.values}")
+                else:
+                    # Annual total with month-day weighting
+                    weight = xr.DataArray(days_per_month, dims=('time',))
+                    total = (var * vol * weight).sum(dim=list(var.dims))
+                    total = (total * molar_mass) * vol_conversion * magnitude_conversion
+                    print("Final integrated total:", total.values)
+            else:
+                if monthly and has_time:
+                    # Monthly totals without rate weighting
+                    total = []
+                    for i in range(var.sizes['time']):
+                        vol_i = vol.isel(time=i) if ('time' in vol.dims) else vol
+                        monthly_total = (var.isel(time=i) * vol_i).sum(
+                            dim=[d for d in var.dims if d != 'time']
+                        )
+                        monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
+                        total.append(monthly_total)
+                    total = xr.concat(total, dim="month")
+                    print(f"All monthly totals: {total.values}")
+                else:
+                    # Integrate over existing dims
+                    total = (var * vol).sum(dim=list(var.dims))
+                    total = (total * molar_mass) * vol_conversion * magnitude_conversion
+                    print("Final integrated total:", total.values)
+            return total
+        
 
     def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
         """
