@@ -44,6 +44,7 @@ m.train(model="knn")
 #load prediction data:
 X_predict = pd.read_csv(os.path.join("..", "data", "so_prediction.csv"))
 X_predict.set_index(['lat', 'lon'], inplace=True)
+X_predict = X_predict[predictors]
 
 #predict your model:
 m = predict(X_train, y, X_predict, model_config)
@@ -81,14 +82,34 @@ def plot_panel(ax, data, var, title, label, cmap='viridis', cbar_label='abundanc
 
     cb = plt.colorbar(h, ax=ax, shrink=0.6, pad=0.1); cb.ax.tick_params(labelsize=8); cb.set_label(cbar_label, size=8)
 
-# ---- usage ----
+# apply plotting function and export
 fig, axs = plt.subplots(2,2, figsize=(8,6), subplot_kw={'projection': ccrs.SouthPolarStereo()})
 (ax00, ax01), (ax10, ax11) = axs
-v = 'Gephyrocapsa huxleyi HET'
-plot_panel(ax00, d,     v, 'Training Data',          'A)')
-plot_panel(ax01, ds,    v, 'Mean Abundance',         'B)')
-plot_panel(ax10, ds_LL, v, '95% CI Lower Limit',     'C)')
-plot_panel(ax11, ds_UL, v, '95% CI Upper Limit',     'D)')
+plot_panel(ax00, d,     target, 'Training Data',          'A)')
+plot_panel(ax01, ds,    target, 'Mean Abundance',         'B)')
+plot_panel(ax10, ds_LL, target, '95% CI Lower Limit',     'C)')
+plot_panel(ax11, ds_UL, target, '95% CI Upper Limit',     'D)')
 plt.tight_layout()
 plt.savefig('figure_2-phase.png', dpi=300, bbox_inches='tight', facecolor='white')
 plt.show()
+
+# we can also look at integrated totals (stocks)
+def do_integrations(statistic):
+    m = post(X_train, y, X_predict, model_config, statistic, datatype="pic")
+    m.estimate_carbon("pg pic")
+    vol_conversion = 1e3 # to convert from pg C L-1 to pg C m-3
+    magnitude_conversion = 1e-24 # convert from pg C to Tg C
+    vol_conversion = vol_conversion*200 # model approximates the top 200m
+    integ = m.integration(m, vol_conversion=vol_conversion,
+                          magnitude_conversion=magnitude_conversion)
+    integ.integrated_totals(targets)
+
+do_integrations(statistic="mean")
+do_integrations(statistic="ci95_UL")
+do_integrations(statistic="ci95_LL")
+
+mean = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", "integrated_totals", "ens_integrated_totals_mean_pic.csv"))['total'][0]
+ci95_UL = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", "integrated_totals", "ens_integrated_totals_ci95_LL_pic.csv"))['total'][0]
+ci95_LL = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", "integrated_totals", "ens_integrated_totals_ci95_UL_pic.csv"))['total'][0]
+
+print(f"estimated integrated total: {mean:.2f} [{ci95_LL:.2f}, {ci95_UL:.2f}] Tg IC")
