@@ -606,57 +606,76 @@ class post:
             """
             Calculate the volume for each cell and add it as a new field to the dataset.
 
+            Works with any subset of ('lat','lon','depth'). If only 'lat' is present,
+            uses the zonal band area (integrated over all longitudes).
+
             Examples
             --------
             >>> m = post(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> print("Volume calculated:", int.ds['volume'].values)
-
             """            
             ds = self.parent.d.to_xarray()
-            resolution_lat = self.resolution_lat
-            resolution_lon = self.resolution_lon
-            depth_w = self.depth_w
-
-            # Calculate the number of cells in latitude and longitude
-            num_cells_lat = int(ds['lat'].size / resolution_lat)
-            num_cells_lon = int(ds['lon'].size / resolution_lon)
-
-            # Retrieve initial latitude and longitude bound
-            min_lat = ds['lat'].values[0]
-            min_lon = ds['lon'].values[0]
-
-            # Initialize the 2D array to store the areas
-            area = np.zeros((num_cells_lat, num_cells_lon))
+            resolution_lat = float(self.resolution_lat)
+            resolution_lon = float(self.resolution_lon)
+            depth_w = float(self.depth_w)
 
             earth_radius = 6371000.0  # Earth's radius in meters
 
-            # Calculate the area of each cell
-            for lat_index in range(num_cells_lat):
-                for lon_index in range(num_cells_lon):
-                    # Calculate the latitude range of the cell
-                    lat_bottom = min_lat + lat_index * resolution_lat
-                    lat_top = lat_bottom + resolution_lat
+            # area factor (lat/lon)
+            has_lat = ('lat' in ds.dims or 'lat' in ds.coords)
+            has_lon = ('lon' in ds.dims or 'lon' in ds.coords)
 
-                    # Calculate the longitude range of the cell
-                    lon_left = min_lon + lon_index * resolution_lon
-                    lon_right = lon_left + resolution_lon
+            if has_lat and has_lon:
+                # lat & lon present: per-cell horizontal area using uniform resolutions
+                lat = ds['lat'].values
+                lon = ds['lon'].values
 
-                    # Calculate the area of the grid cell
-                    areas = earth_radius ** 2 * (np.sin(np.radians(lat_top)) - np.sin(np.radians(lat_bottom))) * \
-                            (np.radians(lon_right) - np.radians(lon_left))
+                dphi = np.deg2rad(resolution_lat)
+                dlambda = np.deg2rad(resolution_lon)
 
-                    # Store the area in the array
-                    area[lat_index, lon_index] = areas
+                # vectorized latitude band contribution
+                phi = np.deg2rad(lat)
+                lat_band = (earth_radius ** 2) * (np.sin(phi + dphi / 2.0) - np.sin(phi - dphi / 2.0))  # (lat,)
 
-            volume = area * depth_w
-            ds['volume'] = (('lat', 'lon'), volume)
+                # longitude width (same for all longitudes for a given Δλ)
+                lon_width = np.full(lon.shape, dlambda)  # (lon,)
+
+                # outer product -> (lat, lon)
+                area = np.outer(lat_band, lon_width)
+                area_da = xr.DataArray(area, dims=('lat', 'lon'))
+
+            elif has_lat and not has_lon:
+                # lat only: use full 2π longitude span (zonal band area per latitude cell)
+                lat = ds['lat'].values
+                dphi = np.deg2rad(resolution_lat)
+                phi = np.deg2rad(lat)
+                # A_band = R^2 * (sin(phi+Δ/2) - sin(phi-Δ/2)) * 2π
+                area_band = (earth_radius ** 2) * (np.sin(phi + dphi / 2.0) - np.sin(phi - dphi / 2.0)) * (2.0 * np.pi)
+                area_da = xr.DataArray(area_band, dims=('lat',))
+            else:
+                # no horizontal dimensions -> multiply by 1
+                area_da = xr.DataArray(1.0)
+
+            # depth factor
+            if 'depth' in ds.dims or 'depth' in ds.coords:
+                nz = ds.sizes.get('depth', len(ds['depth']))
+                dz_da = xr.DataArray(np.full((nz,), depth_w), dims=('depth',))
+            else:
+                dz_da = xr.DataArray(1.0)
+
+            # estimate volume
+            volume = area_da * dz_da
+            volume.name = 'volume'
+            ds['volume'] = volume
             self.parent.d = ds.to_dataframe()
-        
+
         def integrate_total(self, variable='total', monthly=False, subset_depth=None):
             """
             Estimates global integrated values for a single target. Returns the depth integrated annual total.
             
+            Works with any subset/ordering of ('lat','lon','depth','time').
+
             Parameters
             ----------
             variable : str
@@ -664,7 +683,7 @@ class post:
 
             monthly : bool
                 Whether or not to calculate a monthly average value instead of an annual total. Default is False.
- 
+
             subset_depth : float
                 Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.
 
@@ -685,55 +704,76 @@ class post:
             # Average number of days for each month (accounting for leap years)
             days_per_month_full = np.array([31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
             
-            # Get the available time points (months) from the dataset
-            available_time = ds['time'].values  # Assuming 'time' is an array of 1, 2, 3, and 12
+            if variable not in ds:
+                raise KeyError(f"Variable '{variable}' not found in dataset.")
 
-            # Subset the days_per_month array to only include the available months
-            days_per_month = days_per_month_full[available_time - 1]
-
-            if subset_depth:
+            # Optional depth subset if depth exists
+            if subset_depth is not None and ('depth' in ds.dims or 'depth' in ds.coords):
                 ds = ds.sel(depth=slice(0, subset_depth))
 
-            if rate:
+            var = ds[variable]
+            vol = ds['volume']
+
+            # Ensure volume is broadcastable to var
+            vol = vol.broadcast_like(var)
+
+            has_time = ('time' in var.dims)
+
+            # If time exists, map each time step to a month index 1..12
+            if has_time:
+                available_time = ds['time'].values
+                if np.issubdtype(available_time.dtype, np.datetime64):
+                    months_idx = pd.to_datetime(available_time).month.astype(int)
+                else:
+                    months_idx = available_time.astype(int)
+                days_per_month = days_per_month_full[months_idx - 1]
+
+            if rate and has_time:
                 if monthly:
-                    # Calculate monthly total (separately for each month)
+                    # Calculate monthly total (separately for each time step) with month-day weighting
                     total = []
-                    for i,month in enumerate(available_time):
-                        monthly_total = (ds[variable].isel(time=i) * ds['volume'].isel(time=i) * days_per_month[i]).sum(dim=['lat', 'lon', 'depth'])
+                    for i in range(var.sizes['time']):
+                        vol_i = vol.isel(time=i) if ('time' in vol.dims) else vol
+                        monthly_total = (var.isel(time=i) * vol_i * days_per_month[i]).sum(
+                            dim=[d for d in var.dims if d != 'time']
+                        )
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
                     print(f"All monthly totals: {total.values}")
                 else:
-                    # Calculate annual total
-                    total = (ds[variable] * ds['volume'] * days_per_month.mean()).sum(dim=['lat', 'lon', 'depth', 'time'])
+                    # Annual total with month-day weighting
+                    weight = xr.DataArray(days_per_month, dims=('time',))
+                    total = (var * vol * weight).sum(dim=list(var.dims))
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
                     print("Final integrated total:", total.values)
             else:
-                if monthly:
-                    # Calculate monthly total (separately for each month)
+                if monthly and has_time:
+                    # Monthly totals without rate weighting
                     total = []
-                    for i,month in enumerate(available_time):
-                        monthly_total = (ds[variable].isel(time=i) * ds['volume']).isel(time=i).sum(dim=['lat', 'lon', 'depth'])
+                    for i in range(var.sizes['time']):
+                        vol_i = vol.isel(time=i) if ('time' in vol.dims) else vol
+                        monthly_total = (var.isel(time=i) * vol_i).sum(
+                            dim=[d for d in var.dims if d != 'time']
+                        )
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
                     print(f"All monthly totals: {total.values}")
                 else:
-                    # Calculate annual total
-                    total = (ds[variable] * ds['volume']).sum(dim=['lat', 'lon', 'depth', 'time'])
+                    # Integrate over whatever dims exist
+                    total = (var * vol).sum(dim=list(var.dims))
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
                     print("Final integrated total:", total.values)
-            return total
-
-
+            return total    
+        
         def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
-                             export=True, model="ens"):
+                         export=True, model="ens"):
             """
             Estimates global integrated values for all targets.
-    
+
             Considers latitude and depth bin size.
-    
+
             Parameters
             ----------
             targets : an np.array of str, optional
@@ -742,7 +782,7 @@ class post:
 
             monthly : bool
                 Whether or not to calculate a monthly average value instead of an annual total. Default is False.
- 
+
             subset_depth : float
                 Depth in meters from surface to which integral should be calculated. Default is None. Ex. 100 for top 100m integral.
 
@@ -751,7 +791,6 @@ class post:
 
             model : str
                 The model version to be integrated. Default is "ens". Other options include {"rf", "xgb", "knn"}.
-    
             """
             ds = self.parent.d.to_xarray()
             if targets is None:
@@ -802,15 +841,12 @@ class post:
                 totals.to_csv(file_path, index=False)
 
                 print(f"Exported totals")
-
     def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
         """
         Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
-
         This calculates the importance-weighted feature distances from test to train points,
         and then defines the "applicable" test sites as those closer than some threshold
         distance.
-
         A value of 0 indicates the point is within the Area of Applicability, 
         while a value of 1 indicates the point is outside the Area of Applicability.
         Note: if using pseudo-absences in y_train and  X_train, mask out where y_train = 0 to calculate
@@ -824,7 +860,6 @@ class post:
         drop_zeros : bool, optional
             Wether or not to exclude rows where y_train values are equal to 0.
             (default is False)
-
         """
         if targets is None:
             targets = self.targets
@@ -834,7 +869,7 @@ class post:
 
         # estimate the aoa for each target:
         for i in range(len(targets)):
-            
+
             target = targets[i]
             target_no_space = target.replace(' ', '_')
 
@@ -875,7 +910,7 @@ class post:
                     f"{target}_lpd": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                     f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                 }
-                
+
             elif return_all == False:
                 aoa, di_test, cutpoint = area_of_applicability(
                     X_test=self.X_predict,
@@ -913,14 +948,12 @@ class post:
 
         # export aoa to netcdf:
         aoa_dataset.to_netcdf(os.path.join(self.path_out, "aoa.nc"), encoding=encoding)
-   
+
     def merge_env(self):
         """
         Merge model output with environmental data.
-
         This method aligns and merges the predicted values (model output) with the existing 
         environmental dataset stored in `self.d`. The merged data replaces `self.d`.
-
         Returns
         -------
         None
@@ -934,7 +967,7 @@ class post:
             ds['FID'] = ds['FID'].where(ds['FID'] != '', np.nan)
         self.d = ds.to_dataframe()
         self.d = self.d.dropna()
-
+        
     def export_ds(self, file_name, 
                   author=None, description=None):
         """
