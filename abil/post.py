@@ -1062,7 +1062,7 @@ class post:
 
         print("exported d to: " + self.path_out + file_name + "_" + self.statistic + self.datatype + ".csv")
 
-    def merge_obs(self, file_name, targets=None):
+    def merge_obs(self, file_name, targets=None, index_cols=['lat', 'lon', 'depth', 'time']):
         """
         Merge model output with observational data and calculate residuals.
 
@@ -1076,11 +1076,13 @@ class post:
         targets : an np.array of str, optional
             An np.array of target variable names to include in the merge. If None, the default 
             targets from `self.targets` are used (default is None).
+        index_cols : an np.array of str, optional
+            A list of indices which denote the data dimensions. (default is ['lat', 'lon', 'depth', 'time'])
 
         Notes
         -----
         - The function matches the observational data with model predictions based on the 
-        indices `['lat', 'lon', 'depth', 'time']`.
+        index_cols which default to `['lat', 'lon', 'depth', 'time']`.
         - Residuals are calculated as `observed - predicted` for each target variable.
         - Columns included in the output are the original targets, their modeled values 
         (suffixed with `_mod`), and their residuals (suffixed with `_resid`).
@@ -1101,7 +1103,7 @@ class post:
         mod_columns = {target: target + '_mod' for target in targets}
         d = d.rename(mod_columns, axis=1)
         d.reset_index(inplace=True)
-        d.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)        
+        d.set_index(index_cols, inplace=True)        
 
         # Read the training targets from the training.csv file defined in model_config
         try:
@@ -1112,7 +1114,7 @@ class post:
             raise FileNotFoundError(f"Dataset not found at {df2_path}")
         
 
-        df2.set_index(['lat', 'lon', 'depth', 'time'], inplace=True)
+        df2.set_index(index_cols, inplace=True)
         df2['dummy'] = 1
 
         out = pd.concat([df2, d], axis=1)
