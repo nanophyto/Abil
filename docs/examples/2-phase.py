@@ -119,8 +119,14 @@ do_integrations(statistic="mean")
 do_integrations(statistic="ci95_UL")
 do_integrations(statistic="ci95_LL")
 
-mean = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", "integrated_totals", "ens_integrated_totals_mean_pic.csv"))['total'][0]
-ci95_LL = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", "integrated_totals", "ens_integrated_totals_ci95_LL_pic.csv"))['total'][0]
-ci95_UL = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", "integrated_totals", "ens_integrated_totals_ci95_UL_pic.csv"))['total'][0]
+mean = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", 
+                                "integrated_totals", 
+                                "ens_integrated_totals_mean_pic.csv"))['total'][0]
+ci95_LL = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", 
+                                "integrated_totals", 
+                                "ens_integrated_totals_ci95_LL_pic.csv"))['total'][0]
+ci95_UL = pd.read_csv(os.path.join("ModelOutput", "2-phase", "posts", 
+                                "integrated_totals", 
+                                "ens_integrated_totals_ci95_UL_pic.csv"))['total'][0]
 
 print(f"estimated integrated total: {mean:.2f} [{ci95_LL:.2f}, {ci95_UL:.2f}] Tg IC")
