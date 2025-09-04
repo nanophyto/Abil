@@ -1,7 +1,8 @@
-1-phase Ensemble 
-****************
+Coccolithophore abundance in the Bermuda Atlantic Time Series 
+*************************************************************
 
-In this example we will use Abil to predict the biomass of the calcifying nanoplankton *Gephyrocapsa huxleyi*.
+In this example we will use Abil to predict the biomass of the calcifying nanoplankton ('Coccolithophores').
+
 This species is highly abundant in the global oceans, and plays an important role in the carbon cycle.
 We fill focus this example on the Bermuda Atlantic Time Series (BATS), a location with great temporal coverage of *G. huxleyi*.
 In this location, wind-driven mixing in the winter drives nutrient upwelling which results in high concentrations of *G. huxleyi*.
