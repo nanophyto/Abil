@@ -24,6 +24,8 @@ extensions = [
 ]
 
 bibtex_bibfiles = ["library.bib"]
+bibtex_default_style = "unsrt"     
+bibtex_reference_style = "label" 
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
