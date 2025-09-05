@@ -112,12 +112,12 @@ class tune:
         # Setup cross-validation strategy
         if model_config['stratify']:
             if model_config['upsample']:
-                self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'])
+                self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'], random_state=model_config['seed'])
                 print("upsampling = True")
             else:
-                self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'])
+                self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'], random_state=model_config['seed'])
         else:
-            self.cv = KFold(n_splits=model_config['cv'])
+            self.cv = KFold(n_splits=model_config['cv'], random_state=model_config['seed'])
              
         self.bagging_estimators = model_config.get('knn_bagging_estimators', None)
 
@@ -211,7 +211,7 @@ class tune:
             if self.ensemble_config['classifier'] == True:
                 y = self.y[self.y > 0]
                 X_train = self.X_train[self.y > 0].reset_index(drop=True)
-                cv = ZeroStratifiedKFold(n_splits=self.model_config['cv'])
+                cv = ZeroStratifiedKFold(n_splits=self.model_config['cv'], random_state=self.seed)
             else:
                 y = self.y
                 X_train = self.X_train
