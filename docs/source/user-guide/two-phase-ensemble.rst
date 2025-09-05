@@ -4,9 +4,10 @@ Southern Ocean distribution of *Gephyrocapsa huxleyi*
 In this example we will use Abil to predict the biomass of a highly abundant calcifying nanoplankton (*Gephyrocapsa huxleyi*).
 We will focus on the Southern Ocean, a region with high *G. huxleyi* stocks and of significant importance to the ocean carbon cycle.
 This region has an interesting macroscale distribution of *G. huxleyi* biomass, with peak concentrations in the so called "great calcite belt" 
-between ~40-60°S but a notable absence below ~60°S due to competition with silicifying nanoplankton.
+between ~40-60°S but a notable absence below ~60°S due to competition with silicifying nanoplankton :footcite:p:`nissen2018factors`.
 
-For this example we will use a 2-phase regressor to better constrain absences.
+For this example we will use a 2-phase regressor to better constrain absences below ~60°S.
+For an example of the 1-phase model see :doc:`Coccolithophore abundance in the Bermuda Atlantic Time Series  <one-phase-ensemble>`. 
 
 YAML example
 ~~~~~~~~~~~~
@@ -53,8 +54,11 @@ After loading the required packages we need to define our file paths.
 Loading example data
 ^^^^^^^^^^^^^^^^^^^^
 
-Next we load our Southern Ocean example data. When applying the pipeline to your own data, note that the data
+Next we load our Southern Ocean example data which was extracted from the CASCADE database :footcite:p:`deVries2024cascade` and then averaged with depth and time. When applying the pipeline to your own data, note that the data
 needs to be in a `Pandas DataFrame format <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_.
+
+In addition to our predictors (`y_train`) we also need environmental data which match our predictions ('X_train'). 
+This data was obtained from monthly climatologies from data sources such as the World Ocean Atlas :footcite:p:`Reagan2024`, NNGv2  :footcite:p:`Broullon2019, Broullon2020`.
 
 .. literalinclude:: ../../examples/2-phase.py
    :lines: 29-37
@@ -64,7 +68,7 @@ Training the model
 ^^^^^^^^^^^^^^^^^^
 
 Next we train our model. Note that depending on the number of hyper-parameters specified in the
-YAML file this can be computationally very expensive and it recommended to do this on a HPC system. 
+YAML file this can be computationally very expensive and it recommended to do this on a  :doc:`HPC system <hpc>`.  
 
 .. literalinclude:: ../../examples/2-phase.py
    :lines: 39-43
@@ -107,10 +111,14 @@ First we convert our abundances to cellular inorganic carbon,
 and then integrate accounting for grid volumes and unit conversions.
 
 .. literalinclude:: ../../examples/2-phase.py
-   :lines: 107-130
+   :lines: 107-120
    :language: python
 
 Checking the output:
+
+.. literalinclude:: ../../examples/2-phase.py
+   :lines: 122-130
+   :language: python
 
 .. code-block:: python
 
@@ -119,3 +127,8 @@ Checking the output:
 
 The resulting number is OK on a first order basis, but rather high, likely due to our example not accounting 
 for the strong seasonal variation in biomass observed in this region.
+
+References
+^^^^^^^^^^
+.. footbibliography::
+

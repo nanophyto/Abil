@@ -19,9 +19,11 @@ extensions = [
 	'sphinx.ext.autodoc', 
 	'sphinx.ext.coverage', 
 	'sphinx.ext.napoleon',
-    "sphinx_design"
-
+    "sphinx_design",
+    "sphinxcontrib.bibtex",
 ]
+
+bibtex_bibfiles = ["library.bib"]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
