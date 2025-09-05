@@ -30,7 +30,7 @@ jobs:
           pip install matplotlib
           pip install seaborn
           pip install Cartopy
-          pip install -e ./Abil
+          pip install -e . #abil install
           pip install sphinx
           pip install pydata-sphinx-theme
           pip install sphinx-design
