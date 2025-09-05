@@ -28,7 +28,8 @@ from xgboost import XGBClassifier, XGBRegressor, DMatrix
 
 
 def estimate_prediction_quantiles(
-    model, X_predict, X_train, y_train, cv=None, chunksize=20_000, threshold=0.5
+    model, X_predict, X_train, y_train, cv=None, 
+    chunksize=20_000, threshold=0.5, random_state=None
 ):
     """
     Train the model using cross-validation, compute predictions on X_train with summary stats,
@@ -77,7 +78,8 @@ def estimate_prediction_quantiles(
             y_train = (y_train > 0).copy(),
             cv=cv,
             chunksize=chunksize,
-            threshold=threshold
+            threshold=threshold,
+            random_state=random_state,  
         )
         regressor_stats = estimate_prediction_quantiles(
             model.regressor_, 
@@ -86,7 +88,8 @@ def estimate_prediction_quantiles(
             y_train=original_y_train, 
             cv=cv, 
             chunksize=chunksize, 
-            threshold=threshold
+            threshold=threshold,
+            random_state=random_state,  
         )
         return {
             **{f"classifier_{k}": v for k, v in classifier_stats.items()},
@@ -121,6 +124,14 @@ def estimate_prediction_quantiles(
         y_transformer = u.do_nothing
 
     preprocessor = pipeline.named_steps["preprocessor"]
+
+    # Ensure deterministic preprocessor if it accepts random_state
+    if hasattr(preprocessor, "set_params") and random_state is not None:
+        try:
+            preprocessor.set_params(random_state=random_state)
+        except Exception:
+            pass
+
     preprocessor.fit(X_train)
 
     ##################################################
@@ -173,13 +184,26 @@ def estimate_prediction_quantiles(
     # REFIT MODELS WITH TRANSFORMED Y AND Xs #
     ##########################################
 
+    # Set estimator seed if supported, before fitting
+    if hasattr(model, "set_params") and random_state is not None:
+        try:
+            model.set_params(random_state=random_state)
+        except Exception:
+            pass
+
     if not _is_fitted(model):
         model.fit(X_train, y_train)
-
 
     ###############################################
     # MAKE QUANTILE PREDICTIONS FOR TRAINING DATA #
     ###############################################
+
+    # Make CV deterministic if the splitter has a random_state
+    if cv is not None and hasattr(cv, "random_state") and random_state is not None:
+        try:
+            cv.random_state = random_state 
+        except Exception:
+            pass
 
     if cv is not None:
         train_summary_stats = [
@@ -191,7 +215,8 @@ def estimate_prediction_quantiles(
                 y_train=y_train.iloc[train_idx],
                 chunksize=chunksize,
                 threshold=threshold,
-                proba=proba
+                proba=proba,
+                random_state=random_state  # (already present)
             )
             for train_idx, test_idx in cv.split(X_train, y_train)
         ]
@@ -208,7 +233,8 @@ def estimate_prediction_quantiles(
             y_train=y_train,
             chunksize=chunksize,
             threshold=threshold,
-            proba=proba
+            proba=proba,
+            random_state=random_state  # (already present)
         )
 
     #################################################
@@ -223,7 +249,8 @@ def estimate_prediction_quantiles(
         y_train=y_train,
         chunksize=chunksize, 
         threshold=threshold,
-        proba=proba
+        proba=proba,
+        random_state=random_state  # (already present)
     )
 
     return {"train_stats": train_summary_stats, "predict_stats": predict_summary_stats}
@@ -232,7 +259,8 @@ def estimate_prediction_quantiles(
 # DEFINE QUANTILE PREDICTION PIPELINE #
 #######################################
 
-def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None, y_train=None, chunksize=2e4, threshold=0.5, proba=None):
+def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None, y_train=None, 
+                           chunksize=2e4, threshold=0.5, proba=None, random_state=None):
     if proba is None:
         raise ValueError("proba not defined!")
     n_samples, n_features = X_predict.shape
@@ -259,10 +287,10 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
 
     if X_train is not None and y_train is not None:
         if isinstance(model, (XGBRegressor)):
-            model = BaggingRegressor(estimator=model, n_estimators=160)
+            model = BaggingRegressor(estimator=model, n_estimators=160, random_state=random_state)  # (already seeded)
             model.fit(X_train, y_train)
         elif isinstance(model, (XGBClassifier)):
-            model = BaggingClassifier(estimator=model, n_estimators=160)
+            model = BaggingClassifier(estimator=model, n_estimators=160, random_state=random_state)  # (already seeded)
             model.fit(X_train, y_train)
         train_pred_jobs = _setup_pred_jobs(
             model, 
