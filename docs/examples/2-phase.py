@@ -62,9 +62,9 @@ do_post(statistic="ci95_UL")
 do_post(statistic="ci95_LL")
 
 # Load the predictions
-ds = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "SO_mean_abundance.nc"))
-ds_LL = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "SO_ci95_LL_abundance.nc"))
-ds_UL = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "SO_ci95_UL_abundance"))
+ds = xr.open_dataset(os.path.join("ModelOutput", "2-phase", "posts", "SO_mean_abundance.nc"))
+ds_LL = xr.open_dataset(os.path.join("ModelOutput", "2-phase", "posts", "SO_ci95_LL_abundance.nc"))
+ds_UL = xr.open_dataset(os.path.join("ModelOutput", "2-phase", "posts", "SO_ci95_UL_abundance.nc"))
 
 # Create the figure
 def plot_panel(ax, data, var, title, label, 
