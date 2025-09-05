@@ -167,6 +167,16 @@ class Test2Phase(unittest.TestCase):
         do_post(statistic="ci95_LL")
 
 
+        integrated_total_poc_ci95_LL = pd.read_csv("tests/ModelOutput/2-phase/posts/integrated_totals/ens_integrated_totals_ci95_LL_poc.csv")['total'][0]
+
+
+        print("temp total=")
+        print(integrated_total_poc_ci95_LL)
+        
+        self.assertAlmostEqual(integrated_total_poc_ci95_LL, 1.44e+17, delta=1e15)
+
+
+
 def _lat_band_area(lat_deg, dlat_deg):
     """R^2 * (sin(phi+Δφ/2) - sin(phi-Δφ/2))  -> shape (nlat,)"""
     phi = np.deg2rad(np.asarray(lat_deg))
