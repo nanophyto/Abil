@@ -268,12 +268,12 @@ class predict:
             
         if model_config['stratify']==True:
             if model_config['upsample']==True:
-                self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'])
+                self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'], random_state= model_config['seed'])
                 print("upsampling = True")
             else:
-                self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'])
+                self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'], random_state= model_config['seed'])
         else:
-            self.cv = KFold(n_splits=model_config['cv'])
+            self.cv = KFold(n_splits=model_config['cv'], shuffle=True, random_state= model_config['seed'])
 
         self.X_predict = X_predict
         X_predict = None
