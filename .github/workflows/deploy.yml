@@ -29,6 +29,7 @@ jobs:
           pip install -r requirements.txt  # Ensure your requirements.txt includes Sphinx
           pip install matplotlib
           pip install seaborn
+          pip install Cartopy
           pip install sphinx
           pip install pydata-sphinx-theme
           pip install sphinx-design
