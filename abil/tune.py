@@ -117,7 +117,7 @@ class tune:
             else:
                 self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'], random_state=model_config['seed'])
         else:
-            self.cv = KFold(n_splits=model_config['cv'], random_state=model_config['seed'])
+            self.cv = KFold(n_splits=model_config['cv'], shuffle=True, random_state=model_config['seed'])
              
         self.bagging_estimators = model_config.get('knn_bagging_estimators', None)
 
