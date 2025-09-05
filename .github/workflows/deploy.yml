@@ -34,7 +34,7 @@ jobs:
 
       - name: Run Python examples
         run: |
-          for script in docs/examples/*.py; do
+          for script in examples/*.py; do
             echo "Running $script..."
             python "$script"
           done
