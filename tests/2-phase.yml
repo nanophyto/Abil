@@ -4,9 +4,9 @@
   run_name: 2-phase #update for specific run name
   path_out:  tests/ModelOutput/ #root + folder 
 
-  prediction:  docs/examples/data/prediction.csv #root + folder
-  targets:  docs/examples/data/targets.csv #root + folder
-  training:  docs/examples/data/training.csv
+  prediction:  tests/data/prediction.csv #root + folder
+  targets:  tests/data/targets.csv #root + folder
+  training:  tests/data/training.csv
 
   predictors: ["feature_1", "feature_2", "feature_3"]
   verbose: 1
