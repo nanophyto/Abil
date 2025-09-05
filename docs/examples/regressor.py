@@ -22,6 +22,7 @@ os.chdir(os.path.join(".", "docs", "examples"))
 #load configuration yaml:
 with open('regressor_BATS.yml', 'r') as f:
     model_config = load(f, Loader=Loader)
+
 #load example training data:
 d = pd.read_csv(os.path.join("..", "data", "bats_training.csv"))
 #define target:
@@ -80,16 +81,16 @@ m.make_prediction()
 targets = np.array([target])
 def do_post(statistic):
     m = post(X_train, y, X_predict, model_config, statistic, datatype="abundance")
-    m.export_ds("my_first_regressor_model")
+    m.export_ds("BATS")
 
 do_post(statistic="mean")
 do_post(statistic="ci95_UL")
 do_post(statistic="ci95_LL")
 
 # Plot the results
-ds = xr.open_dataset("./ModelOutput/regressor/posts/my_first_regressor_model_mean_abundance.nc")
-ds_UL = xr.open_dataset("./ModelOutput/regressor/posts/my_first_regressor_model_ci95_UL_abundance.nc")
-ds_LL = xr.open_dataset("./ModelOutput/regressor/posts/my_first_regressor_model_ci95_LL_abundance.nc")
+ds = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "BATS_mean_abundance.nc"))
+ds_LL = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "BATS_ci95_LL_abundance.nc"))
+ds_UL = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "BATS_ci95_UL_abundance"))
 
 fig,axs=plt.subplots(3,1,figsize=(7,6),constrained_layout=True)
 for ax,da,title,lab in [
@@ -98,7 +99,6 @@ for ax,da,title,lab in [
     (axs[2], ds_UL[target], '95% CI Upper Limit','C)')]:
     plot_depth_time(ax, da, vmin=0, cbar_label=r'abundance (cells L$^{-1}$)'); ax.set_title(rf'$\mathbf{{{lab}}}$ {title}')
 plt.savefig('BATS_predictions.png',dpi=300,bbox_inches='tight',facecolor='white')
-
 plt.show()
 
 # Check statistics
@@ -129,4 +129,5 @@ sns.regplot(data = obs_abundance, x = 'Gephyrocapsa huxleyi',
 plt.xlabel("obs")
 plt.ylabel("model")
 plt.title('Observed vs modelled abundances')
+plt.savefig('BATS_obs_preds.png',dpi=300,bbox_inches='tight',facecolor='white')
 plt.show()
