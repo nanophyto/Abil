@@ -65,7 +65,10 @@ X_predict.set_index(['depth', 'time'], inplace=True)
 X_predict = X_predict[predictors]
 
 #plotting the prediction data
-vars_list=[('temperature','Temperature','°C'),('PAR', r'PAR ',r'W m$^{-2}$'),('no3','Nitrate','µmol kg$^{-1}$'),('TA','Total Alkalinity','µmol kg$^{-1}$')]
+vars_list=[('temperature','Temperature','°C'),
+           ('PAR', r'PAR ',r'W m$^{-2}$'),
+           ('no3','Nitrate','µmol kg$^{-1}$'),
+           ('TA','Total Alkalinity','µmol kg$^{-1}$')]
 fig,axs=plt.subplots(4,1,figsize=(7,8),constrained_layout=True)
 for ax,(v,title,unit),lab in zip(axs,vars_list,['A)','B)','C)', 'D)']):
     plot_depth_time(ax, X_predict, variable=v, vmin=None, vmax=None, cbar_label=unit)
@@ -90,14 +93,15 @@ do_post(statistic="ci95_LL")
 # Plot the results
 ds = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "BATS_mean_abundance.nc"))
 ds_LL = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "BATS_ci95_LL_abundance.nc"))
-ds_UL = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "BATS_ci95_UL_abundance"))
+ds_UL = xr.open_dataset(os.path.join("ModelOutput", "regressor", "posts", "BATS_ci95_UL_abundance.nc"))
 
 fig,axs=plt.subplots(3,1,figsize=(7,6),constrained_layout=True)
 for ax,da,title,lab in [
     (axs[0], ds[target], 'Mean Abundance','A)'),
     (axs[1], ds_LL[target], '95% CI Lower Limit','B)'),
     (axs[2], ds_UL[target], '95% CI Upper Limit','C)')]:
-    plot_depth_time(ax, da, vmin=0, cbar_label=r'abundance (cells L$^{-1}$)'); ax.set_title(rf'$\mathbf{{{lab}}}$ {title}')
+    plot_depth_time(ax, da, vmin=0, cbar_label=r'abundance (cells L$^{-1}$)')
+    ax.set_title(rf'$\mathbf{{{lab}}}$ {title}')
 plt.savefig('BATS_predictions.png',dpi=300,bbox_inches='tight',facecolor='white')
 plt.show()
 

@@ -110,7 +110,7 @@ We can also quickly plot the environmental data. Note the seasonality in key par
 
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 67-74
+   :lines: 67-77
    :language: python
 
 .. figure:: ../../examples/BATS_environment.png
@@ -119,7 +119,7 @@ We can also quickly plot the environmental data. Note the seasonality in key par
 Then we can make our predictions:
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 76-78
+   :lines: 79-81
    :language: python
 
 Post-processing
@@ -128,7 +128,7 @@ Post-processing
 Finally, we conduct the post-processing.
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 80-88
+   :lines: 83-91
    :language: python
 
 Plotting
@@ -137,7 +137,7 @@ Plotting
 Now that we have predictions we can plot them:
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 90-102
+   :lines: 93-106
    :language: python
 
 .. figure:: ../../examples/BATS_predictions.png
@@ -147,7 +147,7 @@ Model performance
 We can also check the stats
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 104-106
+   :lines: 108-110
    :language: python
 
 .. code-block:: python
@@ -166,7 +166,7 @@ We can also check the stats
 And plot the predictions vs observations:
 
 .. literalinclude:: ../../examples/regressor.py
-   :lines: 115-133
+   :lines: 119-137
    :language: python
 
 .. figure:: ../../examples/BATS_obs_preds.png
