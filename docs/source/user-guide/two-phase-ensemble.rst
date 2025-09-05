@@ -18,7 +18,7 @@ For a detailed explanation of each parameter see :ref:`yaml_config`.
 An example of YAML file of a 2-phase model is provided below.
 Note that compared to a 1-phase regressor model, the hyper-parameters for the classifier also need to be specified.
 
-.. literalinclude:: ../../examples/2-phase.yml
+.. literalinclude:: ../../../examples/2-phase.yml
    :language: yaml
 
 Running the model
@@ -37,7 +37,7 @@ Before running the Python script we need to import all relevant Python packages.
 For instructions on how to install these packages, see `requirements.txt <../../../../../requirements.txt>`_
 and the Abil :ref:`getting-started`.
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 4-21
    :language: python
 
@@ -46,7 +46,7 @@ Loading the configuration YAML
 
 After loading the required packages we need to define our file paths.
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 23
    :language: python
 
@@ -60,7 +60,7 @@ needs to be in a `Pandas DataFrame format <https://pandas.pydata.org/docs/refere
 In addition to our predictors (`y_train`) we also need environmental data which match our predictions ('X_train'). 
 This data was obtained from monthly climatologies from data sources such as the World Ocean Atlas :footcite:p:`Reagan2024`, NNGv2  :footcite:p:`Broullon2019, Broullon2020`.
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 29-37
    :language: python
 
@@ -70,7 +70,7 @@ Training the model
 Next we train our model. Note that depending on the number of hyper-parameters specified in the
 YAML file this can be computationally very expensive and it recommended to do this on a  :doc:`HPC system <hpc>`.  
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 39-43
    :language: python
 
@@ -79,7 +79,7 @@ Making predictions
 
 After training our model we can make predictions on a new dataset (X_predict):
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 45-52
    :language: python
 
@@ -88,7 +88,7 @@ Post-processing
 
 Finally, we conduct the post-processing.
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 55-62
    :language: python
 
@@ -97,11 +97,11 @@ Plotting
 
 Now that we have predictions we can plot them:
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 64-105
    :language: python
 
-.. figure:: ../../examples/SO_predictions.png
+.. figure:: ../../../examples/SO_predictions.png
 
 Integrated inorganic carbon stock
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -110,13 +110,13 @@ With abil.post can also estimate integrated inorganic carbon stock.
 First we convert our abundances to cellular inorganic carbon, 
 and then integrate accounting for grid volumes and unit conversions.
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 107-120
    :language: python
 
 Checking the output:
 
-.. literalinclude:: ../../examples/2-phase.py
+.. literalinclude:: ../../../examples/2-phase.py
    :lines: 122-130
    :language: python
 

@@ -5,7 +5,7 @@
   path_out:  ModelOutput/ #root + folder 
 
   prediction:  data/so_prediction.csv #root + folder
-  targets:  ../data/targets.csv #root + folder
+  targets:  data/targets.csv #root + folder
   training:  data/so_training.csv
 
   predictors: ["temperature", 

@@ -20,14 +20,14 @@ from abil.utils import example_data
 #paths:
 import os
 
-os.chdir(os.path.join(".", "docs", "examples"))
+os.chdir(os.path.join(".", "examples"))
 
 #load configuration yaml:
 with open('2-phase.yml', 'r') as f:
     model_config = load(f, Loader=Loader)
 
 #load example training data:
-d = pd.read_csv(os.path.join("..", "data", "so_training.csv"))
+d = pd.read_csv(os.path.join("data", "so_training.csv"))
 #define target:
 target = "Gephyrocapsa huxleyi HET"
 #define predictors based on YAML:
@@ -43,7 +43,7 @@ m.train(model="xgb")
 m.train(model="knn")
 
 #load prediction data:
-X_predict = pd.read_csv(os.path.join("..", "data", "so_prediction.csv"))
+X_predict = pd.read_csv(os.path.join("data", "so_prediction.csv"))
 X_predict.set_index(['lat', 'lon'], inplace=True)
 X_predict = X_predict[predictors]
 

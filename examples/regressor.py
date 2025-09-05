@@ -17,14 +17,14 @@ from abil.post import post
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-os.chdir(os.path.join(".", "docs", "examples"))
+os.chdir(os.path.join(".", "examples"))
 
 #load configuration yaml:
 with open('regressor_BATS.yml', 'r') as f:
     model_config = load(f, Loader=Loader)
 
 #load example training data:
-d = pd.read_csv(os.path.join("..", "data", "bats_training.csv"))
+d = pd.read_csv(os.path.join("data", "bats_training.csv"))
 #define target:
 target= "Gephyrocapsa huxleyi"
 #define predictors based on YAML:
@@ -60,7 +60,7 @@ m.train(model="xgb")
 m.train(model="knn")
 
 #load prediction data:
-X_predict = pd.read_csv(os.path.join("..", "data", "bats_prediction.csv"))
+X_predict = pd.read_csv(os.path.join("data", "bats_prediction.csv"))
 X_predict.set_index(['depth', 'time'], inplace=True)
 X_predict = X_predict[predictors]
 

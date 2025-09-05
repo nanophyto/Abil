@@ -4,9 +4,9 @@
   run_name: regressor #update for specific run name
   path_out:  ModelOutput/ #root + folder
 
-  prediction:  ../data/bats_prediction.csv #root + folder
-  targets:  ../data/targets.csv #root + folder
-  training:  ../data/bats_training.csv
+  prediction: data/bats_prediction.csv #root + folder
+  targets:  data/targets.csv #root + folder
+  training:  data/bats_training.csv
 
   predictors: ["temperature", "no3", "TA", "DIC", "PAR"]
 
