@@ -28,10 +28,14 @@ jobs:
           pip install sphinx
           pip install pydata-sphinx-theme
           pip install sphinx-design
+          pip install sphinxcontrib-bibtex
 
-      - name: Install Abil
+      - name: Run Python examples
         run: |
-          pip install .
+          for script in docs/examples/*.py; do
+            echo "Running $script..."
+            python "$script"
+          done
 
       - name: Build Sphinx documentation
         run: |
