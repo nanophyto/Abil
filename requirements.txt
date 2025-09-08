@@ -1,6 +1,6 @@
 netcdf4
 dask
-numpy
+numpy==1.26.4
 pandas
 pyyaml
 xarray
