@@ -166,6 +166,13 @@ class Test2Phase(unittest.TestCase):
         do_post(statistic="ci95_UL")
         do_post(statistic="ci95_LL")
 
+        integrated_total_poc_mean = pd.read_csv("tests/ModelOutput/2-phase/posts/integrated_totals/ens_integrated_totals_mean_poc.csv")['total'][0]
+
+        print("poc mean=")
+        print(integrated_total_poc_mean)
+        
+        self.assertAlmostEqual(integrated_total_poc_mean, 2.55e17, delta=1e15)
+
 
         integrated_total_poc_ci95_LL = pd.read_csv("tests/ModelOutput/2-phase/posts/integrated_totals/ens_integrated_totals_ci95_LL_poc.csv")['total'][0]
 
