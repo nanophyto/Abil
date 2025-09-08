@@ -88,6 +88,12 @@ class TestRegressors(unittest.TestCase):
         do_post(statistic="ci95_UL")
         do_post(statistic="ci95_LL")
 
+        integrated_total_poc_mean = pd.read_csv("tests/ModelOutput/regressor/posts/integrated_totals/ens_integrated_totals_mean_poc.csv")['total'][0]
+
+        print("poc mean=")
+        print(integrated_total_poc_mean)
+        
+        self.assertAlmostEqual(integrated_total_poc_mean, 1.013e17, delta=1e15)
 
 
 
