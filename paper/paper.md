@@ -59,6 +59,11 @@ By combining a user-friendly interface, parallel processing capabilities, and a 
 
 `Abil` documentation can be found through [github](https://nanophyto.github.io/Abil). The documentation includes instruction for installing the model locally and running on an High Performance Computing (HPC) system. The model process consists of tuning the model (class: `tune`), predicting the model (class: `predict`), and postprocessing the model (class: `post`). The documentation includes usage examples for running these model steps.
 
+# Research projects using the package
+
+* \texttt{Abil.py} has been used to predict the global carbon stocks of the most commonly occurring calcifying plankton ('coccolithophores') [@devries:2025]. In this application the software was used to predict the abundance of 58 species on high-performance compute using a 2-phase regressor. Post processing functionalities were then used to convert abundances to cellular organic and inorganic carbon, and to accurately estimate globally integrated stocks accounting for latitudinal differences in grid sizes. 
+
+
 # Acknowledgements
 
 This work was supported by funding from the UK Research and Innovation Natural Environment Research Council (CoccoTrait, NE/X001261/1; NERC GW4+ DTP studentship, NE/L002434/1). We gratefully acknowledge Fanny Monteiro for leading the acquisition of the CoccoTrait grant funding that supported this research.
