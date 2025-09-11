@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import logging
+logger = logging.getLogger("abil")
+
 from sklearn.base import BaseEstimator, RegressorMixin, clone, is_regressor, is_classifier
 
 class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
@@ -82,7 +84,7 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
                         y[non_zero_indices],
                 )
         else:
-            logging.info("All predictions are zero (!), skipping regressor fitting.")
+            logger.info("All predictions are zero (!), skipping regressor fitting.")
         
         return self
 

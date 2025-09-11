@@ -11,6 +11,8 @@ from skbio.diversity.alpha import shannon
 
 from .analyze import area_of_applicability
 
+logger = logging.getLogger("abil")
+
 class AbilPostProcessor:
     """
     Post processing of SDM
@@ -77,7 +79,7 @@ class AbilPostProcessor:
 
             This function uses `xarray.open_mfdataset` to load all NetCDF files in the given directory 
             (matching the pattern "*.nc") and combines them into one xarray.Dataset. The function 
-            logging.info(s status messages indicating the start and completion of the merging process.
+            logs status messages indicating the start and completion of the merging process.
 
             Parameters
             ----------
@@ -92,8 +94,7 @@ class AbilPostProcessor:
                 The merged dataset containing the combined data from all the NetCDF files in the directory.
                 The variable names in the merged dataset are derived from the 'target' values in each file.
             """
-            logging.info("merging...")
-            logging.info(path_in)
+            logger.info(f"merging... {path_in}")
 
             datasets = []
             
@@ -108,12 +109,12 @@ class AbilPostProcessor:
                         ds_subset = ds[[statistic]].rename({statistic: target_name})
                         datasets.append(ds_subset)
                     else:
-                        logging.info(f"Statistic '{statistic}' not found in {file}")
+                        logger.info(f"Statistic '{statistic}' not found in {file}")
 
             # Merge datasets by variables, keeping same coordinates
             merged_ds = xr.merge(datasets, compat='override')  # 'override' skips conflicts
 
-            logging.info("finished merging NetCDF files")
+            logger.info("finished merging NetCDF files")
             return merged_ds
 
         self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
@@ -163,7 +164,7 @@ class AbilPostProcessor:
         ------
         Exception
             If an error occurs during the directory creation or file writing process, an exception
-            is caught and an error message is logging.info(ed.
+            is caught and an error message is logger.info(ed.
 
         Notes
         -----
@@ -177,9 +178,9 @@ class AbilPostProcessor:
             with open(yml_file_path, 'w') as yml_file:
                 dump(self.model_config, yml_file, Dumper=Dumper, default_flow_style=False)
             
-            logging.info(f"Model configuration exported to: {yml_file_path}")
+            logger.info(f"Model configuration exported to: {yml_file_path}")
         except Exception as e:
-            logging.info(f"Error exporting model_config to YAML: {e}")   
+            logger.info(f"Error exporting model_config to YAML: {e}")   
 
     def merge_performance(self):
         """
@@ -192,8 +193,7 @@ class AbilPostProcessor:
         """    
 
         models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
-        logging.info("models included in merge performance!")
-        logging.info(models)
+        logger.info(f"models included in merge performance! {models}")
         models.append("ens")
         for model in models:
             self.merge_performance_single_model(model)
@@ -261,7 +261,7 @@ class AbilPostProcessor:
         os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance"), exist_ok=True)
         all_performance.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance", model) + "_performance.csv", index=False)
 
-        logging.info("finished merging performance")
+        logger.info("finished merging performance")
 
     def merge_parameters(self):
         """
@@ -315,8 +315,7 @@ class AbilPostProcessor:
         for i in range(len(self.unique_targets)):
             
             target = self.unique_targets[i]
-            logging.info("the target is:")
-            logging.info(target)
+            logger.info(f"the target is: {target}")
             target_no_space = target.replace(' ', '_')
 
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
@@ -445,7 +444,7 @@ class AbilPostProcessor:
         all_parameters.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters", model) + "_parameters.csv", index=False)
 
         
-        logging.info("finished merging parameters")
+        logger.info("finished merging parameters")
 
     def estimate_carbon(self, variable):
 
@@ -465,9 +464,9 @@ class AbilPostProcessor:
 
         w = self.traits.query('Target in @self.targets')
         var = w[variable].to_numpy()
-        logging.info(var)
+        logger.info(f"{variable} values:\n\t{var}")
         self.d = self.d.apply(lambda row : (row[self.targets]* var), axis = 1)
-        logging.info("finished estimating " + variable)
+        logger.info(f"{variable} finished estimating.")
 
     def def_groups(self, dict):
         """
@@ -490,7 +489,7 @@ class AbilPostProcessor:
         df = (df.rename(columns=dict)
             .groupby(level=0, axis=1, dropna=False)).sum( min_count=1)
         self.d = pd.concat([self.d, df], axis=1)
-        logging.info("finished defining groups")
+        logger.info("finished defining groups")
 
     def cwm(self, variable):
         """
@@ -508,14 +507,14 @@ class AbilPostProcessor:
         var = w[variable].to_numpy()
         var_name = 'cwm ' + variable
         self.d[var_name] = self.d.apply(lambda row : np.average(var, weights=row[self.targets]), axis = 1)
-        logging.info("finished calculating CWM " + variable)
+        logger.info(f"finished calculating CWM {variable}")
 
     def diversity(self):
         """
         Estimates Shannon diversity using scikit-bio.
         """
         self.d['shannon'] = self.d.apply(shannon, axis=1)
-        logging.info("finished calculating shannon diversity")
+        logger.info("finished calculating shannon diversity")
 
     def total(self):
         """
@@ -530,7 +529,7 @@ class AbilPostProcessor:
 
         self.d['total'] = self.d[self.targets].sum( axis='columns')
         self.d['total_log'] = np.log(self.d['total'])
-        logging.info("finished calculating total")
+        logger.info("finished calculating total")
 
     def process_resampled_runs(self):
         """
@@ -546,15 +545,15 @@ class AbilPostProcessor:
         """
 
         self.d['mean'] = self.d[self.targets].mean(axis='columns')
-        logging.info('finished calculating mean')
+        logger.info('finished calculating mean')
     
         self.d['stdev'] = self.d[self.targets].std(axis='columns')
-        logging.info('finished calculating standard deviation')
+        logger.info('finished calculating standard deviation')
 
         self.d['prctile_2.5'] = self.d[self.targets].quantile(0.025, axis='columns')
         self.d['prctile_97.5'] = self.d[self.targets].quantile(0.975, axis='columns')
 
-        logging.info('finished calculating 2.5th and 97.5th percentiles')
+        logger.info('finished calculating 2.5th and 97.5th percentiles')
 
     def integration(self, *args, **kwargs):
         return self.integration_class(self, *args, **kwargs)
@@ -691,7 +690,7 @@ class AbilPostProcessor:
             >>> result = integration.integrate_total(variable='Calcification')
             >>> print("Final integrated total:", result.values)
             """
-            logging.info("Initiate integrated_total")
+            logger.info("Initiate integrated_total")
             ds = self.parent.d.to_xarray()
             vol_conversion = self.vol_conversion
             magnitude_conversion = self.magnitude_conversion
@@ -737,13 +736,13 @@ class AbilPostProcessor:
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
-                    logging.info(f"All monthly totals: {total.values}")
+                    logger.info(f"All monthly totals: {total.values}")
                 else:
                     # Annual total with month-day weighting
                     weight = xr.DataArray(days_per_month, dims=('time',))
                     total = (var * vol * weight).sum(dim=list(var.dims))
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
-                    logging.info("Final integrated total:", total.values)
+                    logger.info(f"Final integrated total: {total.values}")
             else:
                 if monthly and has_time:
                     # Monthly totals without rate weighting
@@ -756,12 +755,12 @@ class AbilPostProcessor:
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
-                    logging.info(f"All monthly totals: {total.values}")
+                    logger.info(f"All monthly totals: {total.values}")
                 else:
                     # Integrate over whatever dims exist
                     total = (var * vol).sum(dim=list(var.dims))
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
-                    logging.info("Final integrated total:", total.values)
+                    logger.info(f"Final integrated total: {total.values}")
             return total
 
         def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
@@ -806,13 +805,13 @@ class AbilPostProcessor:
 
             for target in targets:
                 try:
-                    logging.info(f"Processing target: {target}")
+                    logger.info(f"Processing target: {target}")
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
                     total_df = pd.DataFrame({'total': [total.values], 'variable': target})
                     totals.append(total_df)
                 except Exception as e:
-                    logging.info(f"Some targets do not have predictions! Missing: {target}")
-                    logging.info(f"Error: {e}")
+                    logger.info(f"Some targets do not have predictions! Missing: {target}")
+                    logger.info(f"Error: {e}")
             totals = pd.concat(totals)
 
             if export:
@@ -835,7 +834,8 @@ class AbilPostProcessor:
 
                 # Write to CSV
                 totals.to_csv(file_path, index=False)
-                logging.info(f"Exported totals")
+
+                logger.info(f"Exported totals")
 
 
     def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
@@ -906,8 +906,9 @@ class AbilPostProcessor:
                     f"{target}_di": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                     f"{target}_lpd": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                     f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
-                }      
-            elif not return_all:
+                }
+                
+            elif return_all is False:
                 aoa, di_test, cutpoint = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,
@@ -927,7 +928,7 @@ class AbilPostProcessor:
                 }                
 
             else:
-                logging.info("return_all requires a boolean input")
+                raise ValueError(f"return_all requires a boolean input, but recieved {return_all}")
 
         # convert df to xarray ds:
         aoa_dataset = aoa_dataset.to_xarray()
@@ -994,9 +995,8 @@ class AbilPostProcessor:
         os.makedirs(self.path_out, exist_ok=True)
 
 
-        logging.info("export_ds")
-        logging.info("dataframe: ")
-        logging.info(self.d.head())
+        logger.info("export_ds")
+        logger.info(f"dataframe: {self.d.head()}")
         ds = self.d.to_xarray()
 
         if description is not None:
@@ -1021,10 +1021,10 @@ class AbilPostProcessor:
             pass
         # TODO: to add loop defining units of variables
 
-        logging.info(self.d.head())
-        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".nc")
-
-        logging.info("exported ds to: " + self.path_out + file_name + "_" + self.statistic + self.datatype +  ".nc")
+        logger.info(self.d.head())
+        fname = os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".nc"
+        ds.to_netcdf(fname)
+        logger.info(f"exported ds to: {fname}")
         #add nice metadata
 
 
@@ -1049,10 +1049,11 @@ class AbilPostProcessor:
     
         os.makedirs(self.path_out, exist_ok=True)
     
-        logging.info(self.d.head())
-        self.d.to_csv(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".csv")
+        logger.info(self.d.head())
+        fname = os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".csv"
+        self.d.to_csv(fname)
 
-        logging.info("exported d to: " + self.path_out + file_name + "_" + self.statistic + self.datatype + ".csv")
+        logger.info(f"exported d to: {fname}")
 
     def merge_obs(self, file_name, targets=None):
         """
@@ -1119,9 +1120,10 @@ class AbilPostProcessor:
 
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
-        logging.info(out.head())
-        out.to_csv(os.path.join(self.path_out, file_name)  + self.datatype +  ".csv")
+        logger.info(out.head())
+        fname = os.path.join(self.path_out, file_name)  + self.datatype +  ".csv"
+        out.to_csv(fname)
 
-        logging.info("exported d to: " + self.path_out + file_name  + self.datatype + ".csv")
+        logger.info(f"exported d to: {fname}")
 
-        logging.info('training merged with predictions')
+        logger.info('training merged with predictions')

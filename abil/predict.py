@@ -4,6 +4,7 @@ import pickle
 import os
 import time
 import logging
+logger = logging.getLogger("abil")
 
 from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
@@ -55,7 +56,7 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
         raise ValueError("classifiers are not supported")
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
-        logging.info("predicting regressor")
+        logger.info("predicting regressor")
         target_no_space = target.replace(' ', '_')
         with open(os.path.join(path_to_param, target_no_space) + '_reg.sav', 'rb') as file:
             m = pickle.load(file)
@@ -65,7 +66,7 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
 
 
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
-        logging.info("predicting zero-inflated regressor")
+        logger.info("predicting zero-inflated regressor")
         target_no_space = target.replace(' ', '_')
         with open(os.path.join(path_to_param, target_no_space) + '_zir.sav', 'rb') as file:
             m = pickle.load(file)
@@ -114,7 +115,7 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         os.makedirs(model_out, exist_ok=True)
 
         d.to_netcdf(export_path) 
-        logging.info("finished exporting summary stats to: ",  export_path)
+        logger.info(f"finished exporting summary stats to: {export_path}")
         
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
         y_clf = y_train.copy()
@@ -155,11 +156,11 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
             os.makedirs(os.path.join(model_out, dir_name), exist_ok=True)
 
         d_clf.to_netcdf(clf_export_path) 
-        logging.info("finished exporting summary stats to: ",  clf_export_path)
+        logger.info(f"finished exporting summary stats to: {clf_export_path}")
         d_reg.to_netcdf(reg_export_path) 
-        logging.info("finished exporting summary stats to: ",  reg_export_path)
+        logger.info(f"finished exporting summary stats to: {reg_export_path}")
         d.to_netcdf(zir_export_path) 
-        logging.info("finished exporting summary stats to: ",  zir_export_path)
+        logger.info(f"finished exporting summary stats to: {zir_export_path}")
 
     else:
         raise ValueError("classifiers are not supported")
@@ -264,7 +265,7 @@ class ModelPredictor:
         if model_config['stratify']==True:
             if model_config['upsample']==True:
                 self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'])
-                logging.info("upsampling = True")
+                logger.info("upsampling = True")
             else:
                 self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'])
         else:
@@ -300,7 +301,7 @@ class ModelPredictor:
         else:
             self.extension = "_reg.sav"
 
-        logging.info("initialized prediction")
+        logger.info("initialized prediction")
         
     def make_prediction(self):
         """
@@ -321,7 +322,7 @@ class ModelPredictor:
         """
 
         number_of_models = len(self.ensemble_config) -2
-        logging.info("number of models in ensemble:" + str(number_of_models))
+        logger.info(f"number of models in ensemble: {number_of_models}")
 
         if number_of_models==1:
 
@@ -439,5 +440,5 @@ class ModelPredictor:
 
         et = time.time()
         elapsed_time = et-self.st
-        logging.info("finished")
-        logging.info("execution time:", elapsed_time, "seconds")
+        logger.info("finished")
+        logger.info(f"execution time: {elapsed_time} seconds")
