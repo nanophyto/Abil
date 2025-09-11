@@ -61,7 +61,7 @@ By combining a user-friendly interface, parallel processing capabilities, and a 
 
 # Research projects using the package
 
-* \texttt{Abil.py} has been used to predict the global carbon stocks of the most commonly occurring calcifying plankton ('coccolithophores') [@devries:2025]. In this application the software was used to predict the abundance of 58 species on high-performance compute using a 2-phase regressor. Post processing functionalities were then used to convert abundances to cellular organic and inorganic carbon, and to accurately estimate globally integrated stocks accounting for latitudinal differences in grid sizes. 
+`Abil` has been used to predict the global carbon stocks of the most commonly occurring calcifying plankton ('coccolithophores') [@devries:2025]. In this application the software was used to predict the abundance of 58 species on high-performance compute using 2-phase regressors. Post processing functionalities were then used to convert abundances to cellular organic and inorganic carbon, and to accurately estimate globally integrated stocks accounting for latitudinal differences in grid sizes. 
 
 
 # Acknowledgements
