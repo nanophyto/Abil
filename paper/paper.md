@@ -59,6 +59,14 @@ By combining a user-friendly interface, parallel processing capabilities, and a 
 
 `Abil` documentation can be found through [github](https://nanophyto.github.io/Abil). The documentation includes instruction for installing the model locally and running on an High Performance Computing (HPC) system. The model process consists of tuning the model (class: `tune`), predicting the model (class: `predict`), and postprocessing the model (class: `post`). The documentation includes usage examples for running these model steps.
 
+# Examples
+
+| Example| Code location |
+|--------------|---------------|
+| Global distribution of *Gephyrocapsa huxleyi* (\autoref{fig:ghux}) |  `paper/figure_1.py`|
+| Coccolithophore abundance in the Bermuda Atlantic Time Series |`examples/regressor.py` |
+| Southern Ocean distribution of *Gephyrocapsa huxleyi* |  `examples/2-phase.py`|
+
 # Acknowledgements
 
 This work was supported by funding from the UK Research and Innovation Natural Environment Research Council (CoccoTrait, NE/X001261/1; NERC GW4+ DTP studentship, NE/L002434/1). We gratefully acknowledge Fanny Monteiro for leading the acquisition of the CoccoTrait grant funding that supported this research.
