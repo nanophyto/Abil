@@ -296,7 +296,7 @@ if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
     suite.addTest(TestRegressors('test_post_ensemble'))
-#    suite.addTest(Test2Phase('test_post_ensemble'))
+    suite.addTest(Test2Phase('test_post_ensemble'))
 
     # post area integration tests
     suite.addTest(TestIntegrationFlexibleDims('test_lat_lon_depth_time'))
