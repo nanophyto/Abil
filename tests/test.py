@@ -190,8 +190,8 @@ class Test2Phase(unittest.TestCase):
         )["total"].iat[0]
     
         self.assertAlmostEqual(integrated_total_poc_mean, 2.55e17, delta=1e15)
-        self.assertAlmostEqual(integrated_total_poc_ci95_LL, 3.92e+17, delta=1e15)
-        self.assertAlmostEqual(integrated_total_poc_ci95_UL, 1.44e+17, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_ci95_UL, 3.92e+17, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_ci95_LL, 1.44e+17, delta=1e15)
 
 
 
