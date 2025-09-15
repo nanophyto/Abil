@@ -90,7 +90,8 @@ from sklearn.base import _is_fitted
 def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
     """
     """
-    with warnings.catch_warnings(action='ignore', category=UserWarning):
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=UserWarning)
         if proba:
             if isinstance(member, Booster):
                 # For XGBoost Booster, use predict() to get probabilities
