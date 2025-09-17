@@ -173,7 +173,4 @@ And plot the predictions vs observations:
 
 References
 ^^^^^^^^^^
-.. bibliography::
-   :style: unsrt
-   :cited:
-   :filter: docname in docnames
+.. footbibliography::
