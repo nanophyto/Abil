@@ -27,15 +27,9 @@ jobs:
           PIP_ONLY_BINARY: netCDF4  # prefer wheel, fail fast if none
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Ensure your requirements.txt includes Sphinx
-          pip install matplotlib
-          pip install seaborn
-          pip install Cartopy
+          pip install -r requirements.txt
+          pip install -r documentation_requirements.txt
           pip install -e . #abil install
-          pip install sphinx
-          pip install pydata-sphinx-theme
-          pip install sphinx-design
-          pip install sphinxcontrib-bibtex
 
       - name: Run Python examples
         run: |
