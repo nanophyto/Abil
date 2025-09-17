@@ -326,7 +326,7 @@ class ModelTuner:
             with open(os.path.join(clf_sav_out_model, self.target_no_space) + '_clf.sav', 'wb') as f:
                 pickle.dump(m1, f)
             
-            logger(f"exported model to: {clf_sav_out_model + '/' + self.target_no_space + '_clf.sav'}")
+            logger.info(f"exported model to: {clf_sav_out_model + '/' + self.target_no_space + '_clf.sav'}")
 
             clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
             
