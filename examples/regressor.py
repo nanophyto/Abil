@@ -10,9 +10,9 @@ import xarray as xr
 from yaml import load
 from yaml import CLoader as Loader
 #abil functions:
-from abil.tune import tune
-from abil.predict import predict
-from abil.post import post
+from abil.tune import ModelTuner as tune
+from abil.predict import ModelPredictor as predict
+from abil.post import AbilPostProcessor as post
 #plotting:
 import matplotlib.pyplot as plt
 import seaborn as sns
