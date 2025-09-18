@@ -7,6 +7,8 @@ scripts/data
 scripts/preprocessing
 scripts/env_data_processing/raw_data
 scripts/env_data_processing/regridded_data
+docs/_build
 abil.sif
 __pycache__/
 abil/__pycache__/
+*.png

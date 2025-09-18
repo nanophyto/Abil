@@ -1,0 +1,56 @@
+---
+  root: ./
+
+  run_name: regressor #update for specific run name
+  path_out:  ModelOutput/ #root + folder
+
+  prediction: data/bats_prediction.csv #root + folder
+  targets:  data/targets.csv #root + folder
+  training:  data/bats_training.csv
+
+  predictors: ["temperature", "no3", "TA", "DIC", "PAR"]
+
+  verbose: 1 # scikit-learn warning verbosity
+  seed : 1 # random seed
+  n_threads : 3 # how many cpu threads to use
+  cv : 10 # number of cross folds
+
+  ensemble_config: 
+    classifier: False
+    regressor: True
+    m1: "rf"
+    m2: "xgb"
+    m3: "knn"
+
+  upsample: False
+  stratify: False
+
+  param_grid:
+    rf_param_grid:
+      reg_param_grid:
+        n_estimators: [100]
+        max_features:  [0.1]
+        max_depth: [2]
+        min_samples_leaf: [1]
+        max_samples: [0.1, 0.4, 0.6]        
+
+    xgb_param_grid:
+      reg_param_grid:  
+        learning_rate: [0.1]
+        n_estimators: [100]
+        max_depth: [10]
+        subsample: [0.6]
+        colsample_bytree: [0.8]
+        gamma: [0] 
+        reg_alpha: [0]
+
+    knn_param_grid:
+      reg_param_grid:  
+        max_samples: [1.0]
+        max_features: [0.8]
+        estimator__n_neighbors: [8]
+        estimator__p:  [1]        
+        estimator__weights: ["distance"]
+
+  knn_bagging_estimators: 30
+

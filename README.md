@@ -28,6 +28,13 @@ cd Abil
 pip install -e .
 ```
 
+### Run unit test
+To run a unit test, make sure you are under the project root:
+```sh
+python -m unittest tests/test.py
+```
+
+
 ## Documentation
 
 See the [documentation](https://nanophyto.github.io/Abil/) for instructions on how to setup and run the models.

@@ -5,14 +5,17 @@
   path_out:  ModelOutput/ #root + folder
 
   prediction:  data/prediction.csv #root + folder
-  targets:  data/targets.csv #root + folder
+  targets:  ../data/targets.csv #root + folder
   training:  data/training.csv
 
-  predictors: ["feature_1", "feature_2", "feature_3"]
+  predictors: ["temperature", 
+    "sio4", "po4", "no3", 
+    "o2", "DIC", "TA",
+    "PAR"]
 
   verbose: 1 # scikit-learn warning verbosity
   seed : 1 # random seed
-  n_threads : 1 # how many cpu threads to use
+  n_threads : 3 # how many cpu threads to use
   cv : 5 # number of cross folds
 
   ensemble_config: 
