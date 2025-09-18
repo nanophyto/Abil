@@ -242,7 +242,7 @@ class ModelTuner:
             reg_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
                         ('estimator', reg_estimator)])
             
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+            with parallel_backend('loky', n_jobs=self.n_jobs):
                 reg = LogGridSearch(reg_pipe, verbose = self.verbose, cv=cv, 
                                     param_grid=reg_param_grid, scoring='r2', regions=self.regions)
                 reg_grid_search = reg.transformed_fit(X_train, y, log, self.model_config['predictors'].copy())
@@ -255,7 +255,7 @@ class ModelTuner:
 
             logger.info(f"exported model to: {reg_sav_out_model + '/'  + self.target_no_space + '_reg.sav'}")
 
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+            with parallel_backend('loky', n_jobs=self.n_jobs):
                 reg_scores = cross_validate(m2, X_train, y, cv = cv, verbose = self.verbose, scoring=reg_scoring)
 
             with open(os.path.join(reg_sav_out_scores, self.target_no_space) + '_reg.sav', 'wb') as f:
@@ -318,7 +318,7 @@ class ModelTuner:
 
             y_clf[y_clf > 0] = 1
             logger.info(y_clf)
-            with parallel_backend('multiprocessing', self.n_jobs):
+            with parallel_backend('loky', self.n_jobs):
                 clf.fit(self.X_train, y_clf)
 
             m1 = clf.best_estimator_
@@ -359,7 +359,7 @@ class ModelTuner:
                 
             logger.info(f"exported model to: {zir_sav_out_model + '/' + self.target_no_space + '_zir.sav'}")
 
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+            with parallel_backend('loky', n_jobs=self.n_jobs):
                 zir_scores = cross_validate(zir, self.X_train, self.y, cv=self.cv, verbose =self.verbose, scoring=reg_scoring)
 
             with open(os.path.join(zir_sav_out_scores, self.target_no_space) + '_zir.sav', 'wb') as f:
