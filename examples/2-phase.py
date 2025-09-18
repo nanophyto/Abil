@@ -13,9 +13,9 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib.colors import Normalize
 #abil functions:
-from abil.tune import tune
-from abil.predict import predict
-from abil.post import post
+from abil.tune import ModelTuner as tune
+from abil.predict import ModelPredictor as predict
+from abil.post import AbilPostProcessor as post
 from abil.utils import example_data 
 #paths:
 import os
