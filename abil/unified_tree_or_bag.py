@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import logging
-logger = logging.getLogger("abil")
 
 from sklearn.metrics import mean_absolute_error, balanced_accuracy_score
 
@@ -82,12 +80,12 @@ def estimate_prediction_quantiles(
             threshold=threshold
         )
         regressor_stats = estimate_prediction_quantiles(
-            model.regressor_, 
-            X_predict=X_predict, 
-            X_train=X_train, 
-            y_train=original_y_train, 
-            cv=cv, 
-            chunksize=chunksize, 
+            model.regressor_,
+            X_predict=X_predict,
+            X_train=X_train,
+            y_train=original_y_train,
+            cv=cv,
+            chunksize=chunksize,
             threshold=threshold
         )
         return {
@@ -112,7 +110,7 @@ def estimate_prediction_quantiles(
 
         y_inverse_transformer = getattr(
             model, "inverse_func", FunctionTransformer().inverse_func
-        )       
+        )
 
         model = model.regressor.named_steps["estimator"]
     else:
@@ -133,7 +131,7 @@ def estimate_prediction_quantiles(
         proba = False
     else:
         proba = True
-    
+
 
     ############################################
     # TRANSFORM Y_TRAIN, X_TRAIN AND X_PREDICT #
@@ -143,7 +141,7 @@ def estimate_prediction_quantiles(
         X_train = pd.DataFrame(
             preprocessor.transform(X_train),
             index = getattr(X_train, "index", np.arange(X_train.shape[0])),
-            columns=X_train.columns  
+            columns=X_train.columns
         )
     else:
         raise ValueError("X_train cannot be None")
@@ -151,26 +149,26 @@ def estimate_prediction_quantiles(
         X_predict = pd.DataFrame(
             preprocessor.transform(X_predict),
             index = getattr(X_predict, "index", np.arange(X_predict.shape[0])),
-            columns=X_predict.columns  
+            columns=X_predict.columns
         )
     else:
         raise ValueError("X_predict cannot be None")
 
     if y_train is not None:
         if not proba:
-            y_train = pd.Series(                    
+            y_train = pd.Series(
                 y_transformer(y_train),
                 index = getattr(y_train, "index", np.arange(y_train.shape[0]))
             )
-          
-        else: 
+
+        else:
             y_train = pd.Series(
                 y_train,
                 index = getattr(y_train, "index", np.arange(y_train.shape[0]))
             )
     else:
         raise ValueError("y_train cannot be None")
-    
+
     ##########################################
     # REFIT MODELS WITH TRANSFORMED Y AND Xs #
     ##########################################
@@ -218,12 +216,12 @@ def estimate_prediction_quantiles(
     #################################################
 
     predict_summary_stats = _summarize_predictions(
-        model, 
-        y_inverse_transformer, 
-        X_predict=X_predict, 
+        model,
+        y_inverse_transformer,
+        X_predict=X_predict,
         X_train=X_train,
         y_train=y_train,
-        chunksize=chunksize, 
+        chunksize=chunksize,
         threshold=threshold,
         proba=proba
     )
@@ -267,16 +265,16 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
             model = BaggingClassifier(estimator=model, n_estimators=160)
             model.fit(X_train, y_train)
         train_pred_jobs = _setup_pred_jobs(
-            model, 
-            X_train, 
-            proba, 
+            model,
+            X_train,
+            proba,
             threshold
         )
         train_results = engine(train_pred_jobs)
 
         if proba:
             losses = 1 - np.array(
-                [balanced_accuracy_score(y_train.astype(int), 
+                [balanced_accuracy_score(y_train.astype(int),
                 pred.astype(int)) for pred in train_results]
             )
 
@@ -287,15 +285,15 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
         weights /= weights.sum()  # Normalize weights
     else:
         raise ValueError("X_train and y_train should be defined")
-    
+
     ##########################################
     # COMPUTE PREDICTIONS BASED ON X_PREDICT #
     ##########################################
 
     for chunk in chunks:
-        predict_pred_jobs = _setup_pred_jobs(model=model, 
-                                             X=chunk, 
-                                             proba=proba, 
+        predict_pred_jobs = _setup_pred_jobs(model=model,
+                                             X=chunk,
+                                             proba=proba,
                                              threshold=threshold)
 
         results = engine(predict_pred_jobs)
@@ -318,7 +316,7 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
             index = chunk.index # the index of the chunk, so we can align the results back to X_predict
         )
         stats.append(chunk_stats)
-    
+
     output = pd.concat(stats, axis=0, ignore_index=False)
     return output
 
@@ -334,11 +332,11 @@ def _setup_pred_jobs(model, X, proba, threshold):
         booster = model.get_booster()
         pred_jobs = (
             delayed(u._predict_one_member)(
-                i, 
-                member=booster, 
-                chunk=X, 
-                proba=proba, 
-                threshold=threshold    
+                i,
+                member=booster,
+                chunk=X,
+                proba=proba,
+                threshold=threshold
             )
             for i in range(n_estimators)
         )
@@ -349,13 +347,13 @@ def _setup_pred_jobs(model, X, proba, threshold):
                 _,
                 member=member,
                 chunk=X.iloc[:, features_for_member],
-                proba=proba, 
+                proba=proba,
                 threshold=threshold
             )
             for _, (features_for_member, member) in enumerate(zip(features_for_members, members))
         )
     return pred_jobs
-        
+
 
 #################################################################
 # EXTRACT INDIVIDUAL MEMBERS FROM SKLEARN ENSEMBLE-BASED MODELS #
@@ -365,29 +363,29 @@ def _flatten_metaensemble(me):
     """Modified version to handle RandomForest's individual trees"""
     estimators = []
     features = []
-    
+
     # Case 1: RandomForest - get all its trees
     if hasattr(me, 'estimators_') and isinstance(me, (RandomForestRegressor, RandomForestClassifier)):
         n_features = me.n_features_in_
         estimators = me.estimators_
         features = [list(range(n_features))] * len(estimators)  # All trees use all features (but possibly different subsets)
-    
+
     # Case 2: Bagging estimator (like BaggingRegressor with KNN)
     elif hasattr(me, 'estimators_') and hasattr(me, 'estimators_features_'):
         estimators = me.estimators_
         features = me.estimators_features_
-    
+
     # Case 3: Regular ensemble (Voting, Stacking)
     elif hasattr(me, 'estimators_'):
         n_features = me.n_features_in_
         estimators = me.estimators_
         features = [list(range(n_features))] * len(estimators)
-    
+
     # Case 4: Single estimator
     else:
         estimators = [me]
         features = [list(range(getattr(me, 'n_features_in_', X_train.shape[1])))]  # Fallback to X_train shape
-    
+
     return estimators, features
 
 
@@ -516,6 +514,6 @@ if __name__ == "__main__":
 
     logging.info(f"\n=== Training Summary Stats ===\n{vzir_results['classifier_train_stats'].head()}")
     logging.info(f"\n=== Prediction Summary Stats ===\n{vzir_results['classifier_predict_stats'].head()}")
-    
+
     logging.info(f"\n=== Training Summary Stats ===\n{vzir_results['regressor_train_stats'].head()}")
     logging.info(f"\n=== Prediction Summary Stats ===\{vzir_results['regressor_predict_stats'].head()}")
