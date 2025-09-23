@@ -53,6 +53,8 @@ Beyond `scikit-learn`, `Abil` leverages libraries like `xarray` [@hoyer:2017], `
 
 The package is optimized for parallel processing through the use of `joblib` `loky` multiprocessing [@joblib:2024] and provides vignettes of high-performance computing scripts such that it can be easily ported to large scale parallel programming contexts. `Abil` is thus particularly suited to modeling the distribution of species, genes, and transcripts, as well as biogeochemical processes such as organic carbon and calcite production. Unlike many existing tools focused on predicting species occurrence (e.g., `elapid` [@anderson:2023] and `biomod2` [@thuiller:2009]), `Abil` specializes in regression challenges, enabling the prediction of abundances and rates. This focus on regression complements existing packages and fills a critical gap in the application of statistical models to ocean ecology and biogeochemistry. 
 
+`Abil` employs automated testing and continuous integration (CI) through the Python unittest framework and GitHub CI workflows. The test suite validates results against known model outputs, ensuring both correctness and reproducibility of probabilistic model results.
+
 By combining a user-friendly interface, parallel processing capabilities, and a specific focus on regression problems, `Abil` facilitates novel scientific explorations of sparse oceanic datasets. Its versatility and computational efficiency enable researchers to address complex challenges in ocean biogeochemistry and ecology with greater ease and accuracy. 
 
 # Documentation
