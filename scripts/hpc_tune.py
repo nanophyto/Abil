@@ -3,7 +3,7 @@ import pandas as pd
 import sys, os
 from yaml import load
 from yaml import CLoader as Loader
-from abil.tune import tune
+from abil.tune import ModelTuner
 
 #define directories
 print(sys.argv[1])
@@ -35,7 +35,7 @@ y = d[target]
 X_train = d[predictors]
 
 #setup model:
-m = tune(X_train, y, model_config)
+m = ModelTuner(X_train, y, model_config)
 
 #run model:
 m.train(model=model, regressor=True)

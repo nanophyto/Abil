@@ -9,7 +9,7 @@
 project = 'Abil'
 copyright = '2025, Abil developers'
 author = 'nanophyto'
-release = '25.08.06'
+release = '25.09.18'
 
 
 # -- General configuration ---------------------------------------------------
@@ -19,9 +19,13 @@ extensions = [
 	'sphinx.ext.autodoc', 
 	'sphinx.ext.coverage', 
 	'sphinx.ext.napoleon',
-    "sphinx_design"
-
+    "sphinx_design",
+    "sphinxcontrib.bibtex",
 ]
+
+bibtex_bibfiles = ["library.bib"]
+bibtex_default_style = "unsrt"     
+bibtex_reference_style = "label" 
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

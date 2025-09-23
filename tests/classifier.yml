@@ -4,12 +4,11 @@
   run_name: classifier #update for specific run name
   path_out:  /tests/ModelOutput/ #root + folder  
 
-  prediction:  /examples/data/prediction.csv #root + folder
-  targets:  /examples/data/targets.csv #root + folder
-  training:  /examples/data/training.csv
+  prediction:  tests/data/prediction.csv #root + folder
+  targets:  tests/data/targets.csv #root + folder
+  training:  tests/data/training.csv
 
-  predictors: ["temperature", "din", 
-     "irradiance"]
+  predictors: ["feature_1", "feature_2", "feature_3"]
 
   verbose: 1
   seed : 1 # random seed

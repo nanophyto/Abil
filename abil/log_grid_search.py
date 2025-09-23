@@ -34,7 +34,7 @@ class LogGridSearch:
         self.param_grid = param_grid
         self.scoring = scoring
         self.regions = regions
-    
+
     def do_log(self, x):
         """
         Apply natural logarithm transformation to the input values.
@@ -51,7 +51,7 @@ class LogGridSearch:
         """
         y = np.log(x+1)
         return(y)
-    
+
     def do_nothing(self, x):
         """
         Apply no transformation to the input values.
@@ -84,7 +84,7 @@ class LogGridSearch:
         """
         y = np.exp(x)-1
         return(y)
-    
+
     def transformed_fit(self, X, y, log, predictors):
         """
         Perform grid search with optional log transformation on the target variable.
@@ -116,22 +116,22 @@ class LogGridSearch:
         ValueError
             If `log` is not "yes", "no", or "both".
         """
-
-        if log=="yes":
+        # TODO: would encoding this as True/False/'both' be better?
+        if log == "yes":
 
             model = TransformedTargetRegressor(self.m, func = self.do_log, inverse_func=self.do_exp)
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
-        
-        elif log=="no":
+
+        elif log == "no":
 
             model = TransformedTargetRegressor(self.m, func = self.do_nothing, inverse_func=self.do_nothing)
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
 
-        elif log =="both":
+        elif log == "both":
 
             normal_m = TransformedTargetRegressor(self.m, func = self.do_nothing, inverse_func=self.do_nothing)
             grid_search1 = GridSearchCV(normal_m, param_grid = self.param_grid, scoring=self.scoring, refit=True,
@@ -146,19 +146,13 @@ class LogGridSearch:
             if (grid_search1.best_score_ > grid_search2.best_score_):
                 grid_search = grid_search1
                 best_transformation = "nolog"
-                print("best = nolog")
-        
+
             elif (grid_search1.best_score_ < grid_search2.best_score_):
                 grid_search = grid_search2
                 best_transformation = "log"
-                print("best = log")
             else:
-                print("same performance for both models")
                 grid_search = grid_search1
                 best_transformation = "nobest"
             grid_search.cv_results_['best_transformation'] = best_transformation
-
-        else: 
-            print("defined log invalid, pick from yes, no or both")
 
         return grid_search

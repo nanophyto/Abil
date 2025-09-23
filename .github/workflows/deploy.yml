@@ -28,10 +28,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install sphinx pydata-sphinx-theme sphinx-design
+          pip install -r documentation_requirements.txt
+          pip install -e . #abil install
 
-      - name: Install Abil
-        run: pip install .
+      - name: Run Python examples
+        run: |
+          for script in examples/*.py; do
+            echo "Running $script..."
+            python "$script"
+          done
 
       - name: Build Sphinx documentation
         working-directory: docs

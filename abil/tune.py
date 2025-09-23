@@ -1,13 +1,11 @@
-import os
-os.environ['MKL_NUM_THREADS'] = '1'
-os.environ['OMP_NUM_THREADS'] = '1'
-os.environ['MKL_DYNAMIC'] = 'FALSE'
-os.environ["OMP_THREAD_LIMIT"] = "1"
-
 import time
+import os
 import pickle
 import pandas as pd
 import numpy as np
+import logging
+logger = logging.getLogger("abil")
+
 from joblib import parallel_backend
 from xgboost import XGBClassifier, XGBRegressor
 from sklearn.model_selection import GridSearchCV, cross_validate, KFold
@@ -22,7 +20,7 @@ from .zir import ZeroInflatedRegressor
 from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
 from .log_grid_search import LogGridSearch
 
-class tune:
+class ModelTuner:
     """
     A class for model training, hyperparameter tuning, and cross-validation.
 
@@ -45,7 +43,7 @@ class tune:
 
     def __init__(self, X_train, y, model_config, regions=None):
         """
-        Initialize the `tune` object.
+        Initialize the `ModelTuner` object.
 
         Parameters
         ----------
@@ -81,7 +79,7 @@ class tune:
         >>> X, y = example_data(y_name =  "Coccolithus pelagicus",
         ...                            n_samples=500, n_features=5, noise=20, 
         ...                            random_state=model_config['seed'])
-        >>> m = tune(X, y, model_config)
+        >>> m = ModelTuner(X, y, model_config)
 
         Returns
         -------
@@ -90,8 +88,7 @@ class tune:
         
         """
         self.y = y.sample(frac=1, random_state=model_config['seed']) #shuffle
-        print("length of y:")
-        print(len(self.y))
+        logger.info(f"length of y: {len(self.y)}")
         self.y = self.y.values.ravel()
         self.X_train = X_train.sample(frac=1, random_state=model_config['seed']) #shuffle
         self.model_config = model_config
@@ -113,7 +110,7 @@ class tune:
         if model_config['stratify']:
             if model_config['upsample']:
                 self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'], random_state=model_config['seed'])
-                print("upsampling = True")
+                logger.info("upsampling = True")
             else:
                 self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'], random_state=model_config['seed'])
         else:
@@ -201,14 +198,14 @@ class tune:
         else:
             raise ValueError("invalid model")
 
-        if (self.ensemble_config['classifier'] == False) and (self.ensemble_config['regressor'] == False):
+        if (not self.ensemble_config['classifier']) and (not self.ensemble_config['regressor']):
             raise ValueError("both classifier and regressor defined as False")
 
-        if (self.ensemble_config['classifier'] == True) and (self.ensemble_config['regressor'] != True):        
+        if self.ensemble_config['classifier'] and (not self.ensemble_config['regressor']):        
             raise ValueError("classifiers are not supported")
 
-        if self.ensemble_config['regressor'] == True:
-            if self.ensemble_config['classifier'] == True:
+        if self.ensemble_config['regressor']:
+            if self.ensemble_config['classifier']:
                 y = self.y[self.y > 0]
                 X_train = self.X_train[self.y > 0].reset_index(drop=True)
                 cv = ZeroStratifiedKFold(n_splits=self.model_config['cv'], random_state=self.seed)
@@ -217,7 +214,7 @@ class tune:
                 X_train = self.X_train
                 cv = self.cv
 
-            print("training regressor")
+            logger.info("training regressor")
 
             reg_scoring = {
                 'R2': 'r2',
@@ -233,26 +230,19 @@ class tune:
                 for key, value in user_reg_param_grid.items()
             }
 
-            print(reg_param_grid)
+            logger.info(reg_param_grid)
 
             reg_sav_out_scores = os.path.join(self.path_out, "scoring/", model)
             reg_sav_out_model = os.path.join(self.path_out, "model/", model)
 
 
-            try: #make new dir if needed
-                os.makedirs(reg_sav_out_scores)
-            except:
-                None
-
-            try: #make new dir if needed
-                os.makedirs(reg_sav_out_model)
-            except:
-                None            
+            os.makedirs(reg_sav_out_scores, exist_ok=True)
+            os.makedirs(reg_sav_out_model, exist_ok=True)         
                 
             reg_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
                         ('estimator', reg_estimator)])
             
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+            with parallel_backend('loky', n_jobs=self.n_jobs):
                 reg = LogGridSearch(reg_pipe, verbose = self.verbose, cv=cv, 
                                     param_grid=reg_param_grid, scoring='r2', regions=self.regions)
                 reg_grid_search = reg.transformed_fit(X_train, y, log, self.model_config['predictors'].copy())
@@ -263,35 +253,35 @@ class tune:
             with open(os.path.join(reg_sav_out_model, self.target_no_space) + '_reg.sav', 'wb') as f:
                 pickle.dump(m2, f)
 
-            print("exported model to: " + reg_sav_out_model + "/"  + self.target_no_space + '_reg.sav')
+            logger.info(f"exported model to: {reg_sav_out_model + '/'  + self.target_no_space + '_reg.sav'}")
 
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+            with parallel_backend('loky', n_jobs=self.n_jobs):
                 reg_scores = cross_validate(m2, X_train, y, cv = cv, verbose = self.verbose, scoring=reg_scoring)
 
             with open(os.path.join(reg_sav_out_scores, self.target_no_space) + '_reg.sav', 'wb') as f:
                 pickle.dump(reg_scores, f)
 
-            print("exported scoring to: " + reg_sav_out_scores + "/" + self.target_no_space + '_reg.sav')
+            logger.info(f"exported scoring to:  {reg_sav_out_scores + '/' + self.target_no_space + '_reg.sav'}")
 
             if "RMSE" in reg_scoring:
                 try:
-                    print("reg rRMSE: " + str(int(round(np.mean(reg_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
-                except:
-                    print("reg rRMSE is NA (!)")
+                    logger.info(f"reg rRMSE: {np.mean(reg_scores['test_RMSE'])/np.mean(self.y)*-100:.0f}%")
+                except ValueError:
+                    logger.info("reg rRMSE is NA (!)")
             if "MAE" in reg_scoring:
                 try:
-                    print("reg rMAE: " + str(int(round(np.mean(reg_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
-                except:
-                    print("reg rMAE is NA (!)")
+                    logger.info(f"reg rMAE: {np.mean(reg_scores['test_MAE'])/np.mean(self.y)*-100:.0f}%")
+                except ValueError:
+                    logger.info("reg rMAE is NA (!)")
             if "R2" in reg_scoring:
                 try:
-                    print("reg R2: " + str(round(np.mean(reg_scores['test_R2']), 2)))
-                except:
-                    print("reg R2 is NA (!)")
+                    logger.info(f"reg R2: {np.mean(reg_scores['test_R2']):.2f}")
+                except ValueError:
+                    logger.info("reg R2 is NA (!)")
 
-        if (self.ensemble_config['classifier'] == True) and (self.ensemble_config['regressor'] == True):      
+        if self.ensemble_config['classifier'] and self.ensemble_config['regressor']:      
             
-            print("training classifier")
+            logger.info("training classifier")
 
             user_clf_param_grid = self.model_config['param_grid'][model + '_param_grid']['clf_param_grid']
 
@@ -307,15 +297,10 @@ class tune:
             clf_sav_out_model = os.path.join(self.path_out, "model/", model)
 
 
-            try: #make new dir if needed
-                os.makedirs(clf_sav_out_scores)
-            except:
-                None
+            
+            os.makedirs(clf_sav_out_scores, exist_ok=True)
+            os.makedirs(clf_sav_out_model, exist_ok=True)
 
-            try: #make new dir if needed
-                os.makedirs(clf_sav_out_model)
-            except:
-                None
 
             clf_pipe = Pipeline(steps=[('preprocessor', self.preprocessor),
                       ('estimator', clf_estimator)])
@@ -329,12 +314,11 @@ class tune:
             )
 
             y_clf =  self.y.copy()
-            print("length of y_clf:")
-            print(len(y_clf))
+            logger.info(f"length of y_clf: {len(y_clf)}")
 
             y_clf[y_clf > 0] = 1
-            print(y_clf)
-            with parallel_backend('multiprocessing', self.n_jobs):
+            logger.info(y_clf)
+            with parallel_backend('loky', self.n_jobs):
                 clf.fit(self.X_train, y_clf)
 
             m1 = clf.best_estimator_
@@ -342,19 +326,19 @@ class tune:
             with open(os.path.join(clf_sav_out_model, self.target_no_space) + '_clf.sav', 'wb') as f:
                 pickle.dump(m1, f)
             
-            print("exported model to:" + clf_sav_out_model + "/" + self.target_no_space + '_clf.sav')
+            logger.info(f"exported model to: {clf_sav_out_model + '/' + self.target_no_space + '_clf.sav'}")
 
             clf_scores = cross_validate(m1, self.X_train, y_clf, cv=self.cv, verbose =self.verbose, scoring=clf_scoring)
             
             with open(os.path.join(clf_sav_out_scores, self.target_no_space) + '_clf.sav', 'wb') as f:
                 pickle.dump(clf_scores, f)
             
-            print("exported scoring to: " + clf_sav_out_scores + "/" + self.target_no_space + '_clf.sav')
+            logger.info(f"exported scoring to: {clf_sav_out_scores + '/' + self.target_no_space + '_clf.sav'}")
 
-            print(clf_scores['test_accuracy'])
-            print("clf balanced accuracy " + str((round(np.mean(clf_scores['test_accuracy']), 2))))
+            logger.info(clf_scores['test_accuracy'])
+            logger.info(f"clf balanced accuracy {np.mean(clf_scores['test_accuracy']):.2f}")
 
-            print("training zero-inflated regressor")
+            logger.info("training zero-inflated regressor")
 
             zir = ZeroInflatedRegressor(
                 classifier=m1,
@@ -365,45 +349,47 @@ class tune:
             zir_sav_out_model = os.path.join(self.path_out, "model/", model)
 
 
-            try: #make new dir if needed
-                os.makedirs(zir_sav_out_scores)
-            except:
-                None
-
-            try: #make new dir if needed
-                os.makedirs(zir_sav_out_model)
-            except:
-                None           
+            os.makedirs(zir_sav_out_scores, exist_ok=True)
+            os.makedirs(zir_sav_out_model, exist_ok=True)
 
             zir.fit(self.X_train, self.y)
 
             with open(os.path.join(zir_sav_out_model, self.target_no_space) + '_zir.sav', 'wb') as f:
                 pickle.dump(zir, f)
                 
-            print("exported model to: " + zir_sav_out_model + "/" + self.target_no_space + '_zir.sav')
+            logger.info(f"exported model to: {zir_sav_out_model + '/' + self.target_no_space + '_zir.sav'}")
 
-            with parallel_backend('multiprocessing', n_jobs=self.n_jobs):
+            with parallel_backend('loky', n_jobs=self.n_jobs):
                 zir_scores = cross_validate(zir, self.X_train, self.y, cv=self.cv, verbose =self.verbose, scoring=reg_scoring)
 
             with open(os.path.join(zir_sav_out_scores, self.target_no_space) + '_zir.sav', 'wb') as f:
                 pickle.dump(zir_scores, f)
 
-            print("exported scoring to: " + zir_sav_out_scores + "/" + self.target_no_space + '_zir.sav')
+            logger.info(f"exported scoring to: {zir_sav_out_scores + '/' + self.target_no_space + '_zir.sav'}")
 
             try:
-                print("zir rRMSE: " + str(int(round(np.mean(zir_scores['test_RMSE'])/np.mean(self.y), 2)*-100))+"%")
-            except:
-                print("zir rRMSE is NA (!)")
+                logger.info(f"zir rRMSE: {(np.mean(zir_scores['test_RMSE'])/np.mean(self.y)*-100):.0f}%")
+            except ValueError:
+                logger.info("zir rRMSE is NA (!)")
             try:
-                print("zir rMAE: " + str(int(round(np.mean(zir_scores['test_MAE'])/np.mean(self.y), 2)*-100))+"%")
-            except:
-                print("zir rMAE is NA (!)")
+                logger.info(f"zir rMAE: {(np.mean(zir_scores['test_MAE'])/np.mean(self.y)*-100):.0f}%")
+            except ValueError:
+                logger.info("zir rMAE is NA (!)")
             try:
-                print("zir R2: " + str(round(np.mean(zir_scores['test_R2']), 2)))
-            except:
-                print("zir R2 is NA (!)")
+                logger.info(f"zir R2: {np.mean(zir_scores['test_R2']):.2f}")
+            except ValueError:
+                logger.info("zir R2 is NA (!)")
         st = time.time()
         et = time.time()
         elapsed_time = et-st
 
-        print("execution time:", elapsed_time, "seconds")        
+        logger.info(f"execution time: {elapsed_time:.1f} seconds")        
+
+
+if __name__ == "__main__":
+    import os
+    os.environ['MKL_NUM_THREADS'] = '1'
+    os.environ['OMP_NUM_THREADS'] = '1'
+    os.environ['MKL_DYNAMIC'] = 'FALSE'
+    os.environ["OMP_THREAD_LIMIT"] = "1"
+

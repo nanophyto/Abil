@@ -3,7 +3,8 @@ import numpy as np
 import pickle
 import os
 import time
-import warnings
+import logging
+logger = logging.getLogger("abil")
 
 from sklearn.ensemble import VotingRegressor, VotingClassifier
 from sklearn.model_selection import KFold, cross_validate
@@ -55,7 +56,7 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
         raise ValueError("classifiers are not supported")
 
     elif (ensemble_config["classifier"] ==False) and (ensemble_config["regressor"] == True):
-        print("predicting regressor")
+        logger.info("predicting regressor")
         target_no_space = target.replace(' ', '_')
         with open(os.path.join(path_to_param, target_no_space) + '_reg.sav', 'rb') as file:
             m = pickle.load(file)
@@ -65,7 +66,7 @@ def load_model_and_scores(path_out, ensemble_config, n, target):
 
 
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
-        print("predicting zero-inflated regressor")
+        logger.info("predicting zero-inflated regressor")
         target_no_space = target.replace(' ', '_')
         with open(os.path.join(path_to_param, target_no_space) + '_zir.sav', 'rb') as file:
             m = pickle.load(file)
@@ -111,12 +112,10 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         d = d.to_xarray()
         d['target'] = target
         export_path = os.path.join(model_out, target_no_space + ".nc")
-        try: #make new dir if needed
-            os.makedirs(model_out)
-        except:
-            None
+        os.makedirs(model_out, exist_ok=True)
+
         d.to_netcdf(export_path) 
-        print("finished exporting summary stats to: ",  export_path)
+        logger.info(f"finished exporting summary stats to: {export_path}")
         
     elif (ensemble_config["classifier"] ==True) and (ensemble_config["regressor"] == True):
         y_clf = y_train.copy()
@@ -154,17 +153,14 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
         zir_export_path = os.path.join(model_out, target_no_space + ".nc")
 
         for dir_name in ["", "clf", "reg"]:
-            try:
-                os.makedirs(os.path.join(model_out, dir_name))
-            except FileExistsError:
-                pass
+            os.makedirs(os.path.join(model_out, dir_name), exist_ok=True)
 
         d_clf.to_netcdf(clf_export_path) 
-        print("finished exporting summary stats to: ",  clf_export_path)
+        logger.info(f"finished exporting summary stats to: {clf_export_path}")
         d_reg.to_netcdf(reg_export_path) 
-        print("finished exporting summary stats to: ",  reg_export_path)
+        logger.info(f"finished exporting summary stats to: {reg_export_path}")
         d.to_netcdf(zir_export_path) 
-        print("finished exporting summary stats to: ",  zir_export_path)
+        logger.info(f"finished exporting summary stats to: {zir_export_path}")
 
     else:
         raise ValueError("classifiers are not supported")
@@ -172,9 +168,9 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
     #remove loky tmp data:
     shutil.rmtree(temp_folder, ignore_errors=True)
 
-class predict:
+class ModelPredictor:
     """
-    Predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.
+    Class to predict outcomes using an ensemble of regression models and export the predictions to a NetCDF file.
 
     Parameters
     ----------
@@ -269,7 +265,7 @@ class predict:
         if model_config['stratify']==True:
             if model_config['upsample']==True:
                 self.cv = UpsampledZeroStratifiedKFold(n_splits=model_config['cv'], random_state= model_config['seed'])
-                print("upsampling = True")
+                logger.info("upsampling = True")
             else:
                 self.cv = ZeroStratifiedKFold(n_splits=model_config['cv'], random_state= model_config['seed'])
         else:
@@ -305,7 +301,7 @@ class predict:
         else:
             self.extension = "_reg.sav"
 
-        print("initialized prediction")
+        logger.info("initialized prediction")
         
     def make_prediction(self):
         """
@@ -326,7 +322,7 @@ class predict:
         """
 
         number_of_models = len(self.ensemble_config) -2
-        print("number of models in ensemble:" + str(number_of_models))
+        logger.info(f"number of models in ensemble: {number_of_models}")
 
         if number_of_models==1:
 
@@ -369,10 +365,9 @@ class predict:
                 
                 #export model object:
                 base_output_path = os.path.join(self.path_out, "model", "ens")
-                try: #make new dir if needed
-                    os.makedirs(base_output_path)
-                except:
-                    None
+                #make new dir if needed
+                os.makedirs(base_output_path, exist_ok=True)
+
 
                 file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
 
@@ -415,10 +410,8 @@ class predict:
                                 model_out, n_threads=self.n_jobs, random_state=self.seed)
                 base_output_path = os.path.join(self.path_out, "model", "ens")
 
-                try: #make new dir if needed
-                    os.makedirs(base_output_path)
-                except:
-                    None
+                #make new dir if needed
+                os.makedirs(base_output_path, exist_ok=True)
 
                 file_path = os.path.join(base_output_path, f"{self.target_no_space}{self.extension}")
 
@@ -433,10 +426,9 @@ class predict:
 
             model_out_scores = os.path.join(self.path_out, "scoring", "ens")
 
-            try: #make new dir if needed
-                os.makedirs(model_out_scores)
-            except:
-                None
+            #make new dir if needed
+            os.makedirs(model_out_scores, exist_ok=True)
+
 
             scores_file_path = os.path.join(model_out_scores, f"{self.target_no_space}{self.extension}")
 
@@ -448,5 +440,5 @@ class predict:
 
         et = time.time()
         elapsed_time = et-self.st
-        print("finished")
-        print("execution time:", elapsed_time, "seconds")
+        logger.info("finished")
+        logger.info(f"execution time: {elapsed_time} seconds")

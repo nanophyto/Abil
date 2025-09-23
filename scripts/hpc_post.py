@@ -3,7 +3,7 @@ import pandas as pd
 import sys, os
 from yaml import load
 from yaml import CLoader as Loader
-from abil.post import post
+from abil.post import AbilPostProcessor
 from datetime import datetime
 
 current_date = datetime.today().strftime('%Y-%m-%d')
@@ -43,7 +43,7 @@ y = y[mask]
 X_train = X_train[mask]
 
 def do_post(statistic):
-    m = post(X_train, y, X_predict, model_config, statistic)
+    m = AbilPostProcessor(X_train, y, X_predict, model_config, statistic)
     
     if statistic == "mean":
         print('begin estimate_applicability')

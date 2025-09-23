@@ -57,7 +57,20 @@ By combining a user-friendly interface, parallel processing capabilities, and a 
 
 # Documentation
 
-`Abil` documentation can be found through [github](https://nanophyto.github.io/Abil). The documentation includes instruction for installing the model locally and running on an High Performance Computing (HPC) system. The model process consists of tuning the model (class: `tune`), predicting the model (class: `predict`), and postprocessing the model (class: `post`). The documentation includes usage examples for running these model steps.
+`Abil` documentation can be found through [github](https://nanophyto.github.io/Abil). The documentation includes instruction for installing the model locally and running on an High Performance Computing (HPC) system. The model process consists of tuning the model (class: `ModelTuner`), predicting the model (class: `ModelPredictor`), and postprocessing the model (class: `AbilPostProcessor`). The documentation includes usage examples for running these model steps.
+
+
+# Examples
+
+| Example| Code location |
+|--------------|---------------|
+| Global distribution of *Gephyrocapsa huxleyi* (\autoref{fig:ghux}) |  `paper/figure_1.py`|
+| Coccolithophore abundance in the Bermuda Atlantic Time Series |`examples/regressor.py` |
+| Southern Ocean distribution of *Gephyrocapsa huxleyi* |  `examples/2-phase.py`|
+
+# Research projects using the package
+
+`Abil` has been used to predict the global carbon stocks of the most commonly occurring calcifying plankton ('coccolithophores') [@devries:2025]. In this application the package was used to predict the abundance of 58 species with latitude, longitude, depth and month at 1-degree resolution, on a high-performance computing system using 2-phase regressors. Post processing functionalities were then used to convert abundances to cellular organic and inorganic carbon, and to accurately estimate globally integrated stocks accounting for latitudinal differences in grid sizes. 
 
 # Acknowledgements
 

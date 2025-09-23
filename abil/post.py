@@ -4,13 +4,16 @@ import glob, os
 import xarray as xr
 import pickle
 import gc
+import logging
 from yaml import dump, Dumper
 from skbio.diversity.alpha import shannon
 
 
 from .analyze import area_of_applicability
 
-class post:
+logger = logging.getLogger("abil")
+
+class AbilPostProcessor:
     """
     Post processing of SDM
     """
@@ -76,7 +79,7 @@ class post:
 
             This function uses `xarray.open_mfdataset` to load all NetCDF files in the given directory 
             (matching the pattern "*.nc") and combines them into one xarray.Dataset. The function 
-            prints status messages indicating the start and completion of the merging process.
+            logs status messages indicating the start and completion of the merging process.
 
             Parameters
             ----------
@@ -91,8 +94,7 @@ class post:
                 The merged dataset containing the combined data from all the NetCDF files in the directory.
                 The variable names in the merged dataset are derived from the 'target' values in each file.
             """
-            print("merging...")
-            print(path_in)
+            logger.info(f"merging... {path_in}")
 
             datasets = []
             
@@ -107,12 +109,12 @@ class post:
                         ds_subset = ds[[statistic]].rename({statistic: target_name})
                         datasets.append(ds_subset)
                     else:
-                        print(f"Statistic '{statistic}' not found in {file}")
+                        logger.info(f"Statistic '{statistic}' not found in {file}")
 
             # Merge datasets by variables, keeping same coordinates
             merged_ds = xr.merge(datasets, compat='override')  # 'override' skips conflicts
 
-            print("finished merging NetCDF files")
+            logger.info("finished merging NetCDF files")
             return merged_ds
 
         self.path_out = os.path.join(model_config['root'], model_config['path_out'], model_config['run_name'], "posts/")
@@ -162,7 +164,7 @@ class post:
         ------
         Exception
             If an error occurs during the directory creation or file writing process, an exception
-            is caught and an error message is printed.
+            is caught and an error message is logger.info(ed.
 
         Notes
         -----
@@ -176,9 +178,9 @@ class post:
             with open(yml_file_path, 'w') as yml_file:
                 dump(self.model_config, yml_file, Dumper=Dumper, default_flow_style=False)
             
-            print(f"Model configuration exported to: {yml_file_path}")
+            logger.info(f"Model configuration exported to: {yml_file_path}")
         except Exception as e:
-            print(f"Error exporting model_config to YAML: {e}")   
+            logger.info(f"Error exporting model_config to YAML: {e}")   
 
     def merge_performance(self):
         """
@@ -191,8 +193,7 @@ class post:
         """    
 
         models = [value for key, value in self.model_config['ensemble_config'].items() if key.startswith("m")]
-        print("models included in merge performance!")
-        print(models)
+        logger.info(f"models included in merge performance! {models}")
         models.append("ens")
         for model in models:
             self.merge_performance_single_model(model)
@@ -256,13 +257,11 @@ class post:
                 all_performance.append(performance)
 
         all_performance = pd.concat(all_performance)
-        try: #make new dir if needed
-            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance"))
-        except:
-            None
+        #make new dir if needed
+        os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance"), exist_ok=True)
         all_performance.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/performance", model) + "_performance.csv", index=False)
 
-        print("finished merging performance")
+        logger.info("finished merging performance")
 
     def merge_parameters(self):
         """
@@ -316,8 +315,7 @@ class post:
         for i in range(len(self.unique_targets)):
             
             target = self.unique_targets[i]
-            print("the target is:")
-            print(target)
+            logger.info(f"the target is: {target}")
             target_no_space = target.replace(' ', '_')
 
             with open(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "model", model, target_no_space) + self.extension, 'rb') as file:
@@ -441,14 +439,12 @@ class post:
                     all_parameters.append(parameters) 
 
         all_parameters= pd.concat(all_parameters)
-        try: #make new dir if needed
-            os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters"))
-        except:
-            None
+        #make new dir if needed
+        os.makedirs(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters"), exist_ok=True)
         all_parameters.to_csv(os.path.join(self.root, self.model_config['path_out'], self.model_config['run_name'], "posts/parameters", model) + "_parameters.csv", index=False)
 
         
-        print("finished merging parameters")
+        logger.info("finished merging parameters")
 
     def estimate_carbon(self, variable):
 
@@ -468,9 +464,9 @@ class post:
 
         w = self.traits.query('Target in @self.targets')
         var = w[variable].to_numpy()
-        print(var)
+        logger.info(f"{variable} values:\n\t{var}")
         self.d = self.d.apply(lambda row : (row[self.targets]* var), axis = 1)
-        print("finished estimating " + variable)
+        logger.info(f"{variable} finished estimating.")
 
     def def_groups(self, dict):
         """
@@ -493,7 +489,7 @@ class post:
         df = (df.rename(columns=dict)
             .groupby(level=0, axis=1, dropna=False)).sum( min_count=1)
         self.d = pd.concat([self.d, df], axis=1)
-        print("finished defining groups")
+        logger.info("finished defining groups")
 
     def cwm(self, variable):
         """
@@ -511,14 +507,14 @@ class post:
         var = w[variable].to_numpy()
         var_name = 'cwm ' + variable
         self.d[var_name] = self.d.apply(lambda row : np.average(var, weights=row[self.targets]), axis = 1)
-        print("finished calculating CWM " + variable)
+        logger.info(f"finished calculating CWM {variable}")
 
     def diversity(self):
         """
         Estimates Shannon diversity using scikit-bio.
         """
         self.d['shannon'] = self.d.apply(shannon, axis=1)
-        print("finished calculating shannon diversity")
+        logger.info("finished calculating shannon diversity")
 
     def total(self):
         """
@@ -533,7 +529,7 @@ class post:
 
         self.d['total'] = self.d[self.targets].sum( axis='columns')
         self.d['total_log'] = np.log(self.d['total'])
-        print("finished calculating total")
+        logger.info("finished calculating total")
 
     def process_resampled_runs(self):
         """
@@ -549,15 +545,15 @@ class post:
         """
 
         self.d['mean'] = self.d[self.targets].mean(axis='columns')
-        print('finished calculating mean')
+        logger.info('finished calculating mean')
     
         self.d['stdev'] = self.d[self.targets].std(axis='columns')
-        print('finished calculating standard deviation')
+        logger.info('finished calculating standard deviation')
 
         self.d['prctile_2.5'] = self.d[self.targets].quantile(0.025, axis='columns')
         self.d['prctile_97.5'] = self.d[self.targets].quantile(0.975, axis='columns')
 
-        print('finished calculating 2.5th and 97.5th percentiles')
+        logger.info('finished calculating 2.5th and 97.5th percentiles')
 
     def integration(self, *args, **kwargs):
         return self.integration_class(self, *args, **kwargs)
@@ -611,7 +607,7 @@ class post:
 
             Examples
             --------
-            >>> m = post(model_config)
+            >>> m = AbilPostProcessor(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> print("Volume calculated:", int.ds['volume'].values)
             """            
@@ -689,12 +685,12 @@ class post:
 
             Examples
             --------
-            >>> m = post(model_config)
+            >>> m = AbilPostProcessor(model_config)
             >>> int = m.Integration(m, resolution_lat=1.0, resolution_lon=1.0, depth_w=5, vol_conversion=1, magnitude_conversion=1e-21, molar_mass=12.01, rate=True)
             >>> result = integration.integrate_total(variable='Calcification')
             >>> print("Final integrated total:", result.values)
             """
-            print("Initiate integrated_total")
+            logger.info("Initiate integrated_total")
             ds = self.parent.d.to_xarray()
             vol_conversion = self.vol_conversion
             magnitude_conversion = self.magnitude_conversion
@@ -740,13 +736,13 @@ class post:
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
-                    print(f"All monthly totals: {total.values}")
+                    logger.info(f"All monthly totals: {total.values}")
                 else:
                     # Annual total with month-day weighting
                     weight = xr.DataArray(days_per_month, dims=('time',))
                     total = (var * vol * weight).sum(dim=list(var.dims))
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
-                    print("Final integrated total:", total.values)
+                    logger.info(f"Final integrated total: {total.values}")
             else:
                 if monthly and has_time:
                     # Monthly totals without rate weighting
@@ -759,14 +755,14 @@ class post:
                         monthly_total = (monthly_total * molar_mass) * vol_conversion * magnitude_conversion
                         total.append(monthly_total)
                     total = xr.concat(total, dim="month")
-                    print(f"All monthly totals: {total.values}")
+                    logger.info(f"All monthly totals: {total.values}")
                 else:
                     # Integrate over whatever dims exist
                     total = (var * vol).sum(dim=list(var.dims))
                     total = (total * molar_mass) * vol_conversion * magnitude_conversion
-                    print("Final integrated total:", total.values)
-            return total    
-        
+                    logger.info(f"Final integrated total: {total.values}")
+            return total
+
         def integrated_totals(self, targets=None, monthly=False, subset_depth=None, 
                          export=True, model="ens"):
             """
@@ -809,22 +805,21 @@ class post:
 
             for target in targets:
                 try:
-                    print(f"Processing target: {target}")
+                    logger.info(f"Processing target: {target}")
                     total = self.integrate_total(variable=target, monthly=monthly, subset_depth=subset_depth)
                     total_df = pd.DataFrame({'total': [total.values], 'variable': target})
                     totals.append(total_df)
                 except Exception as e:
-                    print(f"Some targets do not have predictions! Missing: {target}")
-                    print(f"Error: {e}")
+                    logger.info(f"Some targets do not have predictions! Missing: {target}")
+                    logger.info(f"Error: {e}")
             totals = pd.concat(totals)
 
             if export:
                 depth_str = f"_depth_{subset_depth}m" if subset_depth else ""
                 month_str = "_monthly_int" if monthly else ""
-                try: #make new dir if needed
-                    os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"))
-                except:
-                    None
+                #make new dir if needed
+                os.makedirs(os.path.join(self.parent.root, self.parent.model_config['path_out'], self.parent.model_config['run_name'], "posts/integrated_totals"), exist_ok=True)
+
 
                 path_out = self.parent.model_config['path_out']
                 run_name = self.parent.model_config['run_name']
@@ -840,7 +835,9 @@ class post:
                 # Write to CSV
                 totals.to_csv(file_path, index=False)
 
-                print(f"Exported totals")
+                logger.info(f"Exported totals")
+
+
     def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
         """
         Estimate the area of applicability for the data using a strategy similar to Meyer & Pebesma 2022).
@@ -890,7 +887,7 @@ class post:
                 else:
                     y_train = self.y_train[target]
 
-            if return_all == True:
+            if return_all is True:
                 aoa, di_test, lpd_test, cutpoint, test_to_train_d = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,
@@ -910,8 +907,8 @@ class post:
                     f"{target}_lpd": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                     f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                 }
-
-            elif return_all == False:
+                
+            elif return_all is False:
                 aoa, di_test, cutpoint = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,
@@ -931,7 +928,7 @@ class post:
                 }                
 
             else:
-                print("return_all requires a boolean input")
+                raise ValueError(f"return_all requires a boolean input, but recieved {return_all}")
 
         # convert df to xarray ds:
         aoa_dataset = aoa_dataset.to_xarray()
@@ -994,14 +991,12 @@ class post:
         - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
-        try: #make new dir if needed
-            os.makedirs(self.path_out)
-        except:
-            None
+        #make new dir if needed
+        os.makedirs(self.path_out, exist_ok=True)
 
-        print("export_ds")
-        print("dataframe: ")
-        print(self.d.head())
+
+        logger.info("export_ds")
+        logger.info(f"dataframe: {self.d.head()}")
         ds = self.d.to_xarray()
 
         if description is not None:
@@ -1012,24 +1007,24 @@ class post:
         try:
             ds['lat'].attrs['units'] = 'degrees_north'
             ds['lat'].attrs['long_name'] = 'latitude'
-        except:
+        except KeyError:
             pass
         try:
             ds['lon'].attrs['units'] = 'degrees_east'
             ds['lon'].attrs['long_name'] = 'longitude'
-        except:
+        except KeyError:
             pass
         try:
             ds['depth'].attrs['units'] = 'm'
             ds['depth'].attrs['positive'] = 'down'
-        except:
+        except KeyError:
             pass
-        #to add loop defining units of variables
+        # TODO: to add loop defining units of variables
 
-        print(self.d.head())
-        ds.to_netcdf(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".nc")
-
-        print("exported ds to: " + self.path_out + file_name + "_" + self.statistic + self.datatype +  ".nc")
+        logger.info(self.d.head())
+        fname = os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".nc"
+        ds.to_netcdf(fname)
+        logger.info(f"exported ds to: {fname}")
         #add nice metadata
 
 
@@ -1052,15 +1047,13 @@ class post:
         - The file is saved with a suffix that includes the `pi` value (e.g., `_PI50.nc`).
         """
     
-        try: #make new dir if needed
-            os.makedirs(self.path_out)
-        except:
-            None
+        os.makedirs(self.path_out, exist_ok=True)
     
-        print(self.d.head())
-        self.d.to_csv(os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".csv")
+        logger.info(self.d.head())
+        fname = os.path.join(self.path_out, file_name) + "_" + self.statistic + self.datatype + ".csv"
+        self.d.to_csv(fname)
 
-        print("exported d to: " + self.path_out + file_name + "_" + self.statistic + self.datatype + ".csv")
+        logger.info(f"exported d to: {fname}")
 
     def merge_obs(self, file_name, targets=None, index_cols=['lat', 'lon', 'depth', 'time']):
         """
@@ -1129,9 +1122,10 @@ class post:
 
         out = out[keep_columns]
         file_name = f"{file_name}_obs"
-        print(out.head())
-        out.to_csv(os.path.join(self.path_out, file_name)  + self.datatype +  ".csv")
+        logger.info(out.head())
+        fname = os.path.join(self.path_out, file_name)  + self.datatype +  ".csv"
+        out.to_csv(fname)
 
-        print("exported d to: " + self.path_out + file_name  + self.datatype + ".csv")
+        logger.info(f"exported d to: {fname}")
 
-        print('training merged with predictions')
+        logger.info('training merged with predictions')
