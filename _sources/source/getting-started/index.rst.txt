@@ -35,8 +35,8 @@ If you decide to use Anaconda, an Abil specific environment can be created as be
             # Activate the environment
             conda activate myenv
 
-            # Install the dependencies from requirements.txt
-            pip install -r /path/to/requirements.txt
+            # Ensure pip is up-to-date
+            python3 -m pip install --upgrade pip
 
     .. tab-item:: Windows
         
@@ -50,8 +50,8 @@ If you decide to use Anaconda, an Abil specific environment can be created as be
             # Activate the environment
             conda activate myenv
 
-            # Install the dependencies from requirements.txt
-            pip install -r C:\path\to\requirements.txt
+            # Ensure pip is up-to-date
+            python3 -m pip install --upgrade pip
 
 Install via pip
 ---------------

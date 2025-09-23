@@ -398,8 +398,8 @@ conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"
 <span class="c1"># Activate the environment</span>
 conda<span class="w"> </span>activate<span class="w"> </span>myenv
 
-<span class="c1"># Install the dependencies from requirements.txt</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>/path/to/requirements.txt
+<span class="c1"># Ensure pip is up-to-date</span>
+python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
 </pre></div>
 </div>
 </div>
@@ -413,8 +413,8 @@ conda create --name myenv
 # Activate the environment
 conda activate myenv
 
-# Install the dependencies from requirements.txt
-pip install -r C:\path\to\requirements.txt
+# Ensure pip is up-to-date
+python3 -m pip install --upgrade pip
 </pre></div>
 </div>
 </div>
