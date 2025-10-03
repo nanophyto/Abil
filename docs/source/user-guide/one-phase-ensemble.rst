@@ -159,9 +159,9 @@ We can also check the stats
    >>>   f"relative MAE = {obs_abundance['rMAE'][0]*100:.2f} (%)"
    >>> )
    error metrics:
-   R2 = 0.09
-   relative RMSE = 159.22 (%)
-   relative MAE = 123.73 (%)
+   R2 = 0.20
+   relative RMSE = 156.20 (%)
+   relative MAE = 121.10 (%)
 
 And plot the predictions vs observations:
 
