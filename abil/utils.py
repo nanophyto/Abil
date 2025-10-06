@@ -15,6 +15,7 @@ from sklearn.exceptions import NotFittedError
 from xgboost import XGBClassifier, XGBRegressor, DMatrix
 from sklearn.pipeline import Pipeline
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.base import _is_fitted
 
 def do_nothing(x):
     """
@@ -83,11 +84,6 @@ def xgboost_get_n_estimators(model):
 
     # If no `n_estimators` is found, raise an error or return a default value
     raise ValueError("Could not extract `n_estimators` from the model.")
-from sklearn.pipeline import Pipeline
-from sklearn.compose import TransformedTargetRegressor
-from xgboost import XGBClassifier, XGBRegressor
-from sklearn.exceptions import NotFittedError
-from sklearn.base import _is_fitted
 
 def _predict_one_member(i, member, chunk, proba=False, threshold=0.5):
     """
