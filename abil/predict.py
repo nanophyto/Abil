@@ -11,14 +11,6 @@ from sklearn.model_selection import KFold, cross_validate
 from joblib import Parallel, delayed, parallel_backend  
 
 from .utils import inverse_weighting, find_optimal_threshold
-import shutil
-
-# Set the custom temporary folder for loky
-temp_folder = os.path.join(".","tmp") 
-os.environ["LOKY_TEMP_FOLDER"] = temp_folder
-# Ensure the directory exists
-os.makedirs(temp_folder, exist_ok=True)
-
 from . import unified_tree_or_bag as pp
 from .zir import ZeroInflatedRegressor
 from .zero_stratified_kfold import ZeroStratifiedKFold,  UpsampledZeroStratifiedKFold
@@ -164,9 +156,6 @@ def export_prediction(ensemble_config, m, target, target_no_space, X_predict, X_
 
     else:
         raise ValueError("classifiers are not supported")
-
-    #remove loky tmp data:
-    shutil.rmtree(temp_folder, ignore_errors=True)
 
 class ModelPredictor:
     """
