@@ -1,14 +1,11 @@
 Bootstrap: docker
 From: continuumio/miniconda3
 
-%files
-    ../../examples/conda/environment.yml /root
-
 %post
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
     . /opt/conda/etc/profile.d/conda.sh
-    conda install -n base -c conda-forge mamba
-    mamba env update -n base --file /root/environment.yml
+    apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
+    conda install -y -c conda-forge python=3.11 pip
+    python -m pip install --upgrade pip
     pip install abil
 
 %runscript
