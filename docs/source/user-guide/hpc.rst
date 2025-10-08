@@ -146,17 +146,24 @@ First, the array value is used to set a local variable that will be used to spec
     :lines: 10
     :language: shell
 
-Next, the Apptainer module is loaded, and set up using the abil.sif container uploaded prior.
+Next, a temporary folder to store multi-processing output is defined. 
+Note that this is highly cluster dependent and may not be required.
 
 .. literalinclude:: ../../../examples/tune_KNN.sh
     :lines: 12-16
+    :language: shell
+
+Next, the Apptainer module is loaded, and set up using the abil.sif container uploaded prior.
+
+.. literalinclude:: ../../../examples/tune_KNN.sh
+    :lines: 18
     :language: shell
 
 Finally, the model Python script is executed using the specified number of cpus, for the target "i", within a specific model (knn in this instance).
 Lastly, the Singularity cache is exported.
 
 .. literalinclude:: ../../../examples/tune_KNN.sh
-    :lines: 17-19
+    :lines: 20-25
     :language: shell
 
 Alterations for predict and post
@@ -166,13 +173,13 @@ The set up is the same for each the predict.sh and post.sh scripts, with the onl
 predict.sh should say the following:
 
 .. literalinclude:: ../../../examples/predict.sh
-    :lines: 17
+    :lines: 23
     :language: shell
 
 while post.sh should say the following, and does not include the array specification:
 
 .. literalinclude:: ../../../examples/post.sh
-    :lines: 14
+    :lines: 20
     :language: shell
 
 Execute Abil on your HPC Machine
