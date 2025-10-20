@@ -908,7 +908,7 @@ class AbilPostProcessor:
                     f"{target}_cutpoint": {"zlib": True, "complevel": 4, "dtype": "float64", "_FillValue": np.float64(np.nan)},
                 }
                 
-            elif return_all == False:
+            elif return_all is False:
                 aoa, di_test, cutpoint = area_of_applicability(
                     X_test=self.X_predict,
                     X_train=self.X_train,

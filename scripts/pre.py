@@ -20,13 +20,12 @@ d_raw = pd.read_csv('/user/work/mv23682/Abil/studies/wiseman2024/data/calcif_201
                         "Carbonate (CO3) [μmol/kg-seawater]","pH","Temperature (degrees C)","Salinity (ppt)"
                         ])
 
-print("Raw data points, n = ",d_raw["Calcification"].notna().sum())
 d_raw['DateTime'] = pd.to_datetime(d_raw['Date'],dayfirst=True)
 d_raw['Month'] = pd.DatetimeIndex(d_raw['DateTime']).month
 d_raw['Year'] = pd.DatetimeIndex(d_raw['DateTime']).year
 # Drop rows where method is Diff or Ca45 due to quality control concerns (only applicable for CP Data)
 d_filtered = d_raw[~d_raw['Method'].isin(['Diff','Ca45'])]
-print("Removed Diff/Ca45 points, n = ",d_filtered["Calcification"].notna().sum())
+print(d_filtered["Calcification"].notna().sum())
 
 # Drop rows where the condition "Calcification / Emiliania_huxleyi_cell_counts > 3.5" is met (only applicable for CP Data)
 # Only apply condition where "Emiliania huxleyi cell counts [cells mL-1]" is not NaN
@@ -34,8 +33,10 @@ print("Removed Diff/Ca45 points, n = ",d_filtered["Calcification"].notna().sum()
 mask = d_filtered["Emiliania huxleyi cell counts [cells mL-1]"].notna() & (
     d_filtered["Calcification"] / d_filtered["Emiliania huxleyi cell counts [cells mL-1]"] > 3.5)
 d_filtered = d_filtered[~mask]
+print(d_filtered["Calcification"].notna().sum())
+d_filtered = d_filtered[d_filtered["Calcification"] <= 1000]
 d = d_filtered
-print("Removed > 3.5 points, n = ", d["Calcification"].notna().sum())
+print(d["Calcification"].notna().sum())
 
 # Drop data unnecessary for Abil.py
 d = d.convert_dtypes()
@@ -53,7 +54,6 @@ d = d.drop(["PI","Expedition","Reference_Author_Published_year","Reference_doi",
                         "Carbonate (CO3) [μmol/kg-seawater]","pH","Temperature (degrees C)","Salinity (ppt)","Date","DateTime","Year",
                         ],axis = 1)
 
-print("Number of points with SDev, n = ",d['Calcification_Standard_Deviation'].notna().sum())
 n = 3 # number of samples per measurement
 d['CV'] = d['Calcification_Standard_Deviation']/d["Calcification"]
 
@@ -109,7 +109,7 @@ d['Longitude'] = pd.cut(d['Longitude'].astype(np.float64), bins=lon_bins, labels
 
 d = d.groupby(['Latitude', 'Longitude', 'Depth', 'Month']).mean().reset_index()
 d.rename({'Latitude':'lat','Longitude':'lon','Depth':'depth','Month':'time'},inplace=True,axis=1)
-print("Gridded data points, n = ", d["Calcification"].notna().sum())
+print(d["Calcification"].notna().sum())
 
 # Skip lines 79-100 if you do not want to add pseudo zeros below 0.01% Par (only applicable for CP data)
 # Load the 0.01% PAR mask from the NetCDF file
@@ -156,8 +156,9 @@ out = pd.concat([d,df], axis=1)
 out = out[out["dummy"] == 1]
 out = out.drop(['dummy'], axis = 1)
 out = out.dropna()
-print("Non-zero final points, n = ",(out["Calcification"].notna() & (out["Calcification"] != 0)).sum())
-out.to_csv("/user/work/mv23682/Abil/studies/wiseman2024/data/calcif_env_presample_v7.csv", index=True)
+##non_zero_count = out["Calcification"].notna() &
+print((out["Calcification"].notna() & (out["Calcification"] != 0)).sum())
+out.to_csv("/user/work/mv23682/Abil/studies/wiseman2024/data/calcif_env_presample_v4.csv", index=True)
 
 print("fin")
 # %%
