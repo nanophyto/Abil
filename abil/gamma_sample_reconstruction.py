@@ -139,3 +139,35 @@ def generate_gamma_samples(x1, x2, p1=0.05, p2=0.95, sample_size=10000, upper_bo
 
     return(sample)
 
+if __name__ == "__main__":
+
+    x1 = 2.0          # value at percentile p1 (>0)
+    x2 = 20.0         # value at percentile p2 (>0)
+    p1 = 0.05         # lower percentile as probability in (0,1)
+    p2 = 0.95         # upper percentile as probability in (0,1)
+    sample_size = 5000
+    upper_bound = 1e3
+    species = "Demo"  # set to None to suppress label in diagnostics
+    seed = 42         # set to None for non-deterministic sampling
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    alpha, theta = fit_gamma(p1, p2, x1, x2, upper_bound)
+    print(f"Fitted parameters: alpha={alpha:.6g}, theta={theta:.6g}")
+
+    sample = generate_gamma_samples(
+        x1, x2,
+        p1=p1,
+        p2=p2,
+        sample_size=sample_size,
+        upper_bound=upper_bound,
+        species=species
+    )
+
+    # Quick summary of the sampled distribution
+    p_lo, p_hi = p1 * 100, p2 * 100
+    q_lo, q_hi = np.percentile(sample, [p_lo, p_hi])
+
+    print(f"Sample size: {len(sample)}")
+    print(f"Approx. {p_lo:.1f}th/{p_hi:.1f}th percentiles of sample: {q_lo:.6g}, {q_hi:.6g}")
