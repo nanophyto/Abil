@@ -87,7 +87,7 @@ def verify_fit(alpha, theta, n_samples=100, n_repeats=1, q=(5, 95)):
     return percentiles
 
 
-def approximate_Gamma(x1, x2, p1=0.05, p2=0.95, sample_size=10000, upper_bound=1e3, species=None):
+def generate_gamma_samples(x1, x2, p1=0.05, p2=0.95, sample_size=10000, upper_bound=1e3, species=None):
     """
     Given two values x1 and x2 at percentiles p1 and p2 respectively,
     approximate a gamma distribution that fits those percentiles, and
@@ -138,6 +138,4 @@ def approximate_Gamma(x1, x2, p1=0.05, p2=0.95, sample_size=10000, upper_bound=1
     sample = np.random.gamma(shape=a_, scale=t_, size=sample_size)
 
     return(sample)
-
-
 
