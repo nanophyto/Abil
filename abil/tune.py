@@ -4,6 +4,13 @@ import pickle
 import pandas as pd
 import numpy as np
 import logging
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format="%(message)s",
+)
 logger = logging.getLogger("abil")
 
 from joblib import parallel_backend
@@ -87,6 +94,7 @@ class ModelTuner:
             The model used for training.
         
         """
+        print('beginning init')
         self.y = y.sample(frac=1, random_state=model_config['seed']) #shuffle
         logger.info(f"length of y: {len(self.y)}")
         self.y = self.y.values.ravel()
