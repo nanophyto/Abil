@@ -4,6 +4,13 @@ import pickle
 import os
 import time
 import logging
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format="%(message)s",
+)
 logger = logging.getLogger("abil")
 
 from sklearn.ensemble import VotingRegressor, VotingClassifier

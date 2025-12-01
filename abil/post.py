@@ -7,10 +7,14 @@ import gc
 import logging
 from yaml import dump, Dumper
 from skbio.diversity.alpha import shannon
-
-
 from .analyze import area_of_applicability
+import sys
 
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format="%(message)s",
+)
 logger = logging.getLogger("abil")
 
 class AbilPostProcessor:
