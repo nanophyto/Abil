@@ -254,7 +254,9 @@ class ModelTuner:
                 reg = LogGridSearch(reg_pipe, verbose = self.verbose, cv=cv, 
                                     param_grid=reg_param_grid, scoring='r2', regions=self.regions)
                 reg_grid_search = reg.transformed_fit(X_train, y, log, self.model_config['predictors'].copy())
-
+            
+            if log == 'both':
+                logger.info(f"best fit: {reg_grid_search.cv_results_['best_transformation']}")
             m2 = reg_grid_search.best_estimator_
 
 
