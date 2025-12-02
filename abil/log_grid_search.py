@@ -156,6 +156,8 @@ class LogGridSearch:
                 grid_search = grid_search1
                 best_transformation = "nobest"
 
-        grid_search.best_estimator_.transformation_ = best_transformation
+        pipe = grid_search.best_estimator_
+        ttr  = pipe.named_steps["estimator"]
+        ttr.transformation_ = best_transformation
 
         return grid_search
