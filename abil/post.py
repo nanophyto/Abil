@@ -313,7 +313,21 @@ class AbilPostProcessor:
         The parameters for each target are aggregated into a DataFrame and saved as a CSV file in the 
         "posts/parameters" directory.
         """
-        
+        def get_inner_estimator(reg):
+            """
+            Returns the actual estimator inside a pipeline or the bare estimator.
+            """
+            if hasattr(reg, "named_steps"):          # Pipeline case
+                return reg.named_steps["estimator"]
+            return reg                                 # Bare estimator case
+
+        def get_transformation(reg):
+            """
+            Returns the transformation_ attribute if it exists, else None.
+            """
+            est = get_inner_estimator(reg)
+            return getattr(est, "transformation_", None)
+
         all_parameters = []
 
         for i in range(len(self.unique_targets)):
@@ -329,42 +343,71 @@ class AbilPostProcessor:
             if self.model_type == "reg":
 
                 if model == "rf":
-                    max_depth = m.regressor_.named_steps.estimator.max_depth
-                    max_features = m.regressor_.named_steps.estimator.max_features
-                    max_samples = m.regressor_.named_steps.estimator.max_samples
-                    min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
-                    n_estimators = m.regressor_.named_steps.estimator.n_estimators
-                    transformation = m.regressor_.transformation_
-                    parameters = pd.DataFrame({'target':[target], 'n_estimators':[n_estimators], 'max_features':[max_features], 'max_depth':[max_depth], 
-                                            'min_samples_leaf':[min_samples_leaf], 'max_samples':[max_samples], 'transformation':[transformation]
-                                            })
+                    est = get_inner_estimator(m.regressor_)
+                    transformation = get_transformation(m.regressor_)
+
+                    max_depth = est.max_depth
+                    max_features = est.max_features
+                    max_samples = est.max_samples
+                    min_samples_leaf = est.min_samples_leaf
+                    n_estimators = est.n_estimators
+
+                    parameters = pd.DataFrame({
+                        'target': [target],
+                        'n_estimators': [n_estimators],
+                        'max_features': [max_features],
+                        'max_depth': [max_depth],
+                        'min_samples_leaf': [min_samples_leaf],
+                        'max_samples': [max_samples],
+                        'transformation': [transformation]
+                    })
                     all_parameters.append(parameters)
                 elif model == "xgb":
-                    learning_rate = m.regressor_.named_steps.estimator.learning_rate
-                    n_estimators = m.regressor_.named_steps.estimator.n_estimators
-                    max_depth = m.regressor_.named_steps.estimator.max_depth
-                    subsample = m.regressor_.named_steps.estimator.subsample
-                    colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
-                    gamma = m.regressor_.named_steps.estimator.gamma
-                    alpha = m.regressor_.named_steps.estimator.reg_alpha
-                    transformation = m.regressor_.transformation_
-                    parameters = pd.DataFrame({'target':[target], 'learning_rate':[learning_rate], 'n_estimators':[n_estimators], 
-                                            'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
-                                            'learning_rate':[learning_rate], 'gamma':[gamma], 'alpha':[alpha], 'transformation':[transformation]                                           
-                                            })
+                    est = get_inner_estimator(m.regressor_)
+                    transformation = get_transformation(m.regressor_)
+
+                    learning_rate = est.learning_rate
+                    n_estimators = est.n_estimators
+                    max_depth = est.max_depth
+                    subsample = est.subsample
+                    colsample_bytree = est.colsample_bytree
+                    gamma = est.gamma
+                    alpha = est.reg_alpha
+
+                    parameters = pd.DataFrame({
+                        'target': [target],
+                        'learning_rate': [learning_rate],
+                        'n_estimators': [n_estimators],
+                        'max_depth': [max_depth],
+                        'subsample': [subsample],
+                        'colsample_bytree': [colsample_bytree],
+                        'gamma': [gamma],
+                        'alpha': [alpha],
+                        'transformation': [transformation]
+                    })
                     all_parameters.append(parameters)
                 elif model == "knn":
-                    max_samples = m.regressor_.named_steps.estimator.max_samples
-                    max_features = m.regressor_.named_steps.estimator.max_features
-                    leaf_size = m.regressor_.named_steps.estimator.estimator.leaf_size
-                    n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
-                    p = m.regressor_.named_steps.estimator.estimator.p
-                    weights = m.regressor_.named_steps.estimator.estimator.weights
-                    transformation = m.regressor_.transformation_
-                    parameters = pd.DataFrame({'target':[target], 'max_samples':[max_samples], 'max_features':[max_features],
-                                            'leaf_size':[leaf_size], 'n_neighbors':[n_neighbors], 'p':[p], 'weights':[weights],'transformation':[transformation]
-                                            })
-                    all_parameters.append(parameters) 
+                    est = get_inner_estimator(m.regressor_)
+                    transformation = get_transformation(m.regressor_)
+
+                    max_samples = est.max_samples
+                    max_features = est.max_features
+                    leaf_size = est.estimator.leaf_size  # if wrapped in some extra estimator
+                    n_neighbors = est.estimator.n_neighbors
+                    p = est.estimator.p
+                    weights = est.estimator.weights
+
+                    parameters = pd.DataFrame({
+                        'target': [target],
+                        'max_samples': [max_samples],
+                        'max_features': [max_features],
+                        'leaf_size': [leaf_size],
+                        'n_neighbors': [n_neighbors],
+                        'p': [p],
+                        'weights': [weights],
+                        'transformation': [transformation]
+                    })
+                    all_parameters.append(parameters)
 
             elif self.model_type == "clf":
                 raise ValueError("classifiers are not supported")
