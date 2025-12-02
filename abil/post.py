@@ -334,8 +334,9 @@ class AbilPostProcessor:
                     max_samples = m.regressor_.named_steps.estimator.max_samples
                     min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
                     n_estimators = m.regressor_.named_steps.estimator.n_estimators
+                    transformation = m.transformation_
                     parameters = pd.DataFrame({'target':[target], 'n_estimators':[n_estimators], 'max_features':[max_features], 'max_depth':[max_depth], 
-                                            'min_samples_leaf':[min_samples_leaf], 'max_samples':[max_samples]
+                                            'min_samples_leaf':[min_samples_leaf], 'max_samples':[max_samples], 'transformation':[transformation]
                                             })
                     all_parameters.append(parameters)
                 elif model == "xgb":
@@ -346,9 +347,10 @@ class AbilPostProcessor:
                     colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
                     gamma = m.regressor_.named_steps.estimator.gamma
                     alpha = m.regressor_.named_steps.estimator.reg_alpha
+                    transformation = m.transformation_
                     parameters = pd.DataFrame({'target':[target], 'learning_rate':[learning_rate], 'n_estimators':[n_estimators], 
                                             'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
-                                            'learning_rate':[learning_rate], 'gamma':[gamma], 'alpha':[alpha]                                           
+                                            'learning_rate':[learning_rate], 'gamma':[gamma], 'alpha':[alpha], 'transformation':[transformation]                                           
                                             })
                     all_parameters.append(parameters)
                 elif model == "knn":
@@ -358,8 +360,9 @@ class AbilPostProcessor:
                     n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
                     p = m.regressor_.named_steps.estimator.estimator.p
                     weights = m.regressor_.named_steps.estimator.estimator.weights
+                    transformation = m.transformation_
                     parameters = pd.DataFrame({'target':[target], 'max_samples':[max_samples], 'max_features':[max_features],
-                                            'leaf_size':[leaf_size], 'n_neighbors':[n_neighbors], 'p':[p], 'weights':[weights]
+                                            'leaf_size':[leaf_size], 'n_neighbors':[n_neighbors], 'p':[p], 'weights':[weights],'transformation':[transformation]
                                             })
                     all_parameters.append(parameters) 
 
@@ -373,6 +376,7 @@ class AbilPostProcessor:
                     max_samples_reg = m.regressor_.regressor.named_steps.estimator.max_samples
                     min_samples_leaf_reg = m.regressor_.regressor.named_steps.estimator.min_samples_leaf
                     n_estimators_reg = m.regressor_.regressor.named_steps.estimator.n_estimators
+                    transformation = m.transformation_
 
                     n_estimators_clf = m.classifier.named_steps.estimator.n_estimators
                     max_features_clf = m.classifier.named_steps.estimator.max_features
@@ -383,6 +387,7 @@ class AbilPostProcessor:
                     parameters = pd.DataFrame({'target':[target], 'reg_n_estimators':[n_estimators_reg], 
                                             'reg_max_features':[max_features_reg], 'reg_max_depth':[max_depth_reg], 
                                             'reg_min_samples_leaf':[min_samples_leaf_reg], 'reg_max_samples':[max_samples_reg],
+                                            'reg_transformation':[transformation],
                                             'clf_n_estimators':[n_estimators_clf], 
                                             'clf_max_features':[max_features_clf], 'clf_max_depth':[max_depth_clf], 
                                             'clf_min_samples_leaf':[min_samples_leaf_clf], 'clf_max_samples':[max_samples_clf]
@@ -397,6 +402,7 @@ class AbilPostProcessor:
                     colsample_bytree_reg = m.regressor_.regressor.named_steps.estimator.colsample_bytree
                     gamma_reg = m.regressor_.regressor.named_steps.estimator.gamma
                     alpha_reg = m.regressor_.regressor.named_steps.estimator.reg_alpha
+                    transformation = m.transformation_
 
                     learning_rate_clf = m.classifier.named_steps.estimator.learning_rate
                     n_estimators_clf = m.classifier.named_steps.estimator.n_estimators
@@ -410,6 +416,7 @@ class AbilPostProcessor:
                     parameters = pd.DataFrame({'target':[target], 'reg_learning_rate':[learning_rate_reg], 'reg_n_estimators':[n_estimators_reg], 
                                             'reg_max_depth':[max_depth_reg], 'reg_subsample':[subsample_reg], 'reg_colsample_bytree':[colsample_bytree_reg],
                                             'reg_learning_rate':[learning_rate_reg], 'reg_gamma':[gamma_reg], 'reg_alpha':[alpha_reg],
+                                            'reg_transformation':[transformation],
                                             'clf_learning_rate':[learning_rate_clf], 'clf_n_estimators':[n_estimators_clf], 
                                             'clf_max_depth':[max_depth_clf], 'clf_subsample':[subsample_clf], 'clf_colsample_bytree':[colsample_bytree_clf],
                                             'clf_learning_rate':[learning_rate_clf], 'clf_gamma':[gamma_clf], 'clf_alpha':[alpha_clf]                                           
@@ -423,6 +430,7 @@ class AbilPostProcessor:
                     n_neighbors_reg = m.regressor_.regressor.named_steps.estimator.estimator.n_neighbors
                     p_reg = m.regressor_.regressor.named_steps.estimator.estimator.p
                     weights_reg = m.regressor_.regressor.named_steps.estimator.estimator.weights
+                    transformation = m.transformation_
 
                     max_samples_clf = m.classifier.named_steps.estimator.max_samples
                     max_features_clf = m.classifier.named_steps.estimator.max_features
@@ -436,6 +444,7 @@ class AbilPostProcessor:
                     parameters = pd.DataFrame({'target':[target], 'reg_max_samples':[max_samples_reg], 'reg_max_features':[max_features_reg],
                                             'reg_leaf_size':[leaf_size_reg], 'reg_n_neighbors':[n_neighbors_reg], 
                                             'reg_p':[p_reg], 'reg_weights':[weights_reg],
+                                            'reg_transformation':[transformation],
                                             'clf_max_samples':[max_samples_clf], 'clf_max_features':[max_features_clf],
                                             'clf_leaf_size':[leaf_size_clf], 'clf_n_neighbors':[n_neighbors_clf], 
                                             'clf_p':[p_clf], 'clf_weights':[weights_clf]
