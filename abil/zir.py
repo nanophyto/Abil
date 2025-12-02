@@ -67,6 +67,20 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
 
         # Ensure regressor_ is assigned
         self.regressor_ = clone(self.regressor)
+
+        try:
+            # original pipeline from LogGridSearch
+            orig_ttr = self.regressor.named_steps["estimator"]
+
+            # cloned pipeline we actually fit
+            new_ttr  = self.regressor_.named_steps["estimator"]
+
+            # copy transformation flag (e.g. 'log', 'nolog', 'nobest')
+            new_ttr.transformation_ = getattr(orig_ttr, "transformation_", None)
+
+        except Exception:
+            # If it's not a pipeline or missing the estimator step, just skip it.
+            pass
         
         y_pred_proba = self.classifier_.predict_proba(X)[:, 1]
         y_pred = (y_pred_proba >= self.threshold).astype(int)
