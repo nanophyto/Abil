@@ -110,7 +110,11 @@ def area_of_applicability(
         test_to_train_d_ = numpy.empty((n_test, n_train))
 
     X_train = X_train[mask_train]
-    y_train = y_train[mask_train]
+
+    # Only filter y_train if it exists
+    if y_train is not None:
+        y_train = numpy.asarray(y_train)[mask_train]
+
 
     if not feature_weights:
         feature_weights = numpy.ones(n_features)
