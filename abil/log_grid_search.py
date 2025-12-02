@@ -157,7 +157,13 @@ class LogGridSearch:
                 best_transformation = "nobest"
 
         pipe = grid_search.best_estimator_
-        ttr  = pipe.named_steps["estimator"]
+        
+        # Get the TransformedTargetRegressor no matter what its container is
+        if hasattr(pipe, "named_steps"):          # Pipeline case
+            ttr = pipe.named_steps["estimator"]
+        else:                                      # Direct TTR case
+            ttr = pipe
+
         ttr.transformation_ = best_transformation
 
         return grid_search
