@@ -256,7 +256,7 @@ class ModelTuner:
                 reg_grid_search = reg.transformed_fit(X_train, y, log, self.model_config['predictors'].copy())
             
             if log == 'both':
-                logger.info(f"best fit: {reg_grid_search.best_estimator_.transformation_}")
+                logger.info(f"best fit: {reg_grid_search.best_estimator_.named_steps["estimator"].transformation_}")
             m2 = reg_grid_search.best_estimator_
 
 
