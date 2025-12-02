@@ -334,7 +334,7 @@ class AbilPostProcessor:
                     max_samples = m.regressor_.named_steps.estimator.max_samples
                     min_samples_leaf = m.regressor_.named_steps.estimator.min_samples_leaf
                     n_estimators = m.regressor_.named_steps.estimator.n_estimators
-                    transformation = m.regressor_.named_steps.estimator.transformation_
+                    transformation = m.regressor_.transformation_
                     parameters = pd.DataFrame({'target':[target], 'n_estimators':[n_estimators], 'max_features':[max_features], 'max_depth':[max_depth], 
                                             'min_samples_leaf':[min_samples_leaf], 'max_samples':[max_samples], 'transformation':[transformation]
                                             })
@@ -347,7 +347,7 @@ class AbilPostProcessor:
                     colsample_bytree = m.regressor_.named_steps.estimator.colsample_bytree
                     gamma = m.regressor_.named_steps.estimator.gamma
                     alpha = m.regressor_.named_steps.estimator.reg_alpha
-                    transformation = m.regressor_.named_steps.estimator.regressor_.transformation_
+                    transformation = m.regressor_.transformation_
                     parameters = pd.DataFrame({'target':[target], 'learning_rate':[learning_rate], 'n_estimators':[n_estimators], 
                                             'max_depth':[max_depth], 'subsample':[subsample], 'colsample_bytree':[colsample_bytree],
                                             'learning_rate':[learning_rate], 'gamma':[gamma], 'alpha':[alpha], 'transformation':[transformation]                                           
@@ -360,7 +360,7 @@ class AbilPostProcessor:
                     n_neighbors = m.regressor_.named_steps.estimator.estimator.n_neighbors
                     p = m.regressor_.named_steps.estimator.estimator.p
                     weights = m.regressor_.named_steps.estimator.estimator.weights
-                    transformation = m.regressor_.named_steps.estimator.transformation_
+                    transformation = m.regressor_.transformation_
                     parameters = pd.DataFrame({'target':[target], 'max_samples':[max_samples], 'max_features':[max_features],
                                             'leaf_size':[leaf_size], 'n_neighbors':[n_neighbors], 'p':[p], 'weights':[weights],'transformation':[transformation]
                                             })
