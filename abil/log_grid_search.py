@@ -123,6 +123,7 @@ class LogGridSearch:
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
+            best_transformation = 'log'
 
         elif log == "no":
 
@@ -130,6 +131,7 @@ class LogGridSearch:
             grid_search = GridSearchCV(model, param_grid = self.param_grid, scoring=self.scoring, refit=True,
                             cv = self.cv, verbose = self.verbose, return_train_score=True, error_score=-1e99)
             grid_search.fit(X, y)
+            best_transformation = 'nolog'
 
         elif log == "both":
 
@@ -153,6 +155,15 @@ class LogGridSearch:
             else:
                 grid_search = grid_search1
                 best_transformation = "nobest"
-            grid_search.cv_results_['best_transformation'] = best_transformation
+
+        pipe = grid_search.best_estimator_
+        
+        # Get the TransformedTargetRegressor no matter what its container is
+        if hasattr(pipe, "named_steps"):          # Pipeline case
+            ttr = pipe.named_steps["estimator"]
+        else:                                      # Direct TTR case
+            ttr = pipe
+
+        ttr.transformation_ = best_transformation
 
         return grid_search

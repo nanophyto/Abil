@@ -31,8 +31,8 @@ class TestRegressors(unittest.TestCase):
     def test_post_ensemble(self):
         m = tune(self.X_train, self.y, self.model_config)
         m.train(model="rf", log="yes")
-        m.train(model="xgb", log="yes")
-        m.train(model="knn", log="yes")
+        m.train(model="xgb", log="both")
+        m.train(model="knn", log="no")
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config, n_jobs=self.model_config['n_threads'])
         m.make_prediction()
@@ -99,9 +99,9 @@ class TestRegressors(unittest.TestCase):
             os.path.join("tests", "ModelOutput", "regressor", "posts", "integrated_totals", "ens_integrated_totals_ci95_LL_poc.csv")
         )["total"].iat[0]
 
-        self.assertAlmostEqual(integrated_total_poc_mean, 1.013e17, delta=1e15)
-        self.assertAlmostEqual(integrated_total_poc_ci95_UL, 1.95e17, delta=1e15)
-        self.assertAlmostEqual(integrated_total_poc_ci95_LL, 2.46e16, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_mean, 2.301e17, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_ci95_UL, 3.67e17, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_ci95_LL, 3.752e16, delta=1e15)
 
 
 class Test2Phase(unittest.TestCase):
@@ -125,8 +125,8 @@ class Test2Phase(unittest.TestCase):
         m = tune(self.X_train, self.y, self.model_config)
 
         m.train(model="rf", log="yes")
-        m.train(model="xgb", log="yes")
-        m.train(model="knn", log="yes")
+        m.train(model="xgb", log="both")
+        m.train(model="knn", log="no")
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config, n_jobs=self.model_config['n_threads'])
         m.make_prediction()
@@ -189,9 +189,9 @@ class Test2Phase(unittest.TestCase):
             os.path.join("tests", "ModelOutput", "2-phase", "posts", "integrated_totals", "ens_integrated_totals_ci95_LL_poc.csv")
         )["total"].iat[0]
     
-        self.assertAlmostEqual(integrated_total_poc_mean, 2.55e17, delta=1e15)
-        self.assertAlmostEqual(integrated_total_poc_ci95_UL, 3.92e+17, delta=1e15)
-        self.assertAlmostEqual(integrated_total_poc_ci95_LL, 1.44e+17, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_mean, 3.27e17, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_ci95_UL, 5.267e+17, delta=1e15)
+        self.assertAlmostEqual(integrated_total_poc_ci95_LL, 1.795e+17, delta=1e15)
 
 
 

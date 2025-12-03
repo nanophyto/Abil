@@ -254,7 +254,16 @@ class ModelTuner:
                 reg = LogGridSearch(reg_pipe, verbose = self.verbose, cv=cv, 
                                     param_grid=reg_param_grid, scoring='r2', regions=self.regions)
                 reg_grid_search = reg.transformed_fit(X_train, y, log, self.model_config['predictors'].copy())
-
+            
+            if log == 'both':
+                best = reg_grid_search.best_estimator_
+                # If it's a pipeline → extract "estimator"
+                if hasattr(best, "named_steps"):
+                    ttr = best.named_steps["estimator"]
+                else:
+                    # Bare Transformed Target Regressor
+                    ttr = best
+                logger.info(f"best fit: {ttr.transformation_}")
             m2 = reg_grid_search.best_estimator_
 
 

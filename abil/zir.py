@@ -67,6 +67,19 @@ class ZeroInflatedRegressor(BaseEstimator, RegressorMixin):
 
         # Ensure regressor_ is assigned
         self.regressor_ = clone(self.regressor)
+
+        try:
+            if hasattr(self.regressor, "named_steps"):
+                orig_ttr = self.regressor.named_steps["estimator"]
+                new_ttr  = self.regressor_.named_steps["estimator"]
+            else:
+                orig_ttr = self.regressor
+                new_ttr  = self.regressor_
+            
+            new_ttr.transformation_ = getattr(orig_ttr, "transformation_", None)
+
+        except Exception:
+            pass
         
         y_pred_proba = self.classifier_.predict_proba(X)[:, 1]
         y_pred = (y_pred_proba >= self.threshold).astype(int)
