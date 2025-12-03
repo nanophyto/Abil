@@ -31,8 +31,8 @@ class TestRegressors(unittest.TestCase):
     def test_post_ensemble(self):
         m = tune(self.X_train, self.y, self.model_config)
         m.train(model="rf", log="yes")
-        m.train(model="xgb", log="yes")
-        m.train(model="knn", log="yes")
+        m.train(model="xgb", log="both")
+        m.train(model="knn", log="no")
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config, n_jobs=self.model_config['n_threads'])
         m.make_prediction()
@@ -125,8 +125,8 @@ class Test2Phase(unittest.TestCase):
         m = tune(self.X_train, self.y, self.model_config)
 
         m.train(model="rf", log="yes")
-        m.train(model="xgb", log="yes")
-        m.train(model="knn", log="yes")
+        m.train(model="xgb", log="both")
+        m.train(model="knn", log="no")
 
         m = predict(self.X_train, self.y, self.X_predict, self.model_config, n_jobs=self.model_config['n_threads'])
         m.make_prediction()
