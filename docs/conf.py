@@ -8,7 +8,7 @@
 
 project = 'Abil'
 copyright = '2025, Abil developers'
-release = '25.12.01'
+release = '25.12.04'
 
 
 # -- General configuration ---------------------------------------------------
