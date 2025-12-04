@@ -710,13 +710,16 @@ as a CSV file in the “posts/performance” directory for the specified model.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.AbilPostProcessor.process_resampled_runs">
-<span class="sig-name descname"><span class="pre">process_resampled_runs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.AbilPostProcessor.process_resampled_runs" title="Link to this definition">#</a></dt>
-<dd><p>Take mean of target rows.
-Take the standard deviation of the target rows.
-Calculate the 2.5th and 97.5th percentiles of target rows.</p>
-<p class="rubric">Notes</p>
-<p>Useful when running resampled targets of the same initial target.
-Mean is estimated based on the target list defined in model_config.</p>
+<span class="sig-name descname"><span class="pre">process_resampled_runs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.AbilPostProcessor.process_resampled_runs" title="Link to this definition">#</a></dt>
+<dd><p>Compute statistics for each target and its sample columns.
+Always includes the base target column itself.</p>
+<dl class="simple">
+<dt>Output columns are named:</dt><dd><p>{target}_mean
+{target}_stdev
+{target}_prctile_2.5
+{target}_prctile_97.5</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
