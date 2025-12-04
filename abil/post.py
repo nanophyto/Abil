@@ -611,29 +611,43 @@ class AbilPostProcessor:
         self.d['total_log'] = np.log(self.d['total'])
         logger.info("finished calculating total")
 
-    def process_resampled_runs(self):
+    def process_resampled_runs(self, targets=None):
         """
-        Take mean of target rows.
-        Take the standard deviation of the target rows.
-        Calculate the 2.5th and 97.5th percentiles of target rows.
+        Compute statistics for each target and its sample columns.
+        Always includes the base target column itself.
 
-        Notes
-        -----
-        Useful when running resampled targets of the same initial target.
-        Mean is estimated based on the target list defined in model_config.
-
+        Output columns are named:
+            {target}_mean
+            {target}_stdev
+            {target}_prctile_2.5
+            {target}_prctile_97.5
         """
 
-        self.d['mean'] = self.d[self.targets].mean(axis='columns')
-        logger.info('finished calculating mean')
-    
-        self.d['stdev'] = self.d[self.targets].std(axis='columns')
-        logger.info('finished calculating standard deviation')
+        if targets is None:
+            targets = self.targets
 
-        self.d['prctile_2.5'] = self.d[self.targets].quantile(0.025, axis='columns')
-        self.d['prctile_97.5'] = self.d[self.targets].quantile(0.975, axis='columns')
+        for target in targets:
 
-        logger.info('finished calculating 2.5th and 97.5th percentiles')
+            # Always include the base target column (if it exists)
+            cols = []
+            if target in self.d.columns:
+                cols.append(target)
+
+            # Add all sample columns that begin with "target_sample_"
+            sample_cols = [c for c in self.d.columns if c.startswith(f"{target}_sample_")]
+            cols.extend(sample_cols)
+
+            if len(cols) == 0:
+                logger.warning(f"No base or sample columns found for target '{target}'. Skipping.")
+                continue
+
+            # CALCULATE
+            self.d[f"{target}_mean"] = self.d[cols].mean(axis='columns')
+            self.d[f"{target}_stdev"] = self.d[cols].std(axis='columns')
+            self.d[f"{target}_prctile_2.5"] = self.d[cols].quantile(0.025, axis='columns')
+            self.d[f"{target}_prctile_97.5"] = self.d[cols].quantile(0.975, axis='columns')
+
+            logger.info(f"Finished processing resampled stats for target '{target}'")
 
     def integration(self, *args, **kwargs):
         return self.integration_class(self, *args, **kwargs)
@@ -870,17 +884,34 @@ class AbilPostProcessor:
             """
             ds = self.parent.d.to_xarray()
             if targets is None:
-                targets = self.targets
-            if "total" in ds:
-                targets = np.append(targets, 'total')
-            if "mean" in ds:
-                targets = np.append(targets, 'mean')
-            if "stdev" in ds:
-                targets = np.append(targets, 'stdev')
-            if "prctile_2.5" in ds:
-                targets = np.append(targets, 'prctile_2.5')
-            if "prctile_97.5" in ds:
-                targets = np.append(targets, 'prctile_97.5')
+                targets = list(self.targets)
+            else:
+                targets = list(targets)
+
+            # For datasets containing resampled data that has been processed
+            derived_suffixes = [
+                "mean",
+                "stdev",
+                "prctile_2.5",
+                "prctile_97.5",
+            ]
+
+            expanded_targets = []
+
+            for t in targets:
+                expanded_targets.append(t)
+                for suffix in derived_suffixes:
+                    derived_name = f"{t}_{suffix}"
+                    if derived_name in ds:
+                        expanded_targets.append(derived_name)
+
+            # Optional: include extra standalone fields
+            for extra in ["total"]:
+                if extra in ds:
+                    expanded_targets.append(extra)
+
+            # Final targets for this step
+            targets = expanded_targets
             totals = []
 
             for target in targets:
