@@ -11,9 +11,12 @@ Abil.py provides functions to interpolate distributions of biogeochemical observ
 
 ### Prerequisites
 Ensure you have the following installed on your system:
-- [Python](https://www.python.org/downloads/) (>=3.7 recommended)
+- [Python](https://www.python.org/downloads/) (>=3.7, <3.13 required)
 - [Git](https://git-scm.com/downloads)
 - [pip](https://pip.pypa.io/en/stable/installation/)
+
+### Using Anaconda 
+We recommend uing [Anaconda](https://www.anaconda.com/download) environments to avoid package conflicts.
 
 ### Install via pip
 Run the following command to install the package directly from GitHub:
