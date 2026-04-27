@@ -18,8 +18,16 @@ Ensure you have the following installed on your system:
 ### Using Anaconda 
 We recommend uing [Anaconda](https://www.anaconda.com/download) environments to avoid package conflicts.
 
+Run the following command to install the package with Anaconda:
+
+```sh
+conda create -n myenv python=3.11 pip
+conda activate myenv
+pip install abil
+```
+
 ### Install via pip
-Run the following command to install the package directly from GitHub:
+Run the following command to install the package directly:
 ```sh
 pip install abil
 ```
