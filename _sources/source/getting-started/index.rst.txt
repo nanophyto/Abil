@@ -9,7 +9,7 @@ Prerequisites
 
 Ensure you have the following installed on your system:
 
-- `Python <https://www.python.org/downloads/>`_ (>=3.7 required)
+- `Python <https://www.python.org/downloads/>`_ (>=3.7,<3.13 required)
 - `Git <https://git-scm.com/downloads>`_
 - `pip <https://pip.pypa.io/en/stable/installation/>`_
 
@@ -25,7 +25,7 @@ If you decide to use Anaconda, an Abil specific environment can be created as be
 
     .. tab-item:: Unix/MacOS
         
-        To create a new Conda environment and install the dependencies from ``Abil/requirements.txt``, run the following commands:
+        To create a new Conda environment, run the following commands:
 
         .. code-block:: sh
 
@@ -40,7 +40,7 @@ If you decide to use Anaconda, an Abil specific environment can be created as be
 
     .. tab-item:: Windows
         
-        To create a new Conda environment and install the dependencies from ``Abil\requirements.txt``, run the following commands in Command Prompt or Anaconda Prompt:
+        To create a new Conda environment, run the following commands in Command Prompt or Anaconda Prompt:
 
         .. code-block:: bat
 
