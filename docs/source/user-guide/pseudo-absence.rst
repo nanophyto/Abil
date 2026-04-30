@@ -21,7 +21,7 @@ Loading dependencies
 
 
 Generating synthetic data
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. literalinclude:: ../../../examples/pseudo_absence.py
    :lines: 11-27
@@ -44,7 +44,7 @@ Plotting
 Now that we have pseudo-absences we can plot them in environmental space:
 
 .. literalinclude:: ../../../examples/pseudo_absence.py
-   :lines: 37-73
+   :lines: 37-67
    :language: python
 
 .. figure:: ../../../examples/pseudo_absence.png
