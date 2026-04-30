@@ -16,3 +16,4 @@ Guides
    one-phase-ensemble
    two-phase-ensemble
    hpc
+   pseudo-absence
