@@ -333,6 +333,37 @@ class TestPseudoAbsenceGeneration(unittest.TestCase):
         self.assertTrue(pseudo_rows["species_b"].isna().all())
         self.assertTrue(set(pseudo_rows.index).issubset({10, 12, 13}))
 
+
+    def test_generate_pseudo_absences_samples_with_replacement_by_default(self):
+        merged_df = pd.DataFrame({
+            "temp": [10.0, 11.0, 12.0],
+            "silicate": [0.5, 0.6, 0.7],
+            "species_a": [1.0, 1.0, 1.0],
+        })
+        missing_rows = pd.DataFrame({
+            "temp": [2.0, 20.0],
+            "silicate": [2.5, 0.2],
+        }, index=[10, 11])
+
+        def fake_aoa(X_predict, X_train, **kwargs):
+            return np.array([1, 0], dtype=float), np.zeros(2), 0.0
+
+        from unittest.mock import patch
+        with patch("abil.pseudo_generation.area_of_applicability", side_effect=fake_aoa):
+            out = generate_pseudo_absences(
+                merged_df,
+                missing_rows,
+                env_vars=["temp", "silicate"],
+                species_cols=["species_a"],
+                absence_ratio=1,
+                min_presence=2,
+            )
+
+        pseudo_rows = out.iloc[len(merged_df):]
+        self.assertEqual(len(pseudo_rows), 3)
+        self.assertTrue((pseudo_rows["species_a"] == 0).all())
+        self.assertTrue((pseudo_rows.index == 10).all())
+
     def test_generate_pseudo_absences_returns_copy_when_skipped(self):
         merged_df = pd.DataFrame({
             "temp": [10.0],
@@ -359,6 +390,7 @@ if __name__ == '__main__':
     suite.addTest(Test2Phase('test_post_ensemble'))
 
     suite.addTest(TestPseudoAbsenceGeneration('test_generate_pseudo_absences_samples_outside_aoa'))
+    suite.addTest(TestPseudoAbsenceGeneration('test_generate_pseudo_absences_samples_with_replacement_by_default'))
     suite.addTest(TestPseudoAbsenceGeneration('test_generate_pseudo_absences_returns_copy_when_skipped'))
 
     # post area integration tests
