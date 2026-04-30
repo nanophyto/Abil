@@ -12,6 +12,7 @@ from abil.tune import ModelTuner as tune
 from abil.utils import example_data # example_training_data, example_predict_data
 from abil.predict import ModelPredictor as predict
 from abil.post import AbilPostProcessor as post
+from abil.pseudo_generation import generate_pseudo_absences
 
 class TestRegressors(unittest.TestCase):
 
@@ -292,11 +293,73 @@ class TestIntegrationFlexibleDims(unittest.TestCase):
         self.assertAlmostEqual(float(total.values), expected, places=10)
 
 
+class TestPseudoAbsenceGeneration(unittest.TestCase):
+
+    def test_generate_pseudo_absences_samples_outside_aoa(self):
+        merged_df = pd.DataFrame({
+            "time": [1, 1, 1],
+            "lat": [0.0, 1.0, 2.0],
+            "lon": [0.0, 1.0, 2.0],
+            "temp": [10.0, 11.0, 12.0],
+            "nitrate": [1.0, 1.1, 1.2],
+            "species_a": [1.0, 1.0, np.nan],
+            "species_b": [np.nan, np.nan, 1.0],
+        })
+        missing_rows = pd.DataFrame({
+            "time": [1, 1, 1, 1],
+            "lat": [3.0, 4.0, 5.0, 6.0],
+            "lon": [3.0, 4.0, 5.0, 6.0],
+            "temp": [30.0, 31.0, 32.0, 33.0],
+            "nitrate": [3.0, 3.1, 3.2, 3.3],
+        }, index=[10, 11, 12, 13])
+
+        def fake_aoa(X_predict, X_train, **kwargs):
+            return np.array([1, 0, 1, 1], dtype=float), np.zeros(4), 0.0
+
+        from unittest.mock import patch
+        with patch("abil.pseudo_generation.area_of_applicability", side_effect=fake_aoa):
+            out = generate_pseudo_absences(
+                merged_df,
+                missing_rows,
+                env_vars=["time", "lat", "lon", "temp", "nitrate"],
+                species_cols=["species_a", "species_b"],
+                absence_ratio=1,
+                min_presence=2,
+            )
+
+        pseudo_rows = out.loc[out.index.difference(merged_df.index)]
+        self.assertEqual(len(pseudo_rows), 2)
+        self.assertTrue((pseudo_rows["species_a"] == 0).all())
+        self.assertTrue(pseudo_rows["species_b"].isna().all())
+        self.assertTrue(set(pseudo_rows.index).issubset({10, 12, 13}))
+
+    def test_generate_pseudo_absences_returns_copy_when_skipped(self):
+        merged_df = pd.DataFrame({
+            "temp": [10.0],
+            "species_a": [1.0],
+        })
+        missing_rows = pd.DataFrame({"temp": [20.0]})
+
+        out = generate_pseudo_absences(
+            merged_df,
+            missing_rows,
+            env_vars=["temp"],
+            species_cols=["species_a"],
+            min_presence=2,
+        )
+
+        self.assertTrue(out.equals(merged_df))
+        self.assertIsNot(out, merged_df)
+
+
 if __name__ == '__main__':
     # Create a test suite combining all test cases in order
     suite = unittest.TestSuite()
     suite.addTest(TestRegressors('test_post_ensemble'))
     suite.addTest(Test2Phase('test_post_ensemble'))
+
+    suite.addTest(TestPseudoAbsenceGeneration('test_generate_pseudo_absences_samples_outside_aoa'))
+    suite.addTest(TestPseudoAbsenceGeneration('test_generate_pseudo_absences_returns_copy_when_skipped'))
 
     # post area integration tests
     suite.addTest(TestIntegrationFlexibleDims('test_lat_lon_depth_time'))
