@@ -1,75 +1,109 @@
-import pandas as pd
 import numpy as np
-import xarray as xr
-from .analyze import area_of_applicability
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+from .analyze import area_of_applicability
 
-def generate_pseudo_absences(merged_df, missing_rows, env_vars, species_cols, 
-                             absence_ratio=1, aoa_threshold=0.99, min_presence=100):
+
+def generate_pseudo_absences(
+    merged_df,
+    missing_rows,
+    env_vars,
+    species_cols,
+    absence_ratio=1,
+    aoa_threshold=0.99,
+    min_presence=100,
+):
     """
-    Generate pseudo-absences for each species at specified ratio to presences.
-    
-    Parameters:
-    - merged_df: DataFrame containing merged observation and environmental data
-    - missing_rows: DataFrame containing environmental data without observations
-    - env_vars: List of environmental variable names
-    - species_cols: List of species column names
-    - absence_ratio: Ratio of pseudo-absences to generate relative to presences
-    - aoa_threshold: Threshold for Area of Applicability calculation
-    - min_presence: Minimum number of presence records required to generate pseudo-absences
+    Generate pseudo-absences for each species at a specified ratio to presences.
+
+    Pseudo-absences are sampled from rows without observations that fall outside
+    the area of applicability estimated from each species' observed rows.
+
+    Parameters
+    ----------
+    merged_df : pandas.DataFrame
+        Merged observation and environmental data.
+    missing_rows : pandas.DataFrame
+        Environmental rows without observations that can be sampled as
+        pseudo-absence candidates.
+    env_vars : list of str
+        Environmental variable names. Coordinate variables named ``time``,
+        ``depth``, ``lat``, and ``lon`` are excluded from the AOA feature set.
+    species_cols : list of str
+        Species column names.
+    absence_ratio : float, default=1
+        Number of pseudo-absences to sample relative to the number of presences.
+    aoa_threshold : float or str, default=0.99
+        Threshold passed to :func:`abil.analyze.area_of_applicability`.
+    min_presence : int, default=100
+        Minimum number of presence records required to generate pseudo-absences
+        for a species.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``merged_df`` plus sampled pseudo-absence rows. If no pseudo-absences
+        can be generated, a copy of ``merged_df`` is returned.
     """
-    env_feature_vars = [v for v in env_vars if v not in ['time', 'depth', 'lat', 'lon']]
+    if absence_ratio < 0:
+        raise ValueError("absence_ratio must be non-negative")
+    if min_presence < 1:
+        raise ValueError("min_presence must be at least 1")
+
+    missing = [col for col in env_vars + species_cols if col not in merged_df.columns and col not in missing_rows.columns]
+    if missing:
+        raise KeyError(f"columns not found in merged_df or missing_rows: {missing}")
+
+    env_feature_vars = [v for v in env_vars if v not in ["time", "depth", "lat", "lon"]]
+    if not env_feature_vars:
+        raise ValueError("env_vars must contain at least one non-coordinate environmental variable")
+
+    missing_env = [col for col in env_feature_vars if col not in missing_rows.columns]
+    if missing_env:
+        raise KeyError(f"environmental columns not found in missing_rows: {missing_env}")
+
     pseudo_dfs = []
-    
+
     for species in species_cols:
-        print(f"\nProcessing species: {species}")
+        if species not in merged_df.columns:
+            raise KeyError(f"species column not found in merged_df: {species}")
+
         species_obs = merged_df[merged_df[species].notna()]
         n_presence = len(species_obs)
-        
-        # Skip if not enough presence records
+
         if n_presence < min_presence:
-            print(f"Only {n_presence} presence records for {species} (minimum {min_presence} required), skipping")
             continue
-            
+
         X_train = species_obs[env_feature_vars].dropna()
         X_predict = missing_rows[env_feature_vars].dropna()
-        
-        # Skip if no valid training data after dropping NAs
-        if len(X_train) < min_presence:
-            print(f"No valid environmental data for presence locations of {species}, skipping")
+
+        if len(X_train) < min_presence or X_predict.empty:
             continue
-            
-        try:
-            # Scale the data before AOA calculation
-            scaler = StandardScaler()
-            X_train_scaled = scaler.fit_transform(X_train)
-            X_predict_scaled = scaler.transform(X_predict)
-            
-            # Calculate Area of Applicability on scaled data
-            aoa = area_of_applicability(X_predict_scaled, X_train_scaled, feature_weights=False, threshold=aoa_threshold)
-            outside_aoa = missing_rows.loc[X_predict.index][aoa == 0]
-            
-            # Determine number of samples to generate
-            n_samples = min(int(n_presence * absence_ratio), len(outside_aoa))
-            
-            if n_samples == 0:
-                print(f"No suitable locations found outside AOA for {species}")
-                continue
-                
-            # Sample pseudo-absences
-            sampled_na = outside_aoa.sample(n=n_samples, replace=len(outside_aoa) < n_samples, random_state=42)
-            
-            # Create species-specific dataframe with pseudo-absences
-            species_df = pd.DataFrame({
-                s: (0 if s == species else np.nan) for s in species_cols
-            }, index=sampled_na.index)
-            
-            pseudo_dfs.append(pd.concat([sampled_na, species_df], axis=1))
-            print(f"Generated {n_samples} pseudo-absences for {species} (presences: {n_presence})")
-            
-        except Exception as e:
-            print(f"Error processing {species}: {str(e)}")
+
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_predict_scaled = scaler.transform(X_predict)
+
+        aoa = area_of_applicability(
+            X_predict_scaled,
+            X_train_scaled,
+            feature_weights=False,
+            threshold=aoa_threshold,
+        )[0]
+        outside_aoa = missing_rows.loc[X_predict.index][aoa == 1]
+
+        n_samples = min(int(n_presence * absence_ratio), len(outside_aoa))
+        if n_samples == 0:
             continue
-    
-    return pd.concat([merged_df] + pseudo_dfs) if pseudo_dfs else merged_df
+
+        sampled_na = outside_aoa.sample(n=n_samples, random_state=42)
+        species_df = pd.DataFrame(
+            {s: (0 if s == species else np.nan) for s in species_cols},
+            index=sampled_na.index,
+        )
+        pseudo_dfs.append(pd.concat([sampled_na, species_df], axis=1))
+
+    if pseudo_dfs:
+        return pd.concat([merged_df] + pseudo_dfs)
+    return merged_df.copy()
