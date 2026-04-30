@@ -11,8 +11,20 @@ Before running the Python script we need to import the required packages and def
 The candidate rows span temperature from 0 to 25 and silicate from 0.1 to 3.
 Observed presences are then selected from rows with temperature above 5 and silicate below 1.
 
+
+
+Loading dependencies
+^^^^^^^^^^^^^^^^^^^^
 .. literalinclude:: ../../../examples/pseudo_absence.py
-   :lines: 1-32
+   :lines: 2-7
+   :language: python
+
+
+Generating synthetic data
+^^^^^^^^^^^^^^^^^^^^
+
+.. literalinclude:: ../../../examples/pseudo_absence.py
+   :lines: 11-27
    :language: python
 
 Generating pseudo-absences
@@ -23,7 +35,7 @@ With ``absence_ratio=1``, the function targets one pseudo-absence for each obser
 If there are fewer candidate rows outside the area of applicability, rows are sampled with replacement by default.
 
 .. literalinclude:: ../../../examples/pseudo_absence.py
-   :lines: 34-41
+   :lines: 29-36
    :language: python
 
 Plotting
@@ -32,7 +44,7 @@ Plotting
 Now that we have pseudo-absences we can plot them in environmental space:
 
 .. literalinclude:: ../../../examples/pseudo_absence.py
-   :lines: 43-73
+   :lines: 37-73
    :language: python
 
 .. figure:: ../../../examples/pseudo_absence.png

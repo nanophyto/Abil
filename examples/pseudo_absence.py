@@ -1,17 +1,9 @@
 """Generate pseudo-absences for a small synthetic example."""
 
-from pathlib import Path
 import os
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
 from abil.pseudo_generation import generate_pseudo_absences
 
 os.chdir(os.path.join(".", "examples"))
@@ -68,7 +60,7 @@ ax.scatter(
 )
 ax.set_xlabel("temperature")
 ax.set_ylabel("silicate")
-ax.set_title("Pseudo-absences in environmental space")
+ax.set_title("Pseudo-absences from synthetic data")
 ax.legend()
 fig.tight_layout()
 plt.savefig("pseudo_absence.png", dpi=300, bbox_inches="tight", facecolor="white")
