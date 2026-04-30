@@ -13,12 +13,16 @@ def generate_pseudo_absences(
     absence_ratio=1,
     aoa_threshold=0.99,
     min_presence=100,
+    allow_replacement=True,
 ):
     """
     Generate pseudo-absences for each species at a specified ratio to presences.
 
     Pseudo-absences are sampled from rows without observations that fall outside
     the area of applicability estimated from each species' observed rows.
+    ``area_of_applicability`` uses ``0`` for inside AOA and ``1`` for
+    outside AOA, so this function samples candidates where the AOA mask
+    equals ``1``.
 
     Parameters
     ----------
@@ -39,6 +43,13 @@ def generate_pseudo_absences(
     min_presence : int, default=100
         Minimum number of presence records required to generate pseudo-absences
         for a species.
+    allow_replacement : bool, default=True
+        If True, sample outside-AOA candidate rows with replacement when there
+        are fewer available candidate rows than requested by ``absence_ratio``.
+        This allows ``absence_ratio=1`` to produce one pseudo-absence per
+        presence even when outside-AOA candidates are scarce. If False, the
+        number of pseudo-absences is capped by the number of unique outside-AOA
+        candidate rows.
 
     Returns
     -------
@@ -91,13 +102,22 @@ def generate_pseudo_absences(
             feature_weights=False,
             threshold=aoa_threshold,
         )[0]
-        outside_aoa = missing_rows.loc[X_predict.index][aoa == 1]
 
-        n_samples = min(int(n_presence * absence_ratio), len(outside_aoa))
-        if n_samples == 0:
+        # area_of_applicability returns 0 for inside AOA and 1 for outside AOA.
+        outside_aoa = missing_rows.loc[X_predict.index][np.asarray(aoa) == 1]
+
+        n_samples = int(n_presence * absence_ratio)
+        if n_samples == 0 or outside_aoa.empty:
             continue
 
-        sampled_na = outside_aoa.sample(n=n_samples, random_state=42)
+        if not allow_replacement:
+            n_samples = min(n_samples, len(outside_aoa))
+
+        sampled_na = outside_aoa.sample(
+            n=n_samples,
+            replace=allow_replacement and len(outside_aoa) < n_samples,
+            random_state=42,
+        )
         species_df = pd.DataFrame(
             {s: (0 if s == species else np.nan) for s in species_cols},
             index=sampled_na.index,
