@@ -113,6 +113,9 @@ def generate_pseudo_absences(
         if not allow_replacement:
             n_samples = min(n_samples, len(outside_aoa))
 
+        if len(outside_aoa) < n_samples:
+            print("area outside of applicability is smaller than requested pseudo-absence number. sampling will allow replacement unless set as False.")
+
         sampled_na = outside_aoa.sample(
             n=n_samples,
             replace=allow_replacement and len(outside_aoa) < n_samples,
