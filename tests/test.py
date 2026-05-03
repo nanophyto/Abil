@@ -7,6 +7,7 @@ from yaml import CLoader as Loader
 import pandas as pd
 import numpy as np
 import xarray as xr 
+from unittest.mock import patch
 
 from abil.tune import ModelTuner as tune
 from abil.utils import example_data # example_training_data, example_predict_data
@@ -316,7 +317,6 @@ class TestPseudoAbsenceGeneration(unittest.TestCase):
         def fake_aoa(X_predict, X_train, **kwargs):
             return np.array([1, 0, 1, 1], dtype=float), np.zeros(4), 0.0
 
-        from unittest.mock import patch
         with patch("abil.pseudo_generation.area_of_applicability", side_effect=fake_aoa):
             out = generate_pseudo_absences(
                 merged_df,
@@ -348,7 +348,6 @@ class TestPseudoAbsenceGeneration(unittest.TestCase):
         def fake_aoa(X_predict, X_train, **kwargs):
             return np.array([1, 0], dtype=float), np.zeros(2), 0.0
 
-        from unittest.mock import patch
         with patch("abil.pseudo_generation.area_of_applicability", side_effect=fake_aoa):
             out = generate_pseudo_absences(
                 merged_df,
