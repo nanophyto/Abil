@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Zero Stratified KFolds &#8212; Abil 26.5.3 documentation</title>
+    <title>Pseudo-absence generation &#8212; Abil 26.5.3 documentation</title>
   
   
   
@@ -43,12 +43,12 @@
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'source/reference/zero_stratified_kfold';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/user-guide/pseudo-absence';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Zero Inflated Regressor" href="zir.html" />
-    <link rel="prev" title="Ensemble Prediction Statistics" href="confidence_intervals.html" />
+    <link rel="next" title="API Reference" href="../reference/index.html" />
+    <link rel="prev" title="High Performance Computing" href="hpc.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -140,15 +140,15 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../user-guide/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     User Guide
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="index.html">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference/index.html">
     API Reference
   </a>
 </li>
@@ -256,15 +256,15 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../user-guide/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     User Guide
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="index.html">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference/index.html">
     API Reference
   </a>
 </li>
@@ -331,16 +331,11 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="tune.html">Tune</a></li>
-<li class="toctree-l1"><a class="reference internal" href="predict.html">Predict</a></li>
-<li class="toctree-l1"><a class="reference internal" href="post.html">Post</a></li>
-<li class="toctree-l1"><a class="reference internal" href="confidence_intervals.html">Ensemble Prediction Statistics</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Zero Stratified KFolds</a></li>
-<li class="toctree-l1"><a class="reference internal" href="zir.html">Zero Inflated Regressor</a></li>
-<li class="toctree-l1"><a class="reference internal" href="log_grid_search.html">Log Grid Search</a></li>
-<li class="toctree-l1"><a class="reference internal" href="aoa.html">Area of Applicability</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pseudo_generation.html">Pseudo-absence generation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="functions.html">Utility Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="yaml-config.html">Model YAML Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="one-phase-ensemble.html">Coccolithophore abundance in the Bermuda Atlantic Time Series</a></li>
+<li class="toctree-l1"><a class="reference internal" href="two-phase-ensemble.html">Southern Ocean distribution of <em>Gephyrocapsa huxleyi</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="hpc.html">High Performance Computing</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Pseudo-absence generation</a></li>
 </ul>
 </div>
 </nav></div>
@@ -382,9 +377,9 @@
       </a>
     </li>
     
-    <li class="breadcrumb-item"><a href="index.html" class="nav-link">API Reference</a></li>
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Zero Stratified KFolds</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Pseudo-absence generation</span></li>
   </ul>
 </nav>
 </div>
@@ -401,86 +396,105 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-abil.zero_stratified_kfold">
-<span id="zero-stratified-kfolds"></span><h1>Zero Stratified KFolds<a class="headerlink" href="#module-abil.zero_stratified_kfold" title="Link to this heading">#</a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">abil.zero_stratified_kfold.</span></span><span class="sig-name descname"><span class="pre">UpsampledZeroStratifiedKFold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Custom cross-validation generator with upsampling of zero instances for stratified folds.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.get_n_splits">
-<span class="sig-name descname"><span class="pre">get_n_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.get_n_splits" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+  <section id="pseudo-absence-generation">
+<h1>Pseudo-absence generation<a class="headerlink" href="#pseudo-absence-generation" title="Link to this heading">#</a></h1>
+<p>In this example we use a small synthetic dataset to show pseudo-absence generation in environmental space.
+Presences are restricted to warmer, lower-silicate conditions, and pseudo-absences are sampled outside the area of applicability.</p>
+<section id="running-the-example">
+<h2>Running the example<a class="headerlink" href="#running-the-example" title="Link to this heading">#</a></h2>
+<p>Before running the Python script we need to import the required packages and define the synthetic dataset.
+The candidate rows span temperature from 0 to 25 and silicate from 0.1 to 3.
+Observed presences are then selected from rows with temperature above 5 and silicate below 1.</p>
+<section id="loading-dependencies">
+<h3>Loading dependencies<a class="headerlink" href="#loading-dependencies" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abil.pseudo_generation</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_pseudo_absences</span>
+</pre></div>
+</div>
+</section>
+<section id="generating-synthetic-data">
+<h3>Generating synthetic data<a class="headerlink" href="#generating-synthetic-data" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">species</span> <span class="o">=</span> <span class="s2">&quot;synthetic_species&quot;</span>
+<span class="n">env_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;silicate&quot;</span><span class="p">]</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.split">
-<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.split" title="Link to this definition">#</a></dt>
-<dd><p>Generate train-test splits with upsampling of the minority class in the training data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix.</p></li>
-<li><p><strong>y</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – Target variable.</p></li>
-<li><p><strong>groups</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Group labels for the samples, used for group-based splitting. Not used in this method.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Yields<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>train_indices</strong> (<em>np.ndarray</em>) – Indices for the training set with upsampled minority class.</p></li>
-<li><p><strong>test_indices</strong> (<em>np.ndarray</em>) – Indices for the test set.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>Converts <cite>y</cite> into a binary variable (<cite>1</cite> for non-zero values, <cite>0</cite> otherwise) for stratified sampling.</p></li>
-<li><p>Upsamples the minority class in the training set to match the size of the majority class.</p></li>
-<li><p>Uses <cite>StratifiedKFold</cite> for generating splits based on the binary target variable.</p></li>
-</ul>
-</dd></dl>
+<span class="n">missing_rows</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">1200</span><span class="p">),</span>
+        <span class="s2">&quot;silicate&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1200</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 
-</dd></dl>
+<span class="n">presence_pool</span> <span class="o">=</span> <span class="n">missing_rows</span><span class="p">[</span>
+    <span class="p">(</span><span class="n">missing_rows</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">missing_rows</span><span class="p">[</span><span class="s2">&quot;silicate&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="n">merged_df</span> <span class="o">=</span> <span class="n">presence_pool</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">merged_df</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">missing_rows</span> <span class="o">=</span> <span class="n">missing_rows</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">merged_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="generating-pseudo-absences">
+<h2>Generating pseudo-absences<a class="headerlink" href="#generating-pseudo-absences" title="Link to this heading">#</a></h2>
+<p>Next we call <code class="docutils literal notranslate"><span class="pre">generate_pseudo_absences</span></code>.
+With <code class="docutils literal notranslate"><span class="pre">absence_ratio=1</span></code>, the function targets one pseudo-absence for each observed presence.
+If there are fewer candidate rows outside the area of applicability, rows are sampled with replacement by default.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">augmented</span> <span class="o">=</span> <span class="n">generate_pseudo_absences</span><span class="p">(</span>
+    <span class="n">merged_df</span><span class="p">,</span>
+    <span class="n">missing_rows</span><span class="p">,</span>
+    <span class="n">env_vars</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">species</span><span class="p">],</span>
+    <span class="n">absence_ratio</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">min_presence</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="plotting">
+<h2>Plotting<a class="headerlink" href="#plotting" title="Link to this heading">#</a></h2>
+<p>Now that we have pseudo-absences we can plot them in environmental space:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pseudo_absences</span> <span class="o">=</span> <span class="n">augmented</span><span class="p">[</span><span class="n">augmented</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">abil.zero_stratified_kfold.</span></span><span class="sig-name descname"><span class="pre">ZeroStratifiedKFold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Custom cross-validation generator to handle zero-inflated targets with stratification.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold.get_n_splits">
-<span class="sig-name descname"><span class="pre">get_n_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold.get_n_splits" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold.split">
-<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold.split" title="Link to this definition">#</a></dt>
-<dd><p>Generate train-test splits with upsampling of the minority class in the training data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix.</p></li>
-<li><p><strong>y</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – Target variable.</p></li>
-<li><p><strong>groups</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Group labels for the samples, used for group-based splitting. Not used in this method.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Yields<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>train_indices</strong> (<em>np.ndarray</em>) – Indices for the training set with upsampled minority class.</p></li>
-<li><p><strong>test_indices</strong> (<em>np.ndarray</em>) – Indices for the test set.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>Converts <cite>y</cite> into a binary variable (<cite>1</cite> for non-zero values, <cite>0</cite> otherwise) for stratified sampling.</p></li>
-<li><p>Upsamples the minority class in the training set to match the size of the majority class.</p></li>
-<li><p>Uses <cite>StratifiedKFold</cite> for generating splits based on the binary target variable.</p></li>
-</ul>
-</dd></dl>
-
-</dd></dl>
-
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">missing_rows</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+    <span class="n">missing_rows</span><span class="p">[</span><span class="s2">&quot;silicate&quot;</span><span class="p">],</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Candidate rows&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">merged_df</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+    <span class="n">merged_df</span><span class="p">[</span><span class="s2">&quot;silicate&quot;</span><span class="p">],</span>
+    <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">28</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Observed presences&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">pseudo_absences</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+    <span class="n">pseudo_absences</span><span class="p">[</span><span class="s2">&quot;silicate&quot;</span><span class="p">],</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
+    <span class="n">s</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Pseudo-absences&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;temperature&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;silicate&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Pseudo-absences from synthetic data&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;pseudo_absence.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<figure class="align-default">
+<img alt="../../_images/pseudo_absence.png" src="../../_images/pseudo_absence.png" />
+</figure>
+</section>
 </section>
 
 
@@ -494,20 +508,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="confidence_intervals.html"
+       href="hpc.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Ensemble Prediction Statistics</p>
+        <p class="prev-next-title">High Performance Computing</p>
       </div>
     </a>
     <a class="right-next"
-       href="zir.html"
+       href="../reference/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Zero Inflated Regressor</p>
+        <p class="prev-next-title">API Reference</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

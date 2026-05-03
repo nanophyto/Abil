@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Zero Stratified KFolds &#8212; Abil 26.5.3 documentation</title>
+    <title>Pseudo-absence generation &#8212; Abil 26.5.3 documentation</title>
   
   
   
@@ -43,12 +43,12 @@
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'source/reference/zero_stratified_kfold';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/reference/pseudo_generation';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Zero Inflated Regressor" href="zir.html" />
-    <link rel="prev" title="Ensemble Prediction Statistics" href="confidence_intervals.html" />
+    <link rel="next" title="Utility Functions" href="functions.html" />
+    <link rel="prev" title="Area of Applicability" href="aoa.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -335,11 +335,11 @@
 <li class="toctree-l1"><a class="reference internal" href="predict.html">Predict</a></li>
 <li class="toctree-l1"><a class="reference internal" href="post.html">Post</a></li>
 <li class="toctree-l1"><a class="reference internal" href="confidence_intervals.html">Ensemble Prediction Statistics</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Zero Stratified KFolds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zero_stratified_kfold.html">Zero Stratified KFolds</a></li>
 <li class="toctree-l1"><a class="reference internal" href="zir.html">Zero Inflated Regressor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log_grid_search.html">Log Grid Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="aoa.html">Area of Applicability</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pseudo_generation.html">Pseudo-absence generation</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Pseudo-absence generation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="functions.html">Utility Functions</a></li>
 </ul>
 </div>
@@ -384,7 +384,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">API Reference</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Zero Stratified KFolds</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Pseudo-absence generation</span></li>
   </ul>
 </nav>
 </div>
@@ -401,84 +401,46 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-abil.zero_stratified_kfold">
-<span id="zero-stratified-kfolds"></span><h1>Zero Stratified KFolds<a class="headerlink" href="#module-abil.zero_stratified_kfold" title="Link to this heading">#</a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">abil.zero_stratified_kfold.</span></span><span class="sig-name descname"><span class="pre">UpsampledZeroStratifiedKFold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Custom cross-validation generator with upsampling of zero instances for stratified folds.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.get_n_splits">
-<span class="sig-name descname"><span class="pre">get_n_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.get_n_splits" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.split">
-<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.UpsampledZeroStratifiedKFold.split" title="Link to this definition">#</a></dt>
-<dd><p>Generate train-test splits with upsampling of the minority class in the training data.</p>
+  <section id="module-abil.pseudo_generation">
+<span id="pseudo-absence-generation"></span><h1>Pseudo-absence generation<a class="headerlink" href="#module-abil.pseudo_generation" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="abil.pseudo_generation.generate_pseudo_absences">
+<span class="sig-prename descclassname"><span class="pre">abil.pseudo_generation.</span></span><span class="sig-name descname"><span class="pre">generate_pseudo_absences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">merged_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">missing_rows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_vars</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_cols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absence_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aoa_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.99</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_presence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_replacement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.pseudo_generation.generate_pseudo_absences" title="Link to this definition">#</a></dt>
+<dd><p>Generate pseudo-absences for each species at a specified ratio to presences.</p>
+<p>Pseudo-absences are sampled from rows without observations that fall outside
+the area of applicability estimated from each species’ observed rows.
+<code class="docutils literal notranslate"><span class="pre">area_of_applicability</span></code> uses <code class="docutils literal notranslate"><span class="pre">0</span></code> for inside AOA and <code class="docutils literal notranslate"><span class="pre">1</span></code> for
+outside AOA, so this function samples candidates where the AOA mask
+equals <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix.</p></li>
-<li><p><strong>y</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – Target variable.</p></li>
-<li><p><strong>groups</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Group labels for the samples, used for group-based splitting. Not used in this method.</p></li>
+<li><p><strong>merged_df</strong> (<em>pandas.DataFrame</em>) – Merged observation and environmental data.</p></li>
+<li><p><strong>missing_rows</strong> (<em>pandas.DataFrame</em>) – Environmental rows without observations that can be sampled as
+pseudo-absence candidates.</p></li>
+<li><p><strong>env_vars</strong> (<em>list</em><em> of </em><em>str</em>) – Environmental variable names. Coordinate variables named <code class="docutils literal notranslate"><span class="pre">time</span></code>,
+<code class="docutils literal notranslate"><span class="pre">depth</span></code>, <code class="docutils literal notranslate"><span class="pre">lat</span></code>, and <code class="docutils literal notranslate"><span class="pre">lon</span></code> are excluded from the AOA feature set.</p></li>
+<li><p><strong>species_cols</strong> (<em>list</em><em> of </em><em>str</em>) – Species column names.</p></li>
+<li><p><strong>absence_ratio</strong> (<em>float</em><em>, </em><em>default=1</em>) – Number of pseudo-absences to sample relative to the number of presences.</p></li>
+<li><p><strong>aoa_threshold</strong> (<em>float</em><em> or </em><em>str</em><em>, </em><em>default=0.99</em>) – Threshold passed to <a class="reference internal" href="aoa.html#abil.analyze.area_of_applicability" title="abil.analyze.area_of_applicability"><code class="xref py py-func docutils literal notranslate"><span class="pre">abil.analyze.area_of_applicability()</span></code></a>.</p></li>
+<li><p><strong>min_presence</strong> (<em>int</em><em>, </em><em>default=100</em>) – Minimum number of presence records required to generate pseudo-absences
+for a species.</p></li>
+<li><p><strong>allow_replacement</strong> (<em>bool</em><em>, </em><em>default=True</em>) – If True, sample outside-AOA candidate rows with replacement when there
+are fewer available candidate rows than requested by <code class="docutils literal notranslate"><span class="pre">absence_ratio</span></code>.
+This allows <code class="docutils literal notranslate"><span class="pre">absence_ratio=1</span></code> to produce one pseudo-absence per
+presence even when outside-AOA candidates are scarce. If False, the
+number of pseudo-absences is capped by the number of unique outside-AOA
+candidate rows.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Yields<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>train_indices</strong> (<em>np.ndarray</em>) – Indices for the training set with upsampled minority class.</p></li>
-<li><p><strong>test_indices</strong> (<em>np.ndarray</em>) – Indices for the test set.</p></li>
-</ul>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">merged_df</span></code> plus sampled pseudo-absence rows. If no pseudo-absences
+can be generated, a copy of <code class="docutils literal notranslate"><span class="pre">merged_df</span></code> is returned.</p>
 </dd>
-</dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>Converts <cite>y</cite> into a binary variable (<cite>1</cite> for non-zero values, <cite>0</cite> otherwise) for stratified sampling.</p></li>
-<li><p>Upsamples the minority class in the training set to match the size of the majority class.</p></li>
-<li><p>Uses <cite>StratifiedKFold</cite> for generating splits based on the binary target variable.</p></li>
-</ul>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">abil.zero_stratified_kfold.</span></span><span class="sig-name descname"><span class="pre">ZeroStratifiedKFold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Custom cross-validation generator to handle zero-inflated targets with stratification.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold.get_n_splits">
-<span class="sig-name descname"><span class="pre">get_n_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold.get_n_splits" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="abil.zero_stratified_kfold.ZeroStratifiedKFold.split">
-<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.zero_stratified_kfold.ZeroStratifiedKFold.split" title="Link to this definition">#</a></dt>
-<dd><p>Generate train-test splits with upsampling of the minority class in the training data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Feature matrix.</p></li>
-<li><p><strong>y</strong> (<em>array-like</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – Target variable.</p></li>
-<li><p><strong>groups</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Group labels for the samples, used for group-based splitting. Not used in this method.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Yields<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>train_indices</strong> (<em>np.ndarray</em>) – Indices for the training set with upsampled minority class.</p></li>
-<li><p><strong>test_indices</strong> (<em>np.ndarray</em>) – Indices for the test set.</p></li>
-</ul>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>Converts <cite>y</cite> into a binary variable (<cite>1</cite> for non-zero values, <cite>0</cite> otherwise) for stratified sampling.</p></li>
-<li><p>Upsamples the minority class in the training set to match the size of the majority class.</p></li>
-<li><p>Uses <cite>StratifiedKFold</cite> for generating splits based on the binary target variable.</p></li>
-</ul>
-</dd></dl>
-
 </dd></dl>
 
 </section>
@@ -494,20 +456,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="confidence_intervals.html"
+       href="aoa.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Ensemble Prediction Statistics</p>
+        <p class="prev-next-title">Area of Applicability</p>
       </div>
     </a>
     <a class="right-next"
-       href="zir.html"
+       href="functions.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Zero Inflated Regressor</p>
+        <p class="prev-next-title">Utility Functions</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
