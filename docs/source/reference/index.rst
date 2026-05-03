@@ -13,4 +13,5 @@ API Reference
    zir
    log_grid_search
    aoa
+   pseudo_generation
    functions
