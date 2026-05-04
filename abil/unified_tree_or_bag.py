@@ -270,10 +270,11 @@ def _summarize_predictions(model, y_inverse_transformer, X_predict, X_train=None
     ######################################
 
     if chunksize is not None:
-        n_chunks = int(np.ceil(n_samples / chunksize))
-        chunks = np.array_split(X_predict, n_chunks)
-        # Convert each chunk to pandas DataFrame
-        chunks = [pd.DataFrame(chunk, columns=X_predict.columns) for chunk in chunks]
+        chunk_size = int(chunksize)
+        chunks = [
+            X_predict.iloc[start:start + chunk_size]
+            for start in range(0, n_samples, chunk_size)
+        ]
     else:
         chunks = [X_predict]
 
