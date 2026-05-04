@@ -11,7 +11,7 @@ Abil.py
 Abil.py is a `Python <https://www.python.org/>`__ library to interpolate distributions of biogeochemical observations using Machine Learning algorithms in Python. 
 The library is optimized to interpolate many predictions in parallel and is thus particularly suited for distribution models of species, 
 genes and transcripts. The library relies on `scikit-learn <https://scikit-learn.org/stable/>`_, `numpy <https://numpy.org/>`_, `pandas <https://pandas.pydata.org/>`_, 
-`scikit-bio <https://scikit.bio/>`_.
+`xarray <https://docs.xarray.dev/>`_.
 
 .. toctree::
    :maxdepth: 3
