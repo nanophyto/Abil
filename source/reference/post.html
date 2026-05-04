@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Post &#8212; Abil 26.5.4 documentation</title>
+    <title>Post &#8212; Abil 26.5.4-2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../../_static/documentation_options.js?v=badcc587"></script>
+    <script src="../../_static/documentation_options.js?v=2486d5f2"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/design-tabs.js?v=f930bc37"></script>
@@ -119,7 +119,7 @@
   
   
   
-    <p class="title logo__title">Abil 26.5.4 documentation</p>
+    <p class="title logo__title">Abil 26.5.4-2 documentation</p>
   
 </a></div>
     
@@ -439,8 +439,14 @@ column names to be grouped under each key.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="abil.post.AbilPostProcessor.diversity">
-<span class="sig-name descname"><span class="pre">diversity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.AbilPostProcessor.diversity" title="Link to this definition">#</a></dt>
-<dd><p>Estimates Shannon diversity using scikit-bio.</p>
+<span class="sig-name descname"><span class="pre">diversity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#abil.post.AbilPostProcessor.diversity" title="Link to this definition">#</a></dt>
+<dd><p>Calculate Shannon diversity for the prediction targets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>targets</strong> (<em>iterable</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Columns to use for the calculation. Defaults to the targets defined
+in the model configuration.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
