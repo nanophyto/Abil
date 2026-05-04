@@ -13,7 +13,24 @@ from abil.tune import ModelTuner as tune
 from abil.utils import example_data # example_training_data, example_predict_data
 from abil.predict import ModelPredictor as predict
 from abil.post import AbilPostProcessor as post
+from abil.post import _shannon
 from abil.pseudo_generation import generate_pseudo_absences
+
+
+class TestDiversityMetrics(unittest.TestCase):
+
+    def test_shannon_matches_known_value(self):
+        counts = np.array([1.0, 1.0, 2.0, 0.0])
+        expected = -((0.25 * np.log(0.25)) + (0.25 * np.log(0.25)) + (0.5 * np.log(0.5)))
+        self.assertAlmostEqual(_shannon(counts), expected)
+
+    def test_shannon_returns_zero_for_empty_or_zero_counts(self):
+        self.assertEqual(_shannon(np.array([0.0, 0.0])), 0.0)
+
+    def test_diversity_metrics_reject_negative_values(self):
+        with self.assertRaises(ValueError):
+            _shannon(np.array([1.0, -1.0]))
+
 
 class TestRegressors(unittest.TestCase):
 
