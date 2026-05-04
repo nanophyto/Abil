@@ -6,7 +6,6 @@ import pickle
 import gc
 import logging
 from yaml import dump, Dumper
-from skbio.diversity.alpha import shannon
 from .analyze import area_of_applicability
 import sys
 
@@ -16,6 +15,27 @@ logging.basicConfig(
     format="%(message)s",
 )
 logger = logging.getLogger("abil")
+
+
+def _as_nonnegative_finite_array(counts):
+    """Convert counts to a finite, non-negative NumPy array."""
+    values = np.asarray(counts, dtype=float)
+    values = values[np.isfinite(values)]
+    if np.any(values < 0):
+        raise ValueError("Diversity metrics require non-negative values")
+    return values
+
+
+def _shannon(counts):
+    """Calculate Shannon diversity from count or abundance values."""
+    values = _as_nonnegative_finite_array(counts)
+    values = values[values > 0]
+    total = values.sum()
+    if total <= 0:
+        return 0.0
+    proportions = values / total
+    return float(-(proportions * np.log(proportions)).sum())
+
 
 class AbilPostProcessor:
     """
@@ -589,11 +609,18 @@ class AbilPostProcessor:
         self.d[var_name] = self.d.apply(lambda row : np.average(var, weights=row[self.targets]), axis = 1)
         logger.info(f"finished calculating CWM {variable}")
 
-    def diversity(self):
+    def diversity(self, targets=None):
         """
-        Estimates Shannon diversity using scikit-bio.
+        Calculate Shannon diversity for the prediction targets.
+
+        Parameters
+        ----------
+        targets : iterable of str, optional
+            Columns to use for the calculation. Defaults to the targets defined
+            in the model configuration.
         """
-        self.d['shannon'] = self.d.apply(shannon, axis=1)
+        target_columns = self.targets if targets is None else list(targets)
+        self.d['shannon'] = self.d[target_columns].apply(_shannon, axis=1)
         logger.info("finished calculating shannon diversity")
 
     def total(self):
