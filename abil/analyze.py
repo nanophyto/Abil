@@ -145,12 +145,16 @@ def area_of_applicability(
         d_mins = numpy.empty((X_train.shape[0],))
         mean_acc_num = 0
         mean_acc_den = 0
-        for test_ix, train_ix in cv.split(X_train):
+        # sklearn cross-validator `split` yields (train_idx, test_idx); the
+        # previous unpacking was reversed, so d_mins was populated for
+        # in-fold points (overwritten k-1 times per index) instead of the
+        # held-out points (each filled exactly once).
+        for train_ix, test_ix in cv.split(X_train):
             hold_to_seen_d = train_distance[test_ix.reshape(-1,1), train_ix]
             d_mins[test_ix] = hold_to_seen_d.min(axis=1)
             mean_acc_num += hold_to_seen_d.sum()
             mean_acc_den += hold_to_seen_d.size
-        d_mean = mean_acc_num/mean_acc_den    
+        d_mean = mean_acc_num/mean_acc_den
     else:
         d_mins = train_distance.min(axis=1)
         numpy.fill_diagonal(train_distance, 0)
@@ -159,7 +163,8 @@ def area_of_applicability(
     di_train = d_mins / d_mean
 
     if threshold == "tukey":
-        lo_hinge, hi_hinge = numpy.percentile(di_train, (0.25, 0.75))
+        # numpy.percentile expects values in [0, 100], not [0, 1].
+        lo_hinge, hi_hinge = numpy.percentile(di_train, (25, 75))
         iqr = hi_hinge - lo_hinge
         cutpoint = iqr * 1.5 + hi_hinge
     elif threshold == "mad":
@@ -167,7 +172,9 @@ def area_of_applicability(
         mad = numpy.median(numpy.abs(di_train - median))
         cutpoint = median + 3 * mad
     elif (0 < threshold) & (threshold < 1):
-        cutpoint = numpy.percentile(di_train, threshold)
+        # threshold is documented as a quantile in (0, 1); scale to the
+        # 0-100 range numpy.percentile expects.
+        cutpoint = numpy.percentile(di_train, threshold * 100)
     cutpoint = numpy.maximum(cutpoint, di_train.max())
 
     if return_all:
