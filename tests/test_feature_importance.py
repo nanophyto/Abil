@@ -108,6 +108,16 @@ class TestFeatureImportance(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(post.path_out, 'feature_importance', 'summary.csv')))
             self.assertTrue(os.path.isfile(os.path.join(post.path_out, 'feature_importance', 'repeats.csv')))
 
+            # Inspect only the final saved ensemble, without fitting another model.
+            with patch('abil.analyze.clone', side_effect=AssertionError('unexpected refit')):
+                fitted_summary, fitted_repeats = post.estimate_feature_importance(
+                    models=['ens'], cv=False, n_repeats=2, export=False,
+                )
+            self.assertEqual(fitted_summary.model.tolist(), ['ens'] * 3)
+            self.assertTrue((fitted_summary.evaluation == 'fitted').all())
+            self.assertTrue((fitted_summary.n_folds == 1).all())
+            self.assertEqual(len(fitted_repeats), 3 * 2)
+
     def test_two_phase_uses_final_concentration(self):
         rng = np.random.RandomState(4)
         X = pd.DataFrame(rng.normal(size=(48, 2)), columns=['x', 'z'])
