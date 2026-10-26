@@ -6,8 +6,10 @@ import pickle
 import gc
 import logging
 from yaml import dump, Dumper
-from .analyze import area_of_applicability
+from .analyze import area_of_applicability, permutation_feature_importance
 import sys
+from sklearn.model_selection import KFold
+from .zero_stratified_kfold import ZeroStratifiedKFold, UpsampledZeroStratifiedKFold
 
 logging.basicConfig(
     level=logging.INFO,
@@ -975,6 +977,89 @@ class AbilPostProcessor:
 
                 logger.info(f"Exported totals")
 
+
+    def estimate_feature_importance(
+        self, targets=None, models=None, *, cv=True, scoring="r2",
+        n_repeats=10, random_state=None, n_jobs=1, export=True,
+        groups=None,
+    ):
+        """Estimate permutation importance of original predictors for fitted models.
+
+        By default, each saved model is refitted within the configured CV
+        folds, and feature importance is evaluated on held-out observations.
+        Set ``cv=False`` to evaluate the existing fitted models in-sample, or
+        pass an explicit splitter (e.g. GroupKFold) for grouped validation.
+        The two-phase models are evaluated by their final concentration output.
+
+        Returns
+        -------
+        tuple of pandas.DataFrame
+            Feature-level summary and per-fold, per-repeat importances, also
+            written to ``posts/feature_importance/`` when ``export=True``.
+        """
+        if targets is None:
+            targets = self.targets
+        if models is None:
+            models = [v for k, v in self.model_config['ensemble_config'].items()
+                      if k.startswith('m')] + ['ens']
+        if not len(targets) or not len(models):
+            raise ValueError('at least one target and model must be selected')
+        if random_state is None:
+            random_state = self.model_config['seed']
+        if cv is True:
+            if self.model_config.get('stratify', False):
+                splitter = (UpsampledZeroStratifiedKFold if self.model_config.get('upsample', False)
+                            else ZeroStratifiedKFold)(
+                    n_splits=self.model_config['cv'], random_state=random_state
+                )
+            else:
+                splitter = KFold(n_splits=self.model_config['cv'], shuffle=True,
+                                 random_state=random_state)
+        elif cv is False or cv is None:
+            splitter = None
+        else:
+            splitter = cv
+
+        summaries, repeats = [], []
+        base_dir = os.path.join(self.root, self.model_config['path_out'],
+                                self.model_config['run_name'], 'model')
+        for target in targets:
+            y = self.y_train if isinstance(self.y_train, pd.Series) else self.y_train[target]
+            valid = np.asarray(pd.notna(y))
+            # Preserve categorical predictors (e.g. regional one-hot inputs).
+            predictors = pd.DataFrame(self.X_train)
+            valid &= predictors.notna().all(axis=1).to_numpy()
+            numeric = predictors.select_dtypes(include='number')
+            if not numeric.empty:
+                valid &= np.isfinite(numeric.to_numpy()).all(axis=1)
+            X_valid = self.X_train.iloc[valid] if hasattr(self.X_train, 'iloc') else self.X_train[valid]
+            y_valid = y.iloc[valid] if hasattr(y, 'iloc') else np.asarray(y)[valid]
+            groups_valid = None if groups is None else np.asarray(groups)[valid]
+            target_file = target.replace(' ', '_') + self.extension
+            for model_name in models:
+                with open(os.path.join(base_dir, model_name, target_file), 'rb') as file:
+                    fitted_model = pickle.load(file)
+                summary, detail = permutation_feature_importance(
+                    fitted_model, X_valid, y_valid, cv=splitter, scoring=scoring,
+                    n_repeats=n_repeats, random_state=random_state, n_jobs=n_jobs,
+                    return_repeats=True, groups=groups_valid,
+                )
+                for table in (summary, detail):
+                    table.insert(0, 'model', model_name)
+                    table.insert(0, 'target', target)
+                    table['evaluation'] = 'cross_validation' if splitter is not None else 'fitted'
+                    table['scoring'] = scoring if isinstance(scoring, str) else repr(scoring)
+                summaries.append(summary)
+                repeats.append(detail)
+
+        summary = pd.concat(summaries, ignore_index=True)
+        detail = pd.concat(repeats, ignore_index=True)
+        if export:
+            output_dir = os.path.join(self.path_out, 'feature_importance')
+            os.makedirs(output_dir, exist_ok=True)
+            summary.to_csv(os.path.join(output_dir, 'summary.csv'), index=False)
+            detail.to_csv(os.path.join(output_dir, 'repeats.csv'), index=False)
+        return summary, detail
 
     def estimate_applicability(self, targets=None, threshold='tukey', return_all=False, drop_zeros=False):
         """

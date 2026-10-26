@@ -13,5 +13,6 @@ API Reference
    zir
    log_grid_search
    aoa
+   feature_importance
    pseudo_generation
    functions

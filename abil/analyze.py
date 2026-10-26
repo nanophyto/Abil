@@ -1,7 +1,104 @@
 from sklearn import metrics
 from sklearn import inspection
 from sklearn import base
+from sklearn.base import clone
 import numpy
+import pandas as pd
+
+
+def permutation_feature_importance(
+    model, X, y, *, cv=None, scoring="r2", n_repeats=10,
+    random_state=None, n_jobs=1, return_repeats=False, groups=None,
+):
+    """Estimate predictor importance through repeated score reductions.
+
+    Parameters
+    ----------
+    model : fitted sklearn-compatible estimator
+        The full model, including preprocessing and any ensemble components.
+    X : array-like of shape (n_samples, n_features)
+        Original, untransformed predictors. DataFrame column names are retained.
+    y : array-like of shape (n_samples,)
+        Observed targets for scoring.
+    cv : cross-validator, optional
+        If provided, clone and refit the estimator on each training fold and
+        measure importance on its held-out fold. Without ``cv`` the supplied
+        fitted model is evaluated on X and y.
+    scoring : str or callable, default="r2"
+        Scorer accepted by sklearn.inspection.permutation_importance.
+    n_repeats : int, default=10
+        Number of permutations per feature and evaluation fold.
+    random_state : int, optional
+        Seed for reproducible permutations.
+    n_jobs : int, default=1
+        Parallelism within each permutation-importance calculation.
+    return_repeats : bool, default=False
+        Also return one row per predictor, fold and permutation repeat.
+    groups : array-like, optional
+        Group labels supplied to ``cv.split`` when using grouped CV.
+
+    Returns
+    -------
+    pandas.DataFrame or tuple of pandas.DataFrame
+        Feature-level summary (``feature``, ``importance_mean``,
+        ``importance_std``, ``n_folds``, ``n_repeats``), optionally followed
+        by the repeat-level table (``feature``, ``fold``, ``repeat``,
+        ``importance``). Importance is the *decrease* in the scoring metric;
+        a negative value means that permuting improved the score.
+
+    Notes
+    -----
+    When using cross-validation, estimator hyperparameters are retained from
+    the supplied model; they are not retuned within folds.
+    """
+    if not hasattr(X, "shape") or len(X.shape) != 2:
+        raise ValueError("X must be a two-dimensional feature matrix")
+    if len(y) != X.shape[0]:
+        raise ValueError("X and y must contain the same number of samples")
+    if groups is not None and len(groups) != len(y):
+        raise ValueError("groups must contain one value per sample")
+
+    names = list(X.columns) if hasattr(X, "columns") else [
+        f"feature_{i}" for i in range(X.shape[1])
+    ]
+    if len(set(names)) != len(names):
+        raise ValueError("feature names must be unique")
+    rng = numpy.random.RandomState(random_state)
+    if cv is None:
+        splits = [(None, numpy.arange(len(y)))]
+    else:
+        splits = cv.split(X, y, groups)
+
+    def select(data, indices):
+        return data.iloc[indices] if hasattr(data, "iloc") else numpy.asarray(data)[indices]
+
+    records = []
+    for fold, (train_idx, test_idx) in enumerate(splits, start=1):
+        estimator = model
+        if train_idx is not None:
+            estimator = clone(model).fit(select(X, train_idx), select(y, train_idx))
+        result = inspection.permutation_importance(
+            estimator, select(X, test_idx), select(y, test_idx),
+            scoring=scoring, n_repeats=n_repeats,
+            random_state=int(rng.randint(numpy.iinfo(numpy.int32).max)),
+            n_jobs=n_jobs,
+        )
+        for i, name in enumerate(names):
+            records.extend(
+                (name, fold, repeat + 1, float(value))
+                for repeat, value in enumerate(result.importances[i])
+            )
+
+    repeats = pd.DataFrame(records, columns=["feature", "fold", "repeat", "importance"])
+    if repeats.empty:
+        raise ValueError("cross-validation did not produce any evaluation folds")
+    stats = repeats.groupby("feature", sort=False)["importance"].agg(
+        importance_mean="mean", importance_std=lambda values: values.std(ddof=0)
+    ).reset_index()
+    stats["n_folds"] = repeats["fold"].nunique()
+    stats["n_repeats"] = n_repeats
+    return (stats, repeats) if return_repeats else stats
+
 
 
 def area_of_applicability(
@@ -79,8 +176,14 @@ def area_of_applicability(
     if feature_weight_kwargs is None:
         feature_weight_kwargs = dict()
     
-    base.check_array(X_test, force_all_finite='allow-nan')
-    base.check_array(X_train, force_all_finite='allow-nan')
+    for features in (X_test, X_train):
+        try:
+            base.check_array(features, force_all_finite='allow-nan')
+        except TypeError as exc:
+            # scikit-learn >= 1.6 renamed force_all_finite.
+            if 'force_all_finite' not in str(exc):
+                raise
+            base.check_array(features, ensure_all_finite='allow-nan')
 
     mask_test = numpy.asarray(~numpy.isnan(X_test).any(axis=1))
     mask_train = numpy.asarray(~numpy.isnan(X_train).any(axis=1))
@@ -116,25 +219,34 @@ def area_of_applicability(
         y_train = numpy.asarray(y_train)[mask_train]
 
 
-    if not feature_weights:
+    if feature_weights is False or feature_weights is None:
         feature_weights = numpy.ones(n_features)
-    elif feature_weights == "permutation":
-        if model is None:
-            raise ValueError(
-                "Model must be provided if permutation feature importance is used"
-            )
-        feature_weight_kwargs.setdefault("n_jobs", -1)
-        feature_weight_kwargs.setdefault("n_repeats", 10)
-        feature_weights = inspection.permutation_importance(
-            model, X_train, y_train, **feature_weight_kwargs
-        ).importances_mean
-        feature_weights /= feature_weights.sum()
+    elif isinstance(feature_weights, str):
+        if feature_weights != "permutation":
+            raise ValueError("unknown feature weighting strategy")
+        if model is None or y_train is None:
+            raise ValueError("model and y_train are required for permutation weights")
+        options = dict(feature_weight_kwargs)
+        options.setdefault("n_jobs", -1)
+        options.setdefault("n_repeats", 10)
+        options.pop("return_repeats", None)
+        options.pop("cv", None)
+        feature_weights = permutation_feature_importance(
+            model, X_train, y_train, **options
+        )["importance_mean"].to_numpy()
+        # Negative importance is not a meaningful distance weight.
+        feature_weights = numpy.maximum(feature_weights, 0)
     else:
-        if len(feature_weights) != n_features:
-            raise ValueError(
-            "weights must be provided for all features"
-        )
-        feature_weights = feature_weights / sum(feature_weights)
+        feature_weights = numpy.asarray(feature_weights, dtype=float)
+        if feature_weights.shape != (n_features,):
+            raise ValueError("weights must be provided for all features")
+        if not numpy.all(numpy.isfinite(feature_weights)) or numpy.any(feature_weights < 0):
+            raise ValueError("feature weights must be finite and non-negative")
+
+    total_weight = feature_weights.sum()
+    # Uniform weighting is well-defined when no permutation has positive importance.
+    feature_weights = (feature_weights / total_weight if total_weight > 0
+                       else numpy.full(n_features, 1 / n_features))
 
     train_distance = metrics.pairwise_distances(
         X_train * feature_weights[None, :], metric=metric
